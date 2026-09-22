@@ -4,6 +4,58 @@ import QRCode from 'qrcode';
 import type { WindowConfig, CostBreakdown } from '../types/window';
 import type { CadStructure, WorkshopBOM } from '../types/cad';
 
+export function formatOpeningTypeFr(openingType: string): string {
+  const map: Record<string, string> = {
+    sliding_2: 'Coulissant 2 Vantaux',
+    sliding_3: 'Coulissant 3 Vantaux (3 Rails)',
+    casement_1: 'Ouvrant Français 1 Vantail',
+    casement_2: 'Ouvrant Français 2 Vantaux',
+    tilt_turn: 'Oscillo-Battant Sécurité',
+    fixed: 'Châssis Fixe Vitré',
+  };
+  return map[openingType] || openingType;
+}
+
+export function formatProfileSystemFr(profileSystem: string): string {
+  const map: Record<string, string> = {
+    gamme_40: 'Alugraf 40 Standard (Éco)',
+    gamme_45_thermal: 'Gamme 45 Rupture Pont Thermique (RPT)',
+    gamme_67_slide: 'Coulissant Renforcé 67mm (Lourd)',
+    pvc_70_chamber: 'PVC 70mm 5 Chambres Haute Isolation',
+  };
+  return map[profileSystem] || profileSystem;
+}
+
+export function formatFinishColorFr(finishColor: string): string {
+  const map: Record<string, string> = {
+    ral_9016: 'RAL 9016 Blanc Brillant',
+    ral_7016: 'RAL 7016 Gris Anthracite Sablé',
+    ral_9005: 'RAL 9005 Noir Mat Sablé',
+    faux_bois: 'Faux Bois Chêne Doré',
+    bronze_ano: 'Bronze Anodisé Métallisé',
+  };
+  return map[finishColor] || finishColor;
+}
+
+export function formatGlassTypeFr(glassType: string): string {
+  const map: Record<string, string> = {
+    simple_clear: 'Simple Vitrage Clair 6mm',
+    double_clear: 'Double Vitrage 4/16/4 Isolation',
+    stop_sol: 'Stop-Sol Réfléchissant Anti-Chaleur',
+    sable: 'Vitrage Sablé Dépoli Intimité',
+  };
+  return map[glassType] || glassType;
+}
+
+export function formatShutterTypeFr(shutterType: string): string {
+  const map: Record<string, string> = {
+    none: 'Sans volet roulant',
+    manual: 'Volet roulant manuel',
+    motorized: 'Volet roulant motorisé',
+  };
+  return map[shutterType] || shutterType;
+}
+
 export async function generateClientDevisPdf(
   config: WindowConfig,
   cost: CostBreakdown,
@@ -68,11 +120,11 @@ export async function generateClientDevisPdf(
   const tableRows = [
     [
       'Châssis Menuiserie sur-mesure',
-      `${config.openingType} (${config.width} × ${config.height} mm)`,
-      config.profileSystem,
-      config.finishColor,
-      config.glassType,
-      config.shutterType !== 'none' ? config.shutterType : 'Sans volet',
+      `${formatOpeningTypeFr(config.openingType)} (${config.width} × ${config.height} mm)`,
+      formatProfileSystemFr(config.profileSystem),
+      formatFinishColorFr(config.finishColor),
+      formatGlassTypeFr(config.glassType),
+      formatShutterTypeFr(config.shutterType),
       '1',
       `${cost.totalEstimatedDzd.toLocaleString()} DZD`,
     ],
@@ -213,7 +265,7 @@ export function generateWorkshopCutSheetPdf(
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(226, 232, 240);
   doc.text(`Ordre de Fabrication : ${jobCode} • Date : ${new Date().toLocaleDateString('fr-FR')}`, 14, 23);
-  doc.text(`Menuiserie : ${config.openingType} • Cotes Hors-Tout : ${structure.width} × ${structure.height} mm • Gamme : ${config.profileSystem}`, 14, 28);
+  doc.text(`Menuiserie : ${formatOpeningTypeFr(config.openingType)} • Cotes Hors-Tout : ${structure.width} × ${structure.height} mm • Gamme : ${formatProfileSystemFr(config.profileSystem)}`, 14, 28);
 
   // 1. Profile Cuts Table
   const profileRows = bom.cuts.map((c, i) => [
@@ -260,7 +312,7 @@ export function generateWorkshopCutSheetPdf(
     g.label,
     `${g.widthMm} × ${g.heightMm} mm`,
     `${g.areaM2} m²`,
-    g.glassType,
+    formatGlassTypeFr(g.glassType),
     `${g.quantity}`,
   ]);
 
@@ -514,7 +566,7 @@ export async function generateBpuDqeTenderPdf(
   const tenderArticles = [
     [
       '01.01',
-      `Fourniture et pose de profilés aluminium extrudé alliage 6060 T5 thermolaqué conforme au label Qualicoat (${config.finishColor}). Système : ${config.profileSystem}. Compris découpe d'onglet 45°, assemblage mécanique par équerres à sertir/visser étanchées, joints d'étanchéité EPDM dans gorges prévues à cet effet. Cotes hors-tout : ${structure.width} × ${structure.height} mm.`,
+      `Fourniture et pose de profilés aluminium extrudé alliage 6060 T5 thermolaqué conforme au label Qualicoat (${formatFinishColorFr(config.finishColor)}). Système : ${formatProfileSystemFr(config.profileSystem)}. Compris découpe d'onglet 45°, assemblage mécanique par équerres à sertir/visser étanchées, joints d'étanchéité EPDM dans gorges prévues à cet effet. Cotes hors-tout : ${structure.width} × ${structure.height} mm.`,
       'M²',
       surfaceM2.toFixed(2),
       `${puAluHt.toLocaleString()} DZD`,
@@ -522,7 +574,7 @@ export async function generateBpuDqeTenderPdf(
     ],
     [
       '01.02',
-      `Fourniture et calage de vitrage isolant haute performance (${config.glassType}), constitué de feuilles assemblées par cordon butyle et mastic polysulfure bi-composant, avec intercalaire aluminium contenant du tamis moléculaire déshydratant. Conformité exigences thermo-acoustiques DTR C3-2. Surface totale : ${bom.totalGlassAreaM2} m².`,
+      `Fourniture et calage de vitrage isolant haute performance (${formatGlassTypeFr(config.glassType)}), constitué de feuilles assemblées par cordon butyle et mastic polysulfure bi-composant, avec intercalaire aluminium contenant du tamis moléculaire déshydratant. Conformité exigences thermo-acoustiques DTR C3-2. Surface totale : ${bom.totalGlassAreaM2} m².`,
       'M²',
       bom.totalGlassAreaM2.toFixed(2),
       `${puGlassHt.toLocaleString()} DZD`,
