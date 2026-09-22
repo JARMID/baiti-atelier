@@ -9,7 +9,7 @@ import {
 } from '../../utils/tradesPricingEngine';
 import {
   Scissors,
-  Sparkles,
+  Compass,
   ArrowRight,
   CheckCircle2,
 } from 'lucide-react';
@@ -276,7 +276,7 @@ export const HeroStudioSection: React.FC<HeroStudioSectionProps> = ({
           {/* Eyebrow badge */}
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-xs font-mono text-[#D4AF37] font-semibold">
-              <Sparkles className="w-3.5 h-3.5" />
+              <Compass className="w-3.5 h-3.5" />
               <span>{currentTrade.badge}</span>
             </span>
             <span className={`text-[11px] font-mono hidden sm:inline ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>

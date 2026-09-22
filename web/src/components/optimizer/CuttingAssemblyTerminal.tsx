@@ -180,7 +180,7 @@ export const CuttingAssemblyTerminal: React.FC<CuttingAssemblyTerminalProps> = (
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500">
-              <ScanLine className="w-5 h-5 animate-pulse" />
+              <ScanLine className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">

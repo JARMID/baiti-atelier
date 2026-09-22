@@ -465,7 +465,7 @@ export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
       >
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <span>Poste Débitage Actif</span>
           </div>
           <div className="hidden sm:flex items-center gap-1.5">
@@ -587,7 +587,7 @@ export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
               >
                 <div className="text-xs font-mono text-zinc-400 uppercase tracking-wider">Lecteur Code-barres</div>
                 <div className="text-base font-bold font-mono mt-1 text-emerald-400 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <span>Actif & Prêt (HID)</span>
                 </div>
                 <div className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-zinc-500'}`}>

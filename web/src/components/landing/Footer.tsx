@@ -144,7 +144,7 @@ export const Footer: React.FC = () => {
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border ${
                 isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-zinc-300'
               }`}>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 <span>Conforme aux normes DTR C3-2 / CNERIB</span>
               </div>
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border ${

@@ -542,7 +542,7 @@ export const CinematicScrollCanvas: React.FC = () => {
             <div className="double-bezel-inner p-4">
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37] pulse-active" />
+                  <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
                   <span className="text-xs font-mono text-[#D4AF37] uppercase tracking-wider font-semibold">
                     {t.stepLabel} {currentStageInfo.num} / 05
                   </span>
@@ -727,7 +727,7 @@ export const CinematicScrollCanvas: React.FC = () => {
                   : 'bg-[#0E121C]/85 border-white/15 text-zinc-200 shadow-black/70'
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-[#D4AF37] pulse-active" />
+              <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
               <span>{t.scrollHint}</span>
             </div>
           </div>
@@ -808,7 +808,7 @@ export const CinematicScrollCanvas: React.FC = () => {
                   : 'bg-white/5 border-white/10 text-zinc-400'
               }`}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-active" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               <span>{t.scrubberHint}</span>
             </div>
           </div>

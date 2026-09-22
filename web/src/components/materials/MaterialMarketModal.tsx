@@ -251,7 +251,7 @@ export const MaterialMarketModal: React.FC<MaterialMarketModalProps> = ({ isOpen
           </div>
 
           <div className="hidden sm:flex items-center gap-2 text-[11px] font-mono text-zinc-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <span>Mise à jour hebdomadaire</span>
           </div>
         </div>
