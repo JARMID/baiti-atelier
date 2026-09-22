@@ -238,7 +238,8 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
       costBreakdown,
       clientName,
       clientPhone,
-      selectedWilaya
+      selectedWilaya,
+      openings
     );
   };
 

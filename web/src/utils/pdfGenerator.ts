@@ -1,8 +1,21 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import QRCode from 'qrcode';
-import type { WindowConfig, CostBreakdown } from '../types/window';
+import type { WindowConfig, CostBreakdown, OpeningType, ProfileSystem, GlassType, ShutterType } from '../types/window';
 import type { CadStructure, WorkshopBOM } from '../types/cad';
+
+export interface DevisOpeningItem {
+  id: string;
+  roomName: string;
+  width: number;
+  height: number;
+  openingType: OpeningType;
+  profileSystem: ProfileSystem;
+  glassType: GlassType;
+  shutterType: ShutterType;
+  quantity: number;
+  estimatedUnitPriceDzd: number;
+}
 
 export function formatOpeningTypeFr(openingType: string): string {
   const map: Record<string, string> = {
@@ -61,7 +74,8 @@ export async function generateClientDevisPdf(
   cost: CostBreakdown,
   clientName: string = 'Client Particulier',
   clientPhone: string = '05 50 00 00 00',
-  clientWilaya: string = 'Alger'
+  clientWilaya: string = 'Alger',
+  items?: DevisOpeningItem[]
 ) {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -117,18 +131,30 @@ export async function generateClientDevisPdf(
   doc.text(`Validité de l'offre : 30 jours`, 110, 66);
 
   // 3. Itemized Window Specification Table
-  const tableRows = [
-    [
-      'Châssis Menuiserie sur-mesure',
-      `${formatOpeningTypeFr(config.openingType)} (${config.width} × ${config.height} mm)`,
-      formatProfileSystemFr(config.profileSystem),
-      formatFinishColorFr(config.finishColor),
-      formatGlassTypeFr(config.glassType),
-      formatShutterTypeFr(config.shutterType),
-      '1',
-      `${cost.totalEstimatedDzd.toLocaleString()} DZD`,
-    ],
-  ];
+  const hasMultipleItems = items && items.length > 0;
+  const tableRows = hasMultipleItems
+    ? items.map((it) => [
+        it.roomName || 'Châssis',
+        `${formatOpeningTypeFr(it.openingType)} (${it.width} × ${it.height} mm)`,
+        formatProfileSystemFr(it.profileSystem),
+        formatFinishColorFr(config.finishColor),
+        formatGlassTypeFr(it.glassType),
+        formatShutterTypeFr(it.shutterType),
+        `${it.quantity}`,
+        `${(it.estimatedUnitPriceDzd * it.quantity).toLocaleString()} DZD`,
+      ])
+    : [
+        [
+          'Châssis Menuiserie sur-mesure',
+          `${formatOpeningTypeFr(config.openingType)} (${config.width} × ${config.height} mm)`,
+          formatProfileSystemFr(config.profileSystem),
+          formatFinishColorFr(config.finishColor),
+          formatGlassTypeFr(config.glassType),
+          formatShutterTypeFr(config.shutterType),
+          '1',
+          `${cost.totalEstimatedDzd.toLocaleString()} DZD`,
+        ],
+      ];
 
   autoTable(doc, {
     startY: 80,
@@ -157,54 +183,74 @@ export async function generateClientDevisPdf(
     },
   });
 
-  // Get final Y position after table
-  const finalY = (doc as any).lastAutoTable.finalY + 8;
+  // Get final Y position after table with multi-page safety
+  let currentY = (doc as any).lastAutoTable.finalY + 8;
+  if (currentY > 210) {
+    doc.addPage();
+    currentY = 25;
+  }
 
   // 4. Detailed Cost Breakdown Box
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(110, finalY, 86, 44, 2, 2, 'FD');
+  doc.roundedRect(110, currentY, 86, 44, 2, 2, 'FD');
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(71, 85, 105);
 
-  doc.text(`Profilés (${cost.profileWeightKg} kg / ${cost.profileLengthMeters}m) :`, 114, finalY + 7);
-  doc.text(`${cost.profileCostDzd.toLocaleString()} DZD`, 190, finalY + 7, { align: 'right' });
+  if (hasMultipleItems && items.length > 1) {
+    const totalQty = items.reduce((s, it) => s + it.quantity, 0);
+    doc.text(`Ensemble châssis (${totalQty} ouvertures) :`, 114, currentY + 7);
+    doc.text(`${cost.totalEstimatedDzd.toLocaleString()} DZD`, 190, currentY + 7, { align: 'right' });
 
-  doc.text(`Vitrage (${cost.glassAreaM2} m²) :`, 114, finalY + 14);
-  doc.text(`${cost.glassCostDzd.toLocaleString()} DZD`, 190, finalY + 14, { align: 'right' });
+    doc.text(`Chantier : ${items.length} pièces mesurées`, 114, currentY + 14);
+    doc.text(`Conforme DTR C3-2`, 190, currentY + 14, { align: 'right' });
 
-  doc.text('Quincaillerie & Accessoires :', 114, finalY + 21);
-  doc.text(`${cost.hardwareCostDzd.toLocaleString()} DZD`, 190, finalY + 21, { align: 'right' });
+    doc.text('Quincaillerie & Pose sur chantier :', 114, currentY + 21);
+    doc.text(`Inclus au devis`, 190, currentY + 21, { align: 'right' });
+  } else {
+    doc.text(`Profilés (${cost.profileWeightKg} kg / ${cost.profileLengthMeters}m) :`, 114, currentY + 7);
+    doc.text(`${cost.profileCostDzd.toLocaleString()} DZD`, 190, currentY + 7, { align: 'right' });
 
-  if (cost.shutterCostDzd > 0) {
-    doc.text('Volet Roulant Intégré :', 114, finalY + 28);
-    doc.text(`${cost.shutterCostDzd.toLocaleString()} DZD`, 190, finalY + 28, { align: 'right' });
+    doc.text(`Vitrage (${cost.glassAreaM2} m²) :`, 114, currentY + 14);
+    doc.text(`${cost.glassCostDzd.toLocaleString()} DZD`, 190, currentY + 14, { align: 'right' });
+
+    doc.text('Quincaillerie & Accessoires :', 114, currentY + 21);
+    doc.text(`${cost.hardwareCostDzd.toLocaleString()} DZD`, 190, currentY + 21, { align: 'right' });
+
+    if (cost.shutterCostDzd > 0) {
+      doc.text('Volet Roulant Intégré :', 114, currentY + 28);
+      doc.text(`${cost.shutterCostDzd.toLocaleString()} DZD`, 190, currentY + 28, { align: 'right' });
+    }
   }
 
   doc.setDrawColor(203, 213, 225);
-  doc.line(114, finalY + 32, 192, finalY + 32);
+  doc.line(114, currentY + 32, 192, currentY + 32);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(224, 122, 95);
-  doc.text('Total Net à Payer :', 114, finalY + 39);
-  doc.text(`${cost.totalEstimatedDzd.toLocaleString()} DZD`, 190, finalY + 39, { align: 'right' });
+  doc.text('Total Net à Payer :', 114, currentY + 39);
+  doc.text(`${cost.totalEstimatedDzd.toLocaleString()} DZD`, 190, currentY + 39, { align: 'right' });
 
   // 5. Verification QR Code
   try {
     const qrDataUrl = await QRCode.toDataURL(`https://baiti.dz/verify/${quoteNumber}`, { width: 100, margin: 1 });
-    doc.addImage(qrDataUrl, 'PNG', 16, finalY, 34, 34);
+    doc.addImage(qrDataUrl, 'PNG', 16, currentY, 34, 34);
     doc.setFontSize(7);
     doc.setTextColor(148, 163, 184);
-    doc.text('Scannez pour vérifier', 33, finalY + 38, { align: 'center' });
-    doc.text('l’authenticité du devis', 33, finalY + 41, { align: 'center' });
+    doc.text('Scannez pour vérifier', 33, currentY + 38, { align: 'center' });
+    doc.text('l’authenticité du devis', 33, currentY + 41, { align: 'center' });
   } catch (err) {
     console.error('QR code error', err);
   }
 
   // 6. Payment Terms & Stamp Box
-  const termsY = finalY + 54;
+  let termsY = currentY + 50;
+  if (termsY > 235) {
+    doc.addPage();
+    termsY = 25;
+  }
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
