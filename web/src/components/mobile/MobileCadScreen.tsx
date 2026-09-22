@@ -34,6 +34,7 @@ import type { CadStructure, CellType } from '../../types/cad';
 import type { GlassType } from '../../types/window';
 import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
 import { GlazingPerformanceMatrix } from './GlazingPerformanceMatrix';
+import { GlazingBeadGuideModal } from './GlazingBeadGuideModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -205,6 +206,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [activeBomTab, setActiveBomTab] = useState<'cuts' | 'glasses' | 'hardware'>('cuts');
   const [glassViewMode, setGlassViewMode] = useState<'matrix' | 'cuts'>('matrix');
   const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
+  const [showParcloseModal, setShowParcloseModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -822,6 +824,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
               type="button"
               onClick={() => {
                 playTactileClick();
+                setShowParcloseModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-amber-400 font-semibold"
+              title="Guide des coupes d'onglet 45°, coupes 90° et grugeage des parcloses"
+            >
+              <Scissors className="w-3 h-3" />
+              <span>Parcloses</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
                 setShowCrossSectionModal(true);
               }}
               className="px-2 py-1 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-sky-400 font-semibold"
@@ -1206,6 +1221,36 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
         {/* TAB 2: GLASS CUT PIECES LIST & SPECIFIER */}
         {activeBomTab === 'glasses' && (
           <div className="space-y-3">
+            {/* Parclose & Notching Quick Launch Banner */}
+            <div
+              className={`p-3 rounded-2xl border flex items-center justify-between gap-2.5 ${
+                isLight ? 'bg-amber-50/80 border-amber-200 text-slate-800' : 'bg-amber-500/10 border-amber-500/25 text-amber-200'
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                  <Scissors className="w-3.5 h-3.5" />
+                </div>
+                <div className="min-w-0">
+                  <span className="font-bold block truncate text-xs">Débit Parcloses & Grugeage (DTU 39)</span>
+                  <span className="text-[10px] opacity-80 block truncate">
+                    Coupes d'onglet 45°, coupes 90° et joints cales pour vitrage {currentGlassSpec?.thicknessTotalMm || 24} mm
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick();
+                  setShowParcloseModal(true);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer transition-all shrink-0 shadow-xs"
+              >
+                Calculer
+              </button>
+            </div>
+
             {/* Sub-view selector: Matrix vs Cuts */}
             <div className="grid grid-cols-2 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 font-mono text-xs">
               <button
@@ -1747,6 +1792,17 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             />
           </div>
         </div>
+      )}
+
+      {/* GLAZING BEAD MITER & NOTCHING GUIDE MODAL */}
+      {showParcloseModal && (
+        <GlazingBeadGuideModal
+          isOpen={showParcloseModal}
+          onClose={() => setShowParcloseModal(false)}
+          initialWidthMm={cadStructure.width}
+          initialHeightMm={cadStructure.height}
+          initialGlassThicknessMm={currentGlassSpec?.thicknessTotalMm || 24}
+        />
       )}
     </div>
   );

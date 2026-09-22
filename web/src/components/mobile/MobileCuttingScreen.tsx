@@ -24,6 +24,7 @@ import { CuttingAssemblyTerminal } from '../optimizer/CuttingAssemblyTerminal';
 import { computeDetailedBOM } from '../../utils/cadEngine';
 import { generateLinearCuttingPlanPdf, generatePieceLabelsPdf, type PieceLabelItem } from '../../utils/pdfGenerator';
 import { CuttingStockPreCheckModal } from './CuttingStockPreCheckModal';
+import { GlazingBeadGuideModal } from './GlazingBeadGuideModal';
 import { buildCuttingRequisitionMatrix } from '../../utils/cuttingMaterialRequisition';
 import type { MobileNavTab } from './MobileBottomNavigation';
 
@@ -327,6 +328,7 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
 
   const [remnantToastMessage, setRemnantToastMessage] = useState<string | null>(null);
   const [isPreCheckModalOpen, setIsPreCheckModalOpen] = useState(false);
+  const [isParcloseModalOpen, setIsParcloseModalOpen] = useState(false);
 
   // Material requisition summary for stock verification
   const requisitionSummary = useMemo(() => {
@@ -748,7 +750,7 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
               playTactileClick();
               setIsPreCheckModalOpen(true);
             }}
-            className={`col-span-2 py-2.5 px-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-between cursor-pointer min-h-[44px] active:scale-98 transition-all ${
+            className={`col-span-2 sm:col-span-1 py-2.5 px-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-between cursor-pointer min-h-[44px] active:scale-98 transition-all ${
               requisitionSummary.hasShortage
                 ? 'bg-rose-500/15 border-rose-500/30 text-rose-300 hover:bg-rose-500/20'
                 : isLight
@@ -759,7 +761,7 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
           >
             <div className="flex items-center gap-2 min-w-0">
               <Boxes className="w-4 h-4 shrink-0 text-[#D4AF37]" />
-              <span className="truncate">Disponibilité Stock & Bon Sortie ({requisitionSummary.totalRequiredBars} barres 6m)</span>
+              <span className="truncate">Stock Barres 6m ({requisitionSummary.totalRequiredBars}u)</span>
             </div>
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${
@@ -770,7 +772,30 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
             >
               {requisitionSummary.hasShortage
                 ? `Manque ${requisitionSummary.totalShortageBars}u ⚠️`
-                : 'Stock 100% OK ✓'}
+                : '100% OK ✓'}
+            </span>
+          </button>
+
+          {/* Glazing Bead Miter & Notching Modal Button */}
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick();
+              setIsParcloseModalOpen(true);
+            }}
+            className={`col-span-2 sm:col-span-1 py-2.5 px-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-between cursor-pointer min-h-[44px] active:scale-98 transition-all ${
+              isLight
+                ? 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100 shadow-xs'
+                : 'bg-amber-500/15 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
+            }`}
+            title="Calculer les angles d'onglet 45°, coupes 90° et grugeage du talon de clip des parcloses"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Scissors className="w-4 h-4 shrink-0 text-amber-400" />
+              <span className="truncate">Débit Parcloses & Grugeage</span>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 bg-amber-500/20 text-amber-400 border border-amber-500/30">
+              45°/90°
             </span>
           </button>
         </div>
@@ -1226,6 +1251,17 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
           summary={requisitionSummary}
           projectTitle={surveyProjectData?.info?.clientName ? `Chantier ${surveyProjectData.info.clientName}` : 'Débit Scie 1D'}
           clientName={surveyProjectData?.info?.clientName || 'Client Atelier'}
+        />
+      )}
+
+      {/* Glazing Bead Miter & Notching Modal */}
+      {isParcloseModalOpen && (
+        <GlazingBeadGuideModal
+          isOpen={isParcloseModalOpen}
+          onClose={() => setIsParcloseModalOpen(false)}
+          initialWidthMm={config.width}
+          initialHeightMm={config.height}
+          initialGlassThicknessMm={24}
         />
       )}
 
