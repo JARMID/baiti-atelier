@@ -9,6 +9,7 @@ export interface DevisOpeningItem {
   roomName: string;
   width: number;
   height: number;
+  allegeMm?: number;
   openingType: OpeningType;
   profileSystem: ProfileSystem;
   glassType: GlassType;
@@ -135,7 +136,9 @@ export async function generateClientDevisPdf(
   const tableRows = hasMultipleItems
     ? items.map((it) => [
         it.roomName || 'Châssis',
-        `${formatOpeningTypeFr(it.openingType)} (${it.width} × ${it.height} mm)`,
+        it.allegeMm !== undefined
+          ? `${formatOpeningTypeFr(it.openingType)} (${it.width} × ${it.height} mm, Allège ${it.allegeMm} mm)`
+          : `${formatOpeningTypeFr(it.openingType)} (${it.width} × ${it.height} mm)`,
         formatProfileSystemFr(it.profileSystem),
         formatFinishColorFr(config.finishColor),
         formatGlassTypeFr(it.glassType),

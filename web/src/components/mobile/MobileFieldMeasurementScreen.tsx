@@ -11,21 +11,35 @@ import {
   Download,
   Upload,
   RotateCcw,
+  Layers,
 } from 'lucide-react';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
-import { generateClientDevisPdf } from '../../utils/pdfGenerator';
+import {
+  generateClientDevisPdf,
+  formatOpeningTypeFr,
+  formatProfileSystemFr,
+  formatGlassTypeFr,
+  formatShutterTypeFr,
+} from '../../utils/pdfGenerator';
 
 export interface FieldOpeningItem {
   id: string;
   roomName: string;
   width: number;
   height: number;
+  allegeMm?: number;
   openingType: OpeningType;
   profileSystem: ProfileSystem;
   glassType: GlassType;
   shutterType: ShutterType;
   quantity: number;
   estimatedUnitPriceDzd: number;
+}
+
+let nextOpeningSequence = 100;
+function createOpeningId(): string {
+  nextOpeningSequence += 1;
+  return `op_${nextOpeningSequence}`;
 }
 
 const STORAGE_KEY = 'baiti_field_measurement_project';
@@ -98,6 +112,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
         roomName: 'Salon - Baie Vitrée',
         width: 2150,
         height: 2400,
+        allegeMm: 0,
         openingType: 'sliding_2',
         profileSystem: 'gamme_67_slide',
         glassType: 'stop_sol',
@@ -110,6 +125,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
         roomName: 'Chambre 1',
         width: 1200,
         height: 1400,
+        allegeMm: 900,
         openingType: 'sliding_2',
         profileSystem: 'gamme_45_thermal',
         glassType: 'double_clear',
@@ -122,6 +138,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
         roomName: 'Cuisine',
         width: 1000,
         height: 1200,
+        allegeMm: 1000,
         openingType: 'tilt_turn',
         profileSystem: 'gamme_45_thermal',
         glassType: 'double_clear',
@@ -147,18 +164,30 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
   const [newRoom, setNewRoom] = useState('Chambre 2');
   const [newWidth, setNewWidth] = useState(1200);
   const [newHeight, setNewHeight] = useState(1400);
+  const [newAllege, setNewAllege] = useState(900);
   const [newOpeningType, setNewOpeningType] = useState<OpeningType>('sliding_2');
   const [newProfile, setNewProfile] = useState<ProfileSystem>('gamme_45_thermal');
   const [newGlass, setNewGlass] = useState<GlassType>('double_clear');
   const [newShutter, setNewShutter] = useState<ShutterType>('manual');
   const [newQty, setNewQty] = useState(1);
 
-  // Total project cost calculation
+  // Total project cost and surfaces calculation
   const totalProjectDzd = openings.reduce(
     (sum, item) => sum + item.estimatedUnitPriceDzd * item.quantity,
     0
   );
   const totalOpeningsCount = openings.reduce((sum, item) => sum + item.quantity, 0);
+
+  const totalGlassSurfaceM2 = openings.reduce(
+    (sum, item) => sum + (item.width * item.height * item.quantity) / 1000000,
+    0
+  );
+
+  const totalProfileLinearM = openings.reduce((sum, item) => {
+    const perimeterM = (2 * (item.width + item.height)) / 1000;
+    const factor = item.openingType.includes('sliding') || item.openingType.includes('2') ? 2.5 : 2.0;
+    return sum + perimeterM * factor * item.quantity;
+  }, 0);
 
   const handleAddOpening = () => {
     if (!newRoom.trim() || newWidth <= 0 || newHeight <= 0) return;
@@ -180,10 +209,11 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
     const costResult = calculateWindowCost(dummyConfig, calibration);
 
     const newItem: FieldOpeningItem = {
-      id: `op_${Date.now()}`,
+      id: createOpeningId(),
       roomName: newRoom,
       width: newWidth,
       height: newHeight,
+      allegeMm: newAllege,
       openingType: newOpeningType,
       profileSystem: newProfile,
       glassType: newGlass,
@@ -206,10 +236,36 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
     let text = `*RELEVÉ DE COTES & DEVIS CHANTIER*\nClient : ${clientName} (${clientPhone})\nLieu : ${projectSite}\nWilaya : ${selectedWilaya}\n\n*LISTE DES CHÂSSIS :*\n`;
 
     openings.forEach((op, idx) => {
-      text += `${idx + 1}. ${op.roomName} : ${op.width} × ${op.height} mm (×${op.quantity})\n   Prix unitaire : ${op.estimatedUnitPriceDzd.toLocaleString('fr-DZ')} DZD\n`;
+      const allegeInfo = op.allegeMm !== undefined ? ` (Allège : ${op.allegeMm} mm)` : '';
+      text += `${idx + 1}. ${op.roomName} : ${op.width} × ${op.height} mm${allegeInfo} (×${op.quantity})\n   Prix unitaire : ${op.estimatedUnitPriceDzd.toLocaleString('fr-DZ')} DZD\n`;
     });
 
     text += `\n*TOTAL ESTIMÉ (${totalOpeningsCount} ouvertures) : ${totalProjectDzd.toLocaleString('fr-DZ')} DZD*\n\nÉtabli avec Baiti Atelier • https://web-two-tan-31.vercel.app`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const handleGlazierOrderWhatsApp = () => {
+    playTactileClick();
+    let text = `*COMMANDE VERRES & VITRAGES - CHANTIER*\n`;
+    text += `Client : ${clientName || 'Particulier'} (${clientPhone})\n`;
+    text += `Chantier : ${projectSite}\n`;
+    text += `Wilaya : ${selectedWilaya}\n\n`;
+    text += `*VOLUMES DE VITRAGE À DÉBITER :*\n`;
+
+    openings.forEach((op, idx) => {
+      const glassLabel = formatGlassTypeFr(op.glassType);
+      const m2 = ((op.width * op.height * op.quantity) / 1000000).toFixed(2);
+      const allegeInfo = op.allegeMm !== undefined ? ` (Allège : ${op.allegeMm} mm)` : '';
+      text += `${idx + 1}. ${op.roomName} : ${op.width} × ${op.height} mm${allegeInfo}\n`;
+      text += `   - Type : ${glassLabel}\n`;
+      text += `   - Quantité : ${op.quantity} unité(s) • Surface : ${m2} m²\n`;
+    });
+
+    text += `\n*RÉCAPITULATIF MIROITERIE :*\n`;
+    text += `• Total châssis : ${totalOpeningsCount}\n`;
+    text += `• Surface vitrée totale estimée : ${totalGlassSurfaceM2.toFixed(2)} m²\n\n`;
+    text += `Transmis via Baiti Atelier • https://web-two-tan-31.vercel.app`;
 
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
@@ -393,13 +449,47 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
         }`}
       >
         <div className="flex items-center justify-between">
-          <span className="text-xs font-mono font-bold">Ouvertures Relevées</span>
+          <span className={`text-xs font-mono font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            Ouvertures Relevées ({openings.length})
+          </span>
           <span className="text-[10px] font-mono text-[#D4AF37] font-bold">
             Total : {totalProjectDzd.toLocaleString('fr-DZ')} DZD
           </span>
         </div>
 
-        <div className="space-y-2">
+        {/* 4-Metric Summary Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-xs">
+          <div className={`p-2 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/20 border-white/5'}`}>
+            <span className="text-[9px] text-zinc-500 block">Châssis</span>
+            <span className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              {totalOpeningsCount} unité{totalOpeningsCount > 1 ? 's' : ''}
+            </span>
+          </div>
+
+          <div className={`p-2 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/20 border-white/5'}`}>
+            <span className="text-[9px] text-zinc-500 block">Vitrage Débité</span>
+            <span className="text-xs font-bold text-cyan-400">
+              {totalGlassSurfaceM2.toFixed(2)} m²
+            </span>
+          </div>
+
+          <div className={`p-2 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/20 border-white/5'}`}>
+            <span className="text-[9px] text-zinc-500 block">Profilés Estimés</span>
+            <span className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              {totalProfileLinearM.toFixed(0)} ml
+            </span>
+          </div>
+
+          <div className={`p-2 rounded-2xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/20 border-white/5'}`}>
+            <span className="text-[9px] text-zinc-500 block">Montant Estimé</span>
+            <span className="text-xs font-bold text-[#D4AF37]">
+              {totalProjectDzd.toLocaleString('fr-DZ')} DZD
+            </span>
+          </div>
+        </div>
+
+        {/* List of Opening Cards */}
+        <div className="space-y-2 pt-1">
           {openings.map((op) => (
             <div
               key={op.id}
@@ -407,16 +497,23 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
                 isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/20 border-white/5'
               }`}
             >
-              <div>
+              <div className="space-y-0.5">
                 <div className="font-bold flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-                  <span>{op.roomName}</span>
+                  <span className={isLight ? 'text-slate-900' : 'text-white'}>{op.roomName}</span>
                 </div>
-                <div className="text-[10px] text-zinc-400 pl-3 mt-0.5">
-                  {op.width} × {op.height} mm • Qté : {op.quantity}
+                <div className="text-[10px] text-zinc-400 pl-3">
+                  {op.width} × {op.height} mm
+                  <span className="text-[#D4AF37] ml-1 font-semibold">
+                    (Allège : {op.allegeMm !== undefined ? op.allegeMm : (op.height > 2000 ? 0 : 900)} mm)
+                  </span>
+                  {' • Qté : '}{op.quantity}
                 </div>
-                <div className="text-[10px] text-zinc-500 pl-3">
-                  {op.profileSystem} • {op.glassType}
+                <div className="text-[9px] text-zinc-500 pl-3">
+                  {formatOpeningTypeFr(op.openingType)} • {formatProfileSystemFr(op.profileSystem)}
+                </div>
+                <div className="text-[9px] text-zinc-500 pl-3">
+                  {formatGlassTypeFr(op.glassType)} • {formatShutterTypeFr(op.shutterType)}
                 </div>
               </div>
 
@@ -435,6 +532,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
                 <button
                   onClick={() => handleRemoveOpening(op.id)}
                   className="p-1.5 rounded-lg text-zinc-400 hover:text-red-400 cursor-pointer"
+                  title="Supprimer ce châssis"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -447,25 +545,39 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
         <div className="pt-3 border-t border-black/5 dark:border-white/10 space-y-2 text-xs font-mono">
           <span className="text-[11px] font-bold text-zinc-400 block">+ Ajouter une Fenêtre / Baie</span>
 
-          {/* Quick Room Suggestions */}
+          {/* Quick Room Suggestions with smart defaults */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
-            {['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Chambre Parents', 'SDB', 'Couloir', 'Balcon'].map((rm) => (
+            {[
+              { name: 'Salon', w: 2150, h: 2400, a: 0, t: 'sliding_2', p: 'gamme_67_slide' },
+              { name: 'Cuisine', w: 1000, h: 1200, a: 1000, t: 'tilt_turn', p: 'gamme_45_thermal' },
+              { name: 'Chambre 1', w: 1200, h: 1400, a: 900, t: 'sliding_2', p: 'gamme_45_thermal' },
+              { name: 'Chambre 2', w: 1200, h: 1400, a: 900, t: 'sliding_2', p: 'gamme_45_thermal' },
+              { name: 'Chambre Parents', w: 1400, h: 1400, a: 900, t: 'sliding_2', p: 'gamme_45_thermal' },
+              { name: 'SDB', w: 800, h: 800, a: 1200, t: 'tilt_turn', p: 'gamme_45_thermal' },
+              { name: 'Couloir', w: 900, h: 1200, a: 900, t: 'fixed', p: 'gamme_45_thermal' },
+              { name: 'Balcon', w: 1800, h: 2200, a: 0, t: 'sliding_2', p: 'gamme_67_slide' },
+            ].map((rm) => (
               <button
-                key={rm}
+                key={rm.name}
                 type="button"
                 onClick={() => {
                   playTactileClick();
-                  setNewRoom(rm);
+                  setNewRoom(rm.name);
+                  setNewWidth(rm.w);
+                  setNewHeight(rm.h);
+                  setNewAllege(rm.a);
+                  setNewOpeningType(rm.t as OpeningType);
+                  setNewProfile(rm.p as ProfileSystem);
                 }}
                 className={`px-2.5 py-1 rounded-xl border text-[10px] whitespace-nowrap cursor-pointer transition-all ${
-                  newRoom === rm
+                  newRoom === rm.name
                     ? 'bg-[#D4AF37] text-slate-950 font-bold border-[#D4AF37]'
                     : isLight
                     ? 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
                     : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
                 }`}
               >
-                {rm}
+                {rm.name}
               </button>
             ))}
           </div>
@@ -477,7 +589,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
               value={newRoom}
               onChange={(e) => setNewRoom(e.target.value)}
               className={`col-span-12 p-2 rounded-xl border ${
-                isLight ? 'bg-white border-slate-300' : 'bg-black/40 border-white/10 text-white'
+                isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
               }`}
             />
 
@@ -487,7 +599,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
                 value={newOpeningType}
                 onChange={(e) => setNewOpeningType(e.target.value as OpeningType)}
                 className={`w-full p-2 rounded-xl border text-[11px] ${
-                  isLight ? 'bg-white border-slate-300' : 'bg-black/40 border-white/10 text-white'
+                  isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
                 }`}
               >
                 <option value="sliding_2">Coulissant 2V</option>
@@ -505,7 +617,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
                 value={newProfile}
                 onChange={(e) => setNewProfile(e.target.value as ProfileSystem)}
                 className={`w-full p-2 rounded-xl border text-[11px] ${
-                  isLight ? 'bg-white border-slate-300' : 'bg-black/40 border-white/10 text-white'
+                  isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
                 }`}
               >
                 <option value="gamme_45_thermal">Gamme 45 RPT</option>
@@ -515,20 +627,21 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
               </select>
             </div>
 
-            <div className="col-span-4">
+            {/* Width */}
+            <div className="col-span-6 sm:col-span-3">
               <div className="flex items-center justify-between text-[9px] text-zinc-500 mb-0.5">
                 <span>Largeur (mm)</span>
                 <div className="flex gap-1">
                   <button
                     type="button"
-                    onClick={() => setNewWidth((w) => Math.max(500, w - 50))}
-                    className="hover:text-white"
+                    onClick={() => setNewWidth((w) => Math.max(400, w - 50))}
+                    className="hover:text-[#D4AF37]"
                   >
                     -50
                   </button>
                   <button
                     type="button"
-                    onClick={() => setNewWidth((w) => Math.min(3200, w + 50))}
+                    onClick={() => setNewWidth((w) => Math.min(3500, w + 50))}
                     className="text-[#D4AF37]"
                   >
                     +50
@@ -541,25 +654,26 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
                 value={newWidth}
                 onChange={(e) => setNewWidth(parseInt(e.target.value) || 0)}
                 className={`w-full p-2 rounded-xl border ${
-                  isLight ? 'bg-white border-slate-300' : 'bg-black/40 border-white/10 text-white'
+                  isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
                 }`}
               />
             </div>
 
-            <div className="col-span-4">
+            {/* Height */}
+            <div className="col-span-6 sm:col-span-3">
               <div className="flex items-center justify-between text-[9px] text-zinc-500 mb-0.5">
                 <span>Hauteur (mm)</span>
                 <div className="flex gap-1">
                   <button
                     type="button"
-                    onClick={() => setNewHeight((h) => Math.max(500, h - 50))}
-                    className="hover:text-white"
+                    onClick={() => setNewHeight((h) => Math.max(400, h - 50))}
+                    className="hover:text-[#D4AF37]"
                   >
                     -50
                   </button>
                   <button
                     type="button"
-                    onClick={() => setNewHeight((h) => Math.min(2800, h + 50))}
+                    onClick={() => setNewHeight((h) => Math.min(3000, h + 50))}
                     className="text-[#D4AF37]"
                   >
                     +50
@@ -572,20 +686,64 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
                 value={newHeight}
                 onChange={(e) => setNewHeight(parseInt(e.target.value) || 0)}
                 className={`w-full p-2 rounded-xl border ${
-                  isLight ? 'bg-white border-slate-300' : 'bg-black/40 border-white/10 text-white'
+                  isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
                 }`}
               />
             </div>
 
-            <div className="col-span-4">
+            {/* Allège (Cill Height) */}
+            <div className="col-span-6 sm:col-span-3">
+              <div className="flex items-center justify-between text-[9px] text-zinc-500 mb-0.5">
+                <span>Allège (mm)</span>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setNewAllege(0)}
+                    className="text-[#D4AF37] hover:underline"
+                    title="0 mm pour baie vitrée"
+                  >
+                    0
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewAllege(900)}
+                    className="hover:text-[#D4AF37]"
+                    title="900 mm standard"
+                  >
+                    900
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewAllege(1000)}
+                    className="hover:text-[#D4AF37]"
+                    title="1000 mm cuisine"
+                  >
+                    1000
+                  </button>
+                </div>
+              </div>
+              <input
+                type="number"
+                placeholder="900"
+                value={newAllege}
+                onChange={(e) => setNewAllege(parseInt(e.target.value) || 0)}
+                className={`w-full p-2 rounded-xl border ${
+                  isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
+                }`}
+              />
+            </div>
+
+            {/* Quantity */}
+            <div className="col-span-6 sm:col-span-3">
               <label className="text-[9px] text-zinc-500 block mb-0.5">Quantité</label>
               <input
                 type="number"
                 placeholder="1"
+                min={1}
                 value={newQty}
                 onChange={(e) => setNewQty(parseInt(e.target.value) || 1)}
                 className={`w-full p-2 rounded-xl border ${
-                  isLight ? 'bg-white border-slate-300' : 'bg-black/40 border-white/10 text-white'
+                  isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
                 }`}
               />
             </div>
@@ -596,7 +754,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
                 value={newGlass}
                 onChange={(e) => setNewGlass(e.target.value as GlassType)}
                 className={`w-full p-2 rounded-xl border text-[11px] ${
-                  isLight ? 'bg-white border-slate-300' : 'bg-black/40 border-white/10 text-white'
+                  isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
                 }`}
               >
                 <option value="double_clear">Double 4/16/4 Clair</option>
@@ -612,7 +770,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
                 value={newShutter}
                 onChange={(e) => setNewShutter(e.target.value as ShutterType)}
                 className={`w-full p-2 rounded-xl border text-[11px] ${
-                  isLight ? 'bg-white border-slate-300' : 'bg-black/40 border-white/10 text-white'
+                  isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
                 }`}
               >
                 <option value="manual">Manuel Sangle</option>
@@ -649,18 +807,29 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
           <button
             onClick={handleShareProjectWhatsApp}
             className="w-full py-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px] active:scale-98 transition-all"
+            title="Partager le devis estimatif au client"
           >
             <MessageCircle className="w-4 h-4" />
-            <span>Envoyer WhatsApp</span>
+            <span>Devis WhatsApp</span>
+          </button>
+
+          <button
+            onClick={handleGlazierOrderWhatsApp}
+            className="w-full py-3 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px] active:scale-98 transition-all"
+            title="Transmettre la commande de découpe à la miroiterie"
+          >
+            <Layers className="w-4 h-4" />
+            <span>Commande Miroiterie</span>
           </button>
 
           <button
             onClick={handleDownloadProjectPdf}
             className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#C5A880] to-[#D4AF37] text-slate-950 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px] hover:brightness-110 active:scale-98 transition-all shadow-md"
+            title="Télécharger le devis officiel PDF"
           >
             <FileDown className="w-4 h-4" />
             <span>Devis Chantier PDF</span>
