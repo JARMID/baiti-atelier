@@ -8,6 +8,9 @@ import {
   MessageCircle,
   FileDown,
   Building,
+  Download,
+  Upload,
+  RotateCcw,
 } from 'lucide-react';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
 import { generateClientDevisPdf } from '../../utils/pdfGenerator';
@@ -239,6 +242,58 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
     );
   };
 
+  const handleExportJson = () => {
+    playTactileClick();
+    const payload = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      clientName,
+      clientPhone,
+      projectSite,
+      selectedWilaya,
+      openings,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `releve_${clientName.replace(/\s+/g, '_') || 'chantier'}_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        if (data.clientName) setClientName(data.clientName);
+        if (data.clientPhone) setClientPhone(data.clientPhone);
+        if (data.projectSite) setProjectSite(data.projectSite);
+        if (Array.isArray(data.openings)) {
+          setOpenings(data.openings);
+        }
+        playClampSound();
+      } catch {
+        alert('Format de fichier JSON non reconnu.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleResetSurvey = () => {
+    if (window.confirm('Voulez-vous réinitialiser le carnet pour démarrer un nouveau chantier ?')) {
+      playTactileClick();
+      setClientName('');
+      setClientPhone('');
+      setProjectSite('');
+      setOpenings([]);
+    }
+  };
+
   return (
     <div className="pb-36 px-3 sm:px-6 pt-2 max-w-xl md:max-w-2xl mx-auto space-y-4" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* 1. PROJECT CLIENT BANNER */}
@@ -291,6 +346,42 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
               }`}
             />
           </div>
+        </div>
+
+        {/* Action toolbar: Backup, restore, reset */}
+        <div className="flex items-center justify-between gap-1.5 pt-1 border-t border-black/5 dark:border-white/10 text-xs font-mono">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handleExportJson}
+              className="px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1 text-[10px] hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 transition-all"
+              title="Exporter les cotes au format JSON"
+            >
+              <Download className="w-3 h-3 text-[#D4AF37]" />
+              <span>Exporter JSON</span>
+            </button>
+
+            <label className="px-2.5 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1 text-[10px] hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer">
+              <Upload className="w-3 h-3 text-[#D4AF37]" />
+              <span>Importer</span>
+              <input
+                type="file"
+                accept=".json,application/json"
+                onChange={handleImportJson}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleResetSurvey}
+            className="px-2 py-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 flex items-center gap-1 text-[10px] transition-all ml-auto"
+            title="Réinitialiser pour un nouveau chantier"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Nouveau Chantier</span>
+          </button>
         </div>
       </div>
 

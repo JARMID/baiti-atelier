@@ -17,7 +17,7 @@ import {
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 
 export const WindowCanvas: React.FC = () => {
-  const { config, language, theme, toggleExplodedView, toggleOpen } = useConfigStore();
+  const { config, language, theme, toggleExplodedView, toggleOpen, setOpenPercent } = useConfigStore();
   const isLight = theme === 'light';
   const [autoRotate, setAutoRotate] = useState(false);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
@@ -92,7 +92,7 @@ export const WindowCanvas: React.FC = () => {
 
   return (
     <div
-      className={`relative w-full h-[400px] sm:h-[500px] md:h-[640px] rounded-2xl overflow-hidden glass-panel border transition-all duration-300 shadow-2xl ${
+      className={`relative w-full h-full min-h-[320px] rounded-2xl overflow-hidden glass-panel border transition-all duration-300 shadow-2xl ${
         isLight
           ? 'bg-gradient-to-b from-[#FFFFFF] via-[#F8FAFC] to-[#EDF2F7] border-slate-200 text-slate-800 shadow-slate-200/60'
           : 'bg-gradient-to-b from-[#13161F] via-[#0E1017] to-[#0A0C10] border-white/10 text-white'
@@ -180,14 +180,14 @@ export const WindowCanvas: React.FC = () => {
             title={openLabel}
             className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
               config.isOpen
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-emerald-600 text-white font-bold'
                 : isLight
                 ? 'bg-slate-100 text-slate-800 hover:bg-slate-200'
                 : 'text-zinc-300 hover:text-white hover:bg-white/5'
             }`}
           >
             <Compass className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{openLabel}</span>
+            <span>{openLabel}</span>
           </button>
 
           <button
@@ -366,9 +366,36 @@ export const WindowCanvas: React.FC = () => {
         </div>
       )}
 
+      {/* Floating Open Percentage Slider */}
+      {config.isOpen && !isClippingActive && (
+        <div
+          className={`absolute bottom-3 left-4 right-4 z-20 p-2 sm:p-2.5 rounded-2xl border backdrop-blur-md flex items-center gap-2.5 font-mono text-xs shadow-lg max-w-sm mx-auto ${
+            isLight
+              ? 'bg-white/95 border-slate-200 text-slate-800'
+              : 'bg-[#0B0F19]/95 border-white/10 text-white'
+          }`}
+        >
+          <span className="text-[10px] text-zinc-400 shrink-0">Ouverture :</span>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value={config.openPercent}
+            onChange={(e) => setOpenPercent(parseInt(e.target.value, 10))}
+            className="flex-1 accent-emerald-400 cursor-pointer h-1.5 rounded-lg bg-zinc-700"
+          />
+          <span className="text-xs font-bold text-emerald-400 font-mono w-9 text-right shrink-0">
+            {config.openPercent}%
+          </span>
+        </div>
+      )}
+
       {/* Floating Instruction Hint */}
       <div
         className={`hidden sm:block absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none text-[11px] font-mono px-3 py-1 rounded-full border backdrop-blur-sm ${
+          config.isOpen ? 'hidden' : ''
+        } ${
           isLight
             ? 'bg-white/80 border-slate-200 text-slate-600 shadow-sm'
             : 'bg-black/40 border-white/5 text-zinc-500'

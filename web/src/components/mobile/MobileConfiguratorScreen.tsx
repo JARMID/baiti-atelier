@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useConfigStore } from '../../store/configStore';
 import { WindowCanvas } from '../3d/WindowCanvas';
 import type { OpeningType, ProfileSystem, FinishColor, GlassType, ShutterType } from '../../types/window';
@@ -8,6 +8,8 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
+  MapPin,
+  Thermometer,
 } from 'lucide-react';
 import {
   playTactileClick,
@@ -15,6 +17,8 @@ import {
   playClampSound,
 } from '../../utils/audioFeedback';
 import { generateClientDevisPdf } from '../../utils/pdfGenerator';
+import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
+import { DTR_ZONE_THRESHOLDS, getDtrZoneForWilaya } from '../../utils/dtrThermal';
 
 interface PresetItem {
   id: string;
@@ -74,6 +78,7 @@ export const MobileConfiguratorScreen: React.FC = () => {
     language,
     theme,
     selectedWilaya,
+    setSelectedWilaya,
     setWidth,
     setHeight,
     setOpeningType,
@@ -88,6 +93,45 @@ export const MobileConfiguratorScreen: React.FC = () => {
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
+
+  const currentWilaya = useMemo(() => {
+    return (
+      ALGERIAN_WILAYAS_58.find(
+        (w) =>
+          selectedWilaya.toLowerCase().includes(w.nameFr.toLowerCase()) ||
+          selectedWilaya.startsWith(w.code)
+      ) || ALGERIAN_WILAYAS_58[15]
+    );
+  }, [selectedWilaya]);
+
+  const zoneKey = useMemo(() => getDtrZoneForWilaya(currentWilaya), [currentWilaya]);
+  const zoneThreshold = DTR_ZONE_THRESHOLDS[zoneKey];
+
+  const thermalQuick = useMemo(() => {
+    let ug = 2.7;
+    if (config.glassType === 'double_clear') ug = 2.7;
+    else if (config.glassType === 'simple_clear') ug = 5.7;
+    else if (config.glassType === 'stop_sol') ug = 2.4;
+    else if (config.glassType === 'sable') ug = 3.0;
+
+    let uf = 2.4;
+    if (config.profileSystem === 'pvc_70_chamber') uf = 1.4;
+    else if (config.profileSystem === 'gamme_40') uf = 5.8;
+    else if (config.profileSystem === 'gamme_67_slide') uf = 3.2;
+
+    const totalAreaM2 = Math.max(0.2, (config.width * config.height) / 1000000);
+    const calculatedGlassAreaM2 = totalAreaM2 * 0.72;
+    const frameAreaM2 = Math.max(0.04, totalAreaM2 - calculatedGlassAreaM2);
+    const glassPerimeterM = Math.max(0.8, (2 * (config.width + config.height) * 0.85) / 1000);
+    const psiG = 0.08;
+
+    const uw = Number(
+      ((calculatedGlassAreaM2 * ug + frameAreaM2 * uf + glassPerimeterM * psiG) / totalAreaM2).toFixed(2)
+    );
+
+    const isCompliant = uw <= zoneThreshold.maxUw;
+    return { uw, isCompliant, maxUw: zoneThreshold.maxUw };
+  }, [config.width, config.height, config.glassType, config.profileSystem, zoneThreshold]);
 
   const toggleAccessory = (id: string) => {
     playTactileClick();
@@ -461,6 +505,74 @@ export const MobileConfiguratorScreen: React.FC = () => {
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      {/* WILAYA & CONFORMITÉ THERMIQUE DTR C3-2 */}
+      <div
+        className={`p-3.5 rounded-2xl border space-y-2.5 ${
+          isLight ? 'bg-white border-slate-200' : 'bg-[#0B0F19] border-white/10'
+        }`}
+      >
+        <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
+          <div className="flex items-center gap-1.5 font-bold text-xs">
+            <MapPin className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span className={isLight ? 'text-slate-800' : 'text-zinc-200'}>
+              Wilaya & Climat DTR C3-2
+            </span>
+          </div>
+          <span className="text-[10px] text-zinc-500 font-mono">Norme Bâtiment DZ</span>
+        </div>
+
+        {/* Wilaya Selector */}
+        <select
+          value={selectedWilaya}
+          onChange={(e) => {
+            playTactileClick();
+            setSelectedWilaya(e.target.value);
+          }}
+          className={`w-full p-2.5 rounded-xl border text-xs font-mono min-h-[44px] cursor-pointer ${
+            isLight
+              ? 'bg-slate-50 border-slate-200 text-slate-800'
+              : 'bg-black/30 border-white/10 text-white'
+          }`}
+        >
+          {ALGERIAN_WILAYAS_58.map((w) => (
+            <option key={w.code} value={`${w.code} - ${w.nameFr}`}>
+              {w.code} - {w.nameFr} ({w.nameAr})
+            </option>
+          ))}
+        </select>
+
+        {/* Thermal calculation & zone info */}
+        <div
+          className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 text-xs font-mono ${
+            thermalQuick.isCompliant
+              ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400'
+              : 'bg-amber-500/10 border-amber-500/25 text-amber-400'
+          }`}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <Thermometer className="w-4 h-4 shrink-0" />
+            <div className="min-w-0">
+              <div className="font-bold text-[11px] truncate">
+                {zoneThreshold.label}
+              </div>
+              <div className="text-[10px] opacity-80">
+                Uw calculé : {thermalQuick.uw} W/(m²·K) (max : {thermalQuick.maxUw})
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={`px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 ${
+              thermalQuick.isCompliant
+                ? 'bg-emerald-500/20 text-emerald-300'
+                : 'bg-amber-500/20 text-amber-300'
+            }`}
+          >
+            {thermalQuick.isCompliant ? 'Conforme' : 'À optimiser'}
+          </div>
         </div>
       </div>
 
