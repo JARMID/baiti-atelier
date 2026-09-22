@@ -60,7 +60,7 @@ export const DedicatedMobileApp: React.FC<DedicatedMobileAppProps> = ({
       {/* 2. DYNAMIC SCREEN BODY */}
       <main className="flex-1 w-full overflow-y-auto">
         {activeTab === 'configurator' && <MobileConfiguratorScreen />}
-        {activeTab === 'cad' && <MobileCadScreen />}
+        {activeTab === 'cad' && <MobileCadScreen onNavigateTab={setActiveTab} />}
         {activeTab === 'cutting' && <MobileCuttingScreen onNavigateTab={setActiveTab} />}
         {activeTab === 'field_quotes' && <MobileFieldMeasurementScreen onNavigateTab={setActiveTab} />}
         {activeTab === 'workshop' && <MobileWorkshopScreen onNavigateTab={setActiveTab} />}

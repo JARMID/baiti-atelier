@@ -10,6 +10,10 @@ import {
   FlipHorizontal,
   MessageCircle,
   ShieldCheck,
+  Scissors,
+  ClipboardList,
+  Check,
+  X,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -20,6 +24,7 @@ import {
 import { computeCadCells, computeDetailedBOM } from '../../utils/cadEngine';
 import type { CadStructure, CellType } from '../../types/cad';
 import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
+import type { MobileNavTab } from './MobileBottomNavigation';
 
 const CELL_TYPE_CONFIG: {
   type: CellType;
@@ -35,7 +40,11 @@ const CELL_TYPE_CONFIG: {
   { type: 'panel_solid', labelFr: 'Panneau Opaque', sub: 'Sandwich alu/pvc', color: 'text-zinc-300' },
 ];
 
-export const MobileCadScreen: React.FC = () => {
+interface MobileCadScreenProps {
+  onNavigateTab?: (tab: MobileNavTab) => void;
+}
+
+export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab }) => {
   const { config, language, theme, selectedWilaya } = useConfigStore();
   const isLight = theme === 'light';
   const isRtl = language === 'ar';
@@ -59,6 +68,13 @@ export const MobileCadScreen: React.FC = () => {
   const [isGeneratingDtrPdf, setIsGeneratingDtrPdf] = useState(false);
   const [activeBomTab, setActiveBomTab] = useState<'cuts' | 'glasses'>('cuts');
   const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
+
+  // Field Survey Modal State
+  const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
+  const [surveyRoomName, setSurveyRoomName] = useState('Façade - Baie Composée');
+  const [surveyAllege, setSurveyAllege] = useState<number>(0);
+  const [surveyQty, setSurveyQty] = useState<number>(1);
+  const [surveyToastMessage, setSurveyToastMessage] = useState<string | null>(null);
 
   // Derived CAD Structure with current config dimensions
   const cadStructure: CadStructure = useMemo(() => ({
@@ -280,6 +296,77 @@ export const MobileCadScreen: React.FC = () => {
       });
     } finally {
       setIsGeneratingDtrPdf(false);
+    }
+  };
+
+  const handleConfirmAddToSurvey = () => {
+    playClampSound();
+    const STORAGE_KEY = 'baiti_field_measurement_project';
+    let currentOpenings: any[] = [];
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) currentOpenings = JSON.parse(saved);
+      } catch {
+        currentOpenings = [];
+      }
+    }
+
+    // Estimate total price based on detailed BOM
+    const estimatedCostDzd = Math.round(
+      bom.totalProfileWeightKg * 850 + bom.totalGlassAreaM2 * 5500 + 15000
+    );
+
+    const newItem = {
+      id: `op_cad_${Date.now()}`,
+      roomName: surveyRoomName.trim() || 'Châssis CAO 2D',
+      width: cadStructure.width,
+      height: cadStructure.height,
+      allegeMm: surveyAllege,
+      openingType: config.openingType,
+      profileSystem: config.profileSystem,
+      glassType: config.glassType,
+      shutterType: config.shutterType,
+      quantity: Math.max(1, surveyQty),
+      estimatedUnitPriceDzd: estimatedCostDzd,
+    };
+
+    const updated = [...currentOpenings, newItem];
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        window.dispatchEvent(new Event('storage'));
+      } catch {
+        // Fallback
+      }
+    }
+
+    setShowAddToSurveyModal(false);
+    setSurveyToastMessage(`${surveyRoomName} (${cadStructure.width}×${cadStructure.height} mm) ajouté au carnet !`);
+    setTimeout(() => setSurveyToastMessage(null), 3500);
+  };
+
+  const handleSendToCuttingOptimizer = () => {
+    playClampSound();
+    if (typeof window !== 'undefined') {
+      try {
+        const cadDemands = bom.cuts.map((c, idx) => ({
+          id: `cad_cut_${idx + 1}`,
+          length: c.lengthMm,
+          quantity: c.quantity,
+          miterLeft: c.cutLeftAngle,
+          miterRight: c.cutRightAngle,
+          label: `${c.label} (${c.role})`,
+          profileCode: c.role.includes('dormant') ? 'DORMANT-45' : 'OUVRANT-45',
+        }));
+        localStorage.setItem('baiti_cad_active_demands', JSON.stringify(cadDemands));
+        window.dispatchEvent(new Event('storage'));
+      } catch {
+        // Handled
+      }
+    }
+    if (onNavigateTab) {
+      onNavigateTab('cutting');
     }
   };
 
@@ -796,7 +883,176 @@ export const MobileCadScreen: React.FC = () => {
             <span>{isGeneratingCutSheet ? 'Génération...' : 'Télécharger Fiche Scie PDF'}</span>
           </button>
         </div>
+
+        {/* Deep Linking Cross-Studio Actions */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-black/5 dark:border-white/5">
+          <button
+            type="button"
+            onClick={() => {
+              playClampSound();
+              setShowAddToSurveyModal(true);
+            }}
+            className={`w-full py-2.5 px-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] active:scale-98 transition-all ${
+              isLight
+                ? 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-300 shadow-xs'
+                : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
+            }`}
+            title="Ajouter ce châssis paramétrique au carnet de cotes chantier"
+          >
+            <ClipboardList className="w-4 h-4 text-[#D4AF37]" />
+            <span>+ Ajouter au Carnet de Cotes</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSendToCuttingOptimizer}
+            className={`w-full py-2.5 px-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] active:scale-98 transition-all ${
+              isLight
+                ? 'bg-sky-50 hover:bg-sky-100 text-sky-950 border-sky-300 shadow-xs'
+                : 'bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border-sky-500/30'
+            }`}
+            title="Envoyer les tronçons calculés vers l'optimiseur de débit 1D"
+          >
+            <Scissors className="w-4 h-4 text-sky-400" />
+            <span>Optimiser Débit Scie 1D ({bom.cuts.length} débits)</span>
+          </button>
+        </div>
       </div>
+
+      {/* 4. MODAL AJOUT AU CARNET DE COTES CHANTIER */}
+      {showAddToSurveyModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div
+            className={`w-full max-w-lg rounded-t-3xl sm:rounded-3xl border shadow-2xl p-5 space-y-4 font-mono text-xs ${
+              isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-[#0E131F] border-white/10 text-white'
+            }`}
+          >
+            <div className="flex items-center justify-between border-b border-black/10 dark:border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]" />
+                <h3 className="text-sm font-bold">Ajouter au Carnet de Cotes Chantier</h3>
+              </div>
+              <button
+                onClick={() => {
+                  playTactileClick();
+                  setShowAddToSurveyModal(false);
+                }}
+                className="p-1 rounded-lg text-zinc-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Geometry Summary Card */}
+            <div
+              className={`p-3 rounded-2xl border flex items-center justify-between ${
+                isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'
+              }`}
+            >
+              <div>
+                <span className="text-[10px] text-zinc-400 block uppercase">Châssis CAO ({bayCount} Travées)</span>
+                <span className="font-bold text-[#D4AF37]">
+                  {cadStructure.width} × {cadStructure.height} mm
+                </span>
+                <span className="text-[10px] text-zinc-500 block">
+                  {cells.length} case{cells.length > 1 ? 's' : ''} • {bom.totalProfileWeightKg} kg alu
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] text-zinc-400 block uppercase">Estimation Matière</span>
+                <span className="font-bold text-emerald-400">
+                  {Math.round(bom.totalProfileWeightKg * 850 + bom.totalGlassAreaM2 * 5500 + 15000).toLocaleString('fr-DZ')} DZD
+                </span>
+              </div>
+            </div>
+
+            {/* Form Fields */}
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className={`text-[11px] block ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>
+                  Désignation / Emplacement *
+                </label>
+                <input
+                  type="text"
+                  value={surveyRoomName}
+                  onChange={(e) => setSurveyRoomName(e.target.value)}
+                  placeholder="Ex: Façade Principale - Baie Composée"
+                  className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-[#D4AF37] ${
+                    isLight ? 'border-slate-300 bg-slate-50 text-slate-900' : 'border-white/10 bg-black/20 text-white'
+                  }`}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className={isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}>Allège (mm)</span>
+                    <div className="flex gap-1 text-[10px]">
+                      <button type="button" onClick={() => setSurveyAllege(0)} className="text-[#D4AF37] cursor-pointer">0</button>
+                      <button type="button" onClick={() => setSurveyAllege(900)} className="hover:text-[#D4AF37] cursor-pointer">900</button>
+                      <button type="button" onClick={() => setSurveyAllege(1000)} className="hover:text-[#D4AF37] cursor-pointer">1000</button>
+                    </div>
+                  </div>
+                  <input
+                    type="number"
+                    value={surveyAllege}
+                    onChange={(e) => setSurveyAllege(parseInt(e.target.value) || 0)}
+                    className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-[#D4AF37] ${
+                      isLight ? 'border-slate-300 bg-slate-50 text-slate-900' : 'border-white/10 bg-black/20 text-white'
+                    }`}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className={`text-[11px] block ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>
+                    Quantité
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={surveyQty}
+                    onChange={(e) => setSurveyQty(parseInt(e.target.value) || 1)}
+                    className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-[#D4AF37] ${
+                      isLight ? 'border-slate-300 bg-slate-50 text-slate-900' : 'border-white/10 bg-black/20 text-white'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="pt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddToSurveyModal(false)}
+                  className={`w-1/3 py-3 rounded-2xl border cursor-pointer min-h-[48px] ${
+                    isLight
+                      ? 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                      : 'border-white/10 text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAddToSurvey}
+                  className="w-2/3 py-3 rounded-2xl bg-[#D4AF37] text-slate-950 font-bold flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px] shadow-lg hover:brightness-110 active:scale-98 transition-all"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Ajouter au Carnet</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Survey Toast Message */}
+      {surveyToastMessage && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-emerald-600 text-white font-mono font-bold text-xs shadow-2xl flex items-center gap-2 border border-emerald-400/40">
+          <Check className="w-4 h-4 text-emerald-200" />
+          <span>{surveyToastMessage}</span>
+        </div>
+      )}
 
       {/* 2D ARCHITECTURAL CROSS-SECTION MODAL */}
       {showCrossSectionModal && (

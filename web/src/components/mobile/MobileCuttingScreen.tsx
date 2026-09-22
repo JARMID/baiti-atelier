@@ -58,6 +58,22 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
     return null;
   });
 
+  // Active CAD 2D demands data
+  const [cadDemandsAvailable, setCadDemandsAvailable] = useState<CutDemand1D[] | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('baiti_cad_active_demands');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
   useEffect(() => {
     const syncSurvey = () => {
       if (typeof window !== 'undefined') {
@@ -70,6 +86,14 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
             setSurveyProjectData({ info, openings });
           } else {
             setSurveyProjectData(null);
+          }
+
+          const rawCad = localStorage.getItem('baiti_cad_active_demands');
+          if (rawCad) {
+            const parsed = JSON.parse(rawCad);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setCadDemandsAvailable(parsed);
+            }
           }
         } catch {
           setSurveyProjectData(null);
@@ -364,6 +388,12 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
     });
   };
 
+  const handleImportCadDemands = () => {
+    playClampSound();
+    if (!cadDemandsAvailable || !cadDemandsAvailable.length) return;
+    setDemands(cadDemandsAvailable);
+  };
+
   const handleImportCurrentWindow = () => {
     playClampSound();
     setDemands([
@@ -408,7 +438,7 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
 
   return (
     <div className="pb-36 px-3 sm:px-6 pt-2 max-w-xl md:max-w-2xl mx-auto space-y-4" dir={isRtl ? 'rtl' : 'ltr'}>
-      {/* 0. ACTIVE FIELD SURVEY BANNER */}
+      {/* 0A. ACTIVE FIELD SURVEY BANNER */}
       {surveyProjectData && surveyProjectData.openings.length > 0 && (
         <div
           className={`p-3.5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono shadow-xs transition-all ${
@@ -433,7 +463,7 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+          <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0 flex-wrap">
             <button
               type="button"
               onClick={handleImportSurveyProject}
@@ -441,6 +471,16 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
             >
               Importer Tout le Chantier
             </button>
+            {cadDemandsAvailable && cadDemandsAvailable.length > 0 && (
+              <button
+                type="button"
+                onClick={handleImportCadDemands}
+                className="px-2.5 py-2 rounded-xl bg-sky-500/20 text-sky-400 font-bold border border-sky-500/30 text-[11px] cursor-pointer hover:bg-sky-500/30 active:scale-95 transition-all shadow-xs"
+                title="Charger les débits calculés depuis le Studio CAO 2D"
+              >
+                Plan CAO ({cadDemandsAvailable.length})
+              </button>
+            )}
             <button
               type="button"
               onClick={handleImportCurrentWindow}
@@ -450,6 +490,55 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
                   : 'border-white/10 bg-white/5 hover:bg-white/10 text-zinc-300'
               }`}
               title="Charger uniquement le châssis 3D actif"
+            >
+              Châssis 3D
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 0B. CAD ACTIVE DEMANDS BANNER (When no survey project exists) */}
+      {(!surveyProjectData || surveyProjectData.openings.length === 0) && cadDemandsAvailable && cadDemandsAvailable.length > 0 && (
+        <div
+          className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs font-mono shadow-xs transition-all ${
+            isLight
+              ? 'bg-sky-50 border-sky-200 text-slate-800'
+              : 'bg-sky-500/10 border-sky-500/25 text-sky-200'
+          }`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-400 shrink-0">
+              <Scissors className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="font-bold flex items-center gap-1.5 truncate">
+                <span className={isLight ? 'text-slate-900 font-bold' : 'text-white font-bold'}>
+                  Débits CAO 2D Disponibles
+                </span>
+              </div>
+              <div className={`text-[10px] truncate ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>
+                {cadDemandsAvailable.length} profilés calculés depuis le Studio CAO
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleImportCadDemands}
+              className="px-3 py-2 rounded-xl bg-sky-500 text-slate-950 font-bold text-[11px] cursor-pointer hover:brightness-110 active:scale-95 transition-all shadow-xs"
+            >
+              Charger Plan CAO
+            </button>
+            <button
+              type="button"
+              onClick={handleImportCurrentWindow}
+              className={`px-2.5 py-2 rounded-xl border text-[11px] font-medium cursor-pointer active:scale-95 transition-all ${
+                isLight
+                  ? 'border-slate-300 bg-white hover:bg-slate-100 text-slate-700'
+                  : 'border-white/10 bg-white/5 hover:bg-white/10 text-zinc-300'
+              }`}
+              title="Charger le châssis 3D standard"
             >
               Châssis 3D
             </button>
