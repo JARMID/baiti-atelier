@@ -15,6 +15,8 @@ import {
   Check,
   X,
   FileCheck,
+  LayoutTemplate,
+  Sliders,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -42,6 +44,101 @@ const CELL_TYPE_CONFIG: {
   { type: 'panel_solid', labelFr: 'Panneau Opaque', sub: 'Sandwich alu/pvc', color: 'text-zinc-300' },
 ];
 
+interface CadTemplatePreset {
+  id: string;
+  name: string;
+  sub: string;
+  verticalDividers: (width: number) => number[];
+  horizontalDividers: (height: number) => number[];
+  cellTypes: (width: number, height: number) => Record<string, CellType>;
+}
+
+const CAD_TEMPLATE_PRESETS: CadTemplatePreset[] = [
+  {
+    id: 'slide_2v',
+    name: '2V Coulissant',
+    sub: 'Classique 2 vantaux',
+    verticalDividers: (w) => [Math.round(w / 2)],
+    horizontalDividers: () => [],
+    cellTypes: () => ({
+      '0-0': 'sash_slide',
+      '0-1': 'sash_slide',
+    }),
+  },
+  {
+    id: 'frappe_1v',
+    name: '1V Frappe OB',
+    sub: 'Oscillo-battant 1 vantail',
+    verticalDividers: () => [],
+    horizontalDividers: () => [],
+    cellTypes: () => ({
+      '0-0': 'sash_tilt_turn',
+    }),
+  },
+  {
+    id: 'frappe_2v',
+    name: '2V Battant (G+D)',
+    sub: 'Ouvrant à la française',
+    verticalDividers: (w) => [Math.round(w / 2)],
+    horizontalDividers: () => [],
+    cellTypes: () => ({
+      '0-0': 'sash_left',
+      '0-1': 'sash_right',
+    }),
+  },
+  {
+    id: 'slide_2v_imposte',
+    name: '2V + Imposte Fixe',
+    sub: 'Imposte vitrée 450mm',
+    verticalDividers: (w) => [Math.round(w / 2)],
+    horizontalDividers: (h) => [Math.max(300, h - 450)],
+    cellTypes: () => ({
+      '0-0': 'sash_slide',
+      '0-1': 'sash_slide',
+      '1-0': 'glass_fixed',
+      '1-1': 'glass_fixed',
+    }),
+  },
+  {
+    id: 'slide_3v',
+    name: '3V Coulissant',
+    sub: 'Grande baie 3 vantaux',
+    verticalDividers: (w) => [Math.round(w / 3), Math.round((2 * w) / 3)],
+    horizontalDividers: () => [],
+    cellTypes: () => ({
+      '0-0': 'sash_slide',
+      '0-1': 'sash_slide',
+      '0-2': 'sash_slide',
+    }),
+  },
+  {
+    id: 'porte_soubassement',
+    name: 'Porte + Allège Opaque',
+    sub: 'Panneau sandwich 900mm',
+    verticalDividers: (w) => [Math.round(w / 2)],
+    horizontalDividers: (h) => [Math.min(Math.max(400, h - 400), 900)],
+    cellTypes: () => ({
+      '0-0': 'panel_solid',
+      '0-1': 'panel_solid',
+      '1-0': 'sash_left',
+      '1-1': 'sash_right',
+    }),
+  },
+  {
+    id: 'chassis_4v_mixte',
+    name: '4V (2 Fixes + 2 Coul.)',
+    sub: 'Fixes latéraux + coulissants',
+    verticalDividers: (w) => [Math.round(w / 4), Math.round(w / 2), Math.round((3 * w) / 4)],
+    horizontalDividers: () => [],
+    cellTypes: () => ({
+      '0-0': 'glass_fixed',
+      '0-1': 'sash_slide',
+      '0-2': 'sash_slide',
+      '0-3': 'glass_fixed',
+    }),
+  },
+];
+
 interface MobileCadScreenProps {
   onNavigateTab?: (tab: MobileNavTab) => void;
 }
@@ -66,6 +163,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   }));
 
   const [rawSelectedCellKey, setRawSelectedCellKey] = useState<string>('0-0');
+  const [activePresetId, setActivePresetId] = useState<string>('slide_2v');
   const [isGeneratingCutSheet, setIsGeneratingCutSheet] = useState(false);
   const [isGeneratingDtrPdf, setIsGeneratingDtrPdf] = useState(false);
   const [isGeneratingGlazierPdf, setIsGeneratingGlazierPdf] = useState(false);
@@ -183,6 +281,41 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
         };
       });
     }
+  };
+
+  const handleApplyTemplatePreset = (preset: CadTemplatePreset) => {
+    playClampSound();
+    setActivePresetId(preset.id);
+    const vDividers = preset.verticalDividers(config.width);
+    const hDividers = preset.horizontalDividers(config.height);
+    const types = preset.cellTypes(config.width, config.height);
+
+    setGridState({
+      verticalDividers: vDividers,
+      horizontalDividers: hDividers,
+      cellTypes: types,
+    });
+    setRawSelectedCellKey('0-0');
+  };
+
+  const handleAdjustTransomHeight = (deltaMm: number) => {
+    playTactileClick();
+    if (cadStructure.horizontalDividers.length === 0) return;
+    const currentY = cadStructure.horizontalDividers[0];
+    const newY = Math.min(Math.max(250, currentY + deltaMm), config.height - 250);
+    setGridState((prev) => ({
+      ...prev,
+      horizontalDividers: [newY],
+    }));
+  };
+
+  const handleSetTransomAbsoluteHeight = (targetY: number) => {
+    playClampSound();
+    const clampedY = Math.min(Math.max(250, targetY), config.height - 250);
+    setGridState((prev) => ({
+      ...prev,
+      horizontalDividers: [clampedY],
+    }));
   };
 
   // Symmetrical Inversion / Mirror Blueprint
@@ -407,6 +540,40 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
 
   return (
     <div className="pb-36 px-3 sm:px-6 pt-2 max-w-xl md:max-w-2xl mx-auto space-y-4" dir={isRtl ? 'rtl' : 'ltr'}>
+      {/* 0. ARCHITECTURAL COMPOSITION TEMPLATES */}
+      <div className="space-y-1.5 font-mono">
+        <div className="flex items-center justify-between text-[11px] px-1">
+          <span className="flex items-center gap-1.5 font-bold text-[#D4AF37]">
+            <LayoutTemplate className="w-3.5 h-3.5" />
+            <span>Modèles de Châssis Fréquents</span>
+          </span>
+          <span className="text-[10px] text-zinc-500">1-tap pour charger</span>
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs">
+          {CAD_TEMPLATE_PRESETS.map((tmpl) => {
+            const isSelected = activePresetId === tmpl.id;
+            return (
+              <button
+                key={tmpl.id}
+                type="button"
+                onClick={() => handleApplyTemplatePreset(tmpl)}
+                className={`px-3 py-2 rounded-2xl border text-left shrink-0 cursor-pointer transition-all min-h-[42px] ${
+                  isSelected
+                    ? 'bg-[#D4AF37] text-slate-950 font-bold border-[#D4AF37] shadow-sm'
+                    : isLight
+                    ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+                    : 'bg-[#0B0F19] border-white/10 text-zinc-300 hover:bg-white/10'
+                }`}
+              >
+                <div className="font-bold text-[11px] leading-tight">{tmpl.name}</div>
+                <div className="text-[9px] opacity-75 leading-tight">{tmpl.sub}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* 1. CAD CONTROLS BAR (+ MENEAUX / + TRAVERSES) */}
       <div
         className={`p-3 rounded-2xl border shadow-sm flex items-center justify-between gap-2 font-mono text-xs ${
@@ -460,6 +627,88 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           <span>{cells.length} case{cells.length > 1 ? 's' : ''}</span>
         </div>
       </div>
+
+      {/* 1B. TRANSOM DIMENSION CONTROLS */}
+      {hasTransom && (
+        <div
+          className={`p-3 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 font-mono text-xs shadow-xs transition-all ${
+            isLight ? 'bg-amber-50/80 border-amber-200 text-slate-800' : 'bg-amber-500/10 border-amber-500/25 text-amber-200'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Sliders className="w-4 h-4 text-[#D4AF37] shrink-0" />
+            <div>
+              <span className="font-bold block">
+                Hauteur Traverse : {cadStructure.horizontalDividers[0]} mm (Sol) • Imposte : {config.height - cadStructure.horizontalDividers[0]} mm
+              </span>
+              <span className={`text-[10px] block ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>
+                Ajustez le niveau de la traverse intermédiaire
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 self-end sm:self-auto flex-wrap">
+            {/* Quick preset chips */}
+            {[
+              { label: '350', val: config.height - 350 },
+              { label: '450', val: config.height - 450 },
+              { label: '600', val: config.height - 600 },
+              { label: '900', val: 900 },
+            ].map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => handleSetTransomAbsoluteHeight(p.val)}
+                className={`px-2 py-1 rounded-lg border text-[10px] cursor-pointer transition-all ${
+                  cadStructure.horizontalDividers[0] === p.val
+                    ? 'bg-[#D4AF37] text-slate-950 font-bold border-[#D4AF37]'
+                    : isLight
+                    ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
+                    : 'bg-white/10 border-white/10 text-zinc-300 hover:bg-white/15'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+
+            {/* Steppers */}
+            <div className="flex items-center gap-0.5 bg-black/10 dark:bg-white/10 p-0.5 rounded-lg border border-black/10 dark:border-white/10 ml-1">
+              <button
+                type="button"
+                onClick={() => handleAdjustTransomHeight(-50)}
+                className="px-1.5 py-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 font-bold text-[10px] cursor-pointer"
+                title="Abaisser de 50mm"
+              >
+                -50
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAdjustTransomHeight(-10)}
+                className="px-1.5 py-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 font-bold text-[10px] cursor-pointer"
+                title="Abaisser de 10mm"
+              >
+                -10
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAdjustTransomHeight(10)}
+                className="px-1.5 py-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 font-bold text-[10px] cursor-pointer"
+                title="Monter de 10mm"
+              >
+                +10
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAdjustTransomHeight(50)}
+                className="px-1.5 py-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 font-bold text-[10px] cursor-pointer"
+                title="Monter de 50mm"
+              >
+                +50
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2. DYNAMIC 2D BLUEPRINT SVG VIEWER */}
       <div
