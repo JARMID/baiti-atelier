@@ -5,6 +5,7 @@ import {
   advanceJobStage,
   addWorkshopJob,
   deleteJob,
+  updateJob,
   STAGE_CONFIG,
   STAGE_ORDER,
 } from '../../utils/workshopJobManager';
@@ -22,6 +23,7 @@ import {
   Calendar,
   ClipboardList,
   FileCheck,
+  Banknote,
 } from 'lucide-react';
 import { playTactileClick, playClampSound, playSwitchSound } from '../../utils/audioFeedback';
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
@@ -180,6 +182,71 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
       setNewProfileSystem(surveyProjectData.openings[0].profileSystem);
     }
     setIsNewJobModalOpen(true);
+  };
+
+  // Payment / Encaissement modal state
+  const [paymentJob, setPaymentJob] = useState<WorkshopJob | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [paymentMethod, setPaymentMethod] = useState<'especes' | 'baridimob' | 'virement' | 'cheque'>('especes');
+  const [paymentNote, setPaymentNote] = useState<string>('');
+  const [sendWhatsAppReceipt, setSendWhatsAppReceipt] = useState<boolean>(true);
+  const [paymentToast, setPaymentToast] = useState<string | null>(null);
+
+  const handleOpenPaymentModal = (job: WorkshopJob) => {
+    playTactileClick();
+    const remaining = Math.max(0, job.totalAmountDzd - job.depositDzd);
+    setPaymentJob(job);
+    setPaymentAmount(remaining > 0 ? (remaining >= 50000 ? 50000 : remaining) : 0);
+    setPaymentMethod('especes');
+    setPaymentNote('');
+    setSendWhatsAppReceipt(true);
+  };
+
+  const handleConfirmPayment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!paymentJob || paymentAmount <= 0) return;
+    playClampSound();
+
+    const newDeposit = Math.min(paymentJob.totalAmountDzd, paymentJob.depositDzd + paymentAmount);
+    const newBalance = Math.max(0, paymentJob.totalAmountDzd - newDeposit);
+    updateJob(paymentJob.id, { depositDzd: newDeposit });
+    setJobs((prev) =>
+      prev.map((j) => (j.id === paymentJob.id ? { ...j, depositDzd: newDeposit } : j))
+    );
+
+    const methodLabel =
+      paymentMethod === 'especes'
+        ? 'Espèces (Cash)'
+        : paymentMethod === 'baridimob'
+        ? 'BaridiMob / CCP'
+        : paymentMethod === 'virement'
+        ? 'Virement Bancaire'
+        : 'Chèque de Banque';
+
+    if (sendWhatsAppReceipt && paymentJob.clientPhone) {
+      const todayStr = new Date().toLocaleDateString('fr-DZ');
+      let text = `*REÇU DE VERSEMENT ACOMPTE • BAITI ATELIER*\n`;
+      text += `Date : ${todayStr}\n`;
+      text += `Client : ${paymentJob.clientName}\n`;
+      text += `Réf Affaire : ${paymentJob.id}\n\n`;
+      text += `*DÉTAILS DU RÈGLEMENT :*\n`;
+      text += `• Montant versé : *+${paymentAmount.toLocaleString('fr-DZ')} DZD*\n`;
+      text += `• Mode de paiement : ${methodLabel}\n`;
+      if (paymentNote.trim()) {
+        text += `• Référence / Note : ${paymentNote.trim()}\n`;
+      }
+      text += `\n*SITUATION DU COMPTE :*\n`;
+      text += `• Montant total commande : ${paymentJob.totalAmountDzd.toLocaleString('fr-DZ')} DZD\n`;
+      text += `• Total acomptes perçus : ${newDeposit.toLocaleString('fr-DZ')} DZD\n`;
+      text += `• Solde restant à régler : *${newBalance.toLocaleString('fr-DZ')} DZD*\n\n`;
+      text += `Document émis pour valoir reçu de règlement d'acompte.\nBaiti Atelier Menuiserie Aluminium & PVC Algérie`;
+
+      window.open(`https://wa.me/${paymentJob.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    setPaymentToast(`Versement de ${paymentAmount.toLocaleString('fr-DZ')} DZD enregistré !`);
+    setTimeout(() => setPaymentToast(null), 3500);
+    setPaymentJob(null);
   };
 
   const handleAdvance = (jobId: string) => {
@@ -498,11 +565,13 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
                   <span>{job.itemCount} châssis</span>
                 </div>
 
-                {/* Financials Row */}
+                {/* Financials Row (Interactive for quick payment) */}
                 <div
-                  className={`p-2.5 rounded-2xl border flex items-center justify-between ${
-                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'
+                  onClick={() => handleOpenPaymentModal(job)}
+                  className={`p-2.5 rounded-2xl border flex items-center justify-between cursor-pointer hover:border-[#D4AF37]/50 active:scale-99 transition-all ${
+                    isLight ? 'bg-slate-50 border-slate-200 hover:bg-slate-100' : 'bg-black/30 border-white/5 hover:bg-black/40'
                   }`}
+                  title="Cliquer pour enregistrer un versement ou acompte"
                 >
                   <div>
                     <span className="text-[10px] text-zinc-500 block">Total Affaire</span>
@@ -513,13 +582,20 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
 
                   <div>
                     <span className="text-[10px] text-zinc-500 block">Acompte</span>
-                    <span className={`font-semibold ${isLight ? 'text-slate-700' : 'text-zinc-300'}`}>
+                    <span className="font-semibold text-emerald-500">
                       {job.depositDzd.toLocaleString('fr-DZ')} DZD
                     </span>
                   </div>
 
                   <div className="text-right">
-                    <span className="text-[10px] text-zinc-500 block">Reste Dû</span>
+                    <span className="text-[10px] text-zinc-500 block flex items-center justify-end gap-1">
+                      <span>Reste Dû</span>
+                      {balanceDue > 0 && (
+                        <span className="text-[8px] px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-400 font-bold">
+                          + Encaisser
+                        </span>
+                      )}
+                    </span>
                     <span className={`font-bold ${balanceDue > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
                       {balanceDue.toLocaleString('fr-DZ')} DZD
                     </span>
@@ -572,7 +648,7 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
                   </button>
                 </div>
 
-                {/* Production Order & Handover Actions (OF & PV) */}
+                {/* Production Order & Handover Actions (OF, PV, & Encaisser) */}
                 <div className="pt-2 border-t border-black/5 dark:border-white/5 flex items-center gap-1.5 flex-wrap">
                   <button
                     type="button"
@@ -608,8 +684,25 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
 
                   <button
                     type="button"
+                    onClick={() => handleOpenPaymentModal(job)}
+                    className={`py-2 px-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px] active:scale-98 transition-all ${
+                      balanceDue > 0
+                        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 shadow-xs'
+                        : isLight
+                        ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                        : 'bg-white/5 border-white/10 text-zinc-500 cursor-not-allowed'
+                    }`}
+                    title="Enregistrer un versement client et générer le reçu"
+                    disabled={balanceDue <= 0}
+                  >
+                    <Banknote className="w-3.5 h-3.5 shrink-0" />
+                    <span>{balanceDue <= 0 ? 'Soldé' : 'Encaisser'}</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => handleSharePvWhatsApp(job)}
-                    className="py-2 px-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px] hover:bg-emerald-500/20 active:scale-98 transition-all"
+                    className="py-2 px-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer min-h-[38px] hover:bg-emerald-500/20 active:scale-98 transition-all"
                     title="Partager le résumé de réception et solde par WhatsApp"
                   >
                     <MessageCircle className="w-3.5 h-3.5 shrink-0" />
@@ -887,6 +980,204 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* 5. MODAL ENCAISSEMENT & VERSEMENT ACOMPTE */}
+      {paymentJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
+          <div
+            className={`w-full max-w-md rounded-3xl border p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto ${
+              isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-[#0F1420] border-white/10 text-white'
+            }`}
+          >
+            <div className="flex items-center justify-between border-b pb-3 border-black/5 dark:border-white/10">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <Banknote className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold font-mono">Encaisser un Versement</h3>
+                  <p className={`text-[10px] font-mono ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>
+                    {paymentJob.clientName} • {paymentJob.id}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPaymentJob(null)}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Financial Summary Card */}
+            <div
+              className={`p-3 rounded-2xl border text-xs font-mono grid grid-cols-3 gap-2 text-center ${
+                isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'
+              }`}
+            >
+              <div>
+                <span className="text-[10px] text-zinc-500 block">Total</span>
+                <span className="font-bold">{paymentJob.totalAmountDzd.toLocaleString('fr-DZ')} DA</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-zinc-500 block">Déjà Réglé</span>
+                <span className="font-bold text-emerald-400">{paymentJob.depositDzd.toLocaleString('fr-DZ')} DA</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-zinc-500 block">Solde Restant</span>
+                <span className="font-bold text-[#D4AF37]">
+                  {Math.max(0, paymentJob.totalAmountDzd - paymentJob.depositDzd).toLocaleString('fr-DZ')} DA
+                </span>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleConfirmPayment} className="space-y-3 font-mono text-xs">
+              <div>
+                <label className={`text-[10px] block mb-1 ${isLight ? 'text-slate-700 font-medium' : 'text-zinc-400'}`}>
+                  Montant du Versement (DZD)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max={Math.max(0, paymentJob.totalAmountDzd - paymentJob.depositDzd)}
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(parseInt(e.target.value) || 0)}
+                  className={`w-full p-2.5 rounded-xl border text-sm font-bold ${
+                    isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
+                  }`}
+                  required
+                />
+              </div>
+
+              {/* Quick Amount Shortcuts */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  { label: 'Solde Total', amt: Math.max(0, paymentJob.totalAmountDzd - paymentJob.depositDzd) },
+                  { label: '100 000 DA', amt: 100000 },
+                  { label: '50 000 DA', amt: 50000 },
+                  { label: '20 000 DA', amt: 20000 },
+                ]
+                  .filter((b) => b.amt > 0 && b.amt <= Math.max(0, paymentJob.totalAmountDzd - paymentJob.depositDzd))
+                  .map((btn) => (
+                    <button
+                      key={btn.label}
+                      type="button"
+                      onClick={() => setPaymentAmount(btn.amt)}
+                      className={`px-2.5 py-1 rounded-lg border text-[10px] cursor-pointer transition-all ${
+                        paymentAmount === btn.amt
+                          ? 'bg-[#D4AF37] text-slate-950 font-bold border-[#D4AF37]'
+                          : isLight
+                          ? 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+                          : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      {btn.label}
+                    </button>
+                  ))}
+              </div>
+
+              {/* Payment Method Selector */}
+              <div>
+                <label className={`text-[10px] block mb-1 ${isLight ? 'text-slate-700 font-medium' : 'text-zinc-400'}`}>
+                  Mode de Règlement
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { id: 'especes', label: 'Espèces (Cash)' },
+                    { id: 'baridimob', label: 'BaridiMob / CCP' },
+                    { id: 'virement', label: 'Virement Bancaire' },
+                    { id: 'cheque', label: 'Chèque de Banque' },
+                  ].map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setPaymentMethod(m.id as any)}
+                      className={`p-2 rounded-xl border text-[11px] text-left cursor-pointer transition-all ${
+                        paymentMethod === m.id
+                          ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400 font-bold'
+                          : isLight
+                          ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                          : 'bg-black/30 border-white/5 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Note / Check or Transfer Ref */}
+              <div>
+                <label className={`text-[10px] block mb-1 ${isLight ? 'text-slate-700 font-medium' : 'text-zinc-400'}`}>
+                  Référence / Note de versement (optionnel)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Reçu BaridiMob N°8491, Chèque BNA N°..."
+                  value={paymentNote}
+                  onChange={(e) => setPaymentNote(e.target.value)}
+                  className={`w-full p-2 rounded-xl border text-xs ${
+                    isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
+                  }`}
+                />
+              </div>
+
+              {/* WhatsApp Receipt Toggle */}
+              <label className="flex items-center gap-2 pt-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sendWhatsAppReceipt}
+                  onChange={(e) => setSendWhatsAppReceipt(e.target.checked)}
+                  className="rounded border-zinc-600 text-emerald-500 focus:ring-0 cursor-pointer"
+                />
+                <span className={`text-[11px] ${isLight ? 'text-slate-700' : 'text-zinc-300'}`}>
+                  Envoyer automatiquement le reçu officiel par WhatsApp
+                </span>
+              </label>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-black/5 dark:border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setPaymentJob(null)}
+                  className="px-3 py-2 rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={paymentAmount <= 0}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold cursor-pointer hover:bg-emerald-500 disabled:opacity-50 transition-all text-xs flex items-center gap-1.5 shadow-md"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Valider l'Encaissement</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Payment Toast */}
+      {paymentToast && (
+        <div className="fixed bottom-24 left-4 right-4 z-50 flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-900/95 text-white border border-emerald-500/40 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+              <Check className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-mono font-medium truncate">{paymentToast}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPaymentToast(null)}
+            className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white shrink-0 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
     </div>
