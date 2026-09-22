@@ -30,6 +30,7 @@ import {
   ScanLine,
   FileText,
   Compass,
+  Sparkles,
 } from 'lucide-react';
 import { CuttingAssemblyTerminal } from '../optimizer/CuttingAssemblyTerminal';
 import { ProfileCrossSectionViewer } from './ProfileCrossSectionViewer';
@@ -351,6 +352,105 @@ export const CadStudio2D: React.FC = () => {
       ? 'Clair'
       : 'Hors-Tout';
 
+  const cadPresets = [
+    {
+      id: 'fenetre_2v',
+      label: 'Fenêtre 2V Standard',
+      sub: '1200 × 1300 mm',
+      apply: () => {
+        playSwitchSound();
+        setArchType('none');
+        setStructure({
+          width: 1200,
+          height: 1300,
+          verticalDividers: [600],
+          horizontalDividers: [],
+          cellTypes: { '0-0': 'sash_left', '0-1': 'sash_right' },
+        });
+      },
+    },
+    {
+      id: 'porte_fenetre_imposte',
+      label: 'Porte-Fenêtre + Imposte',
+      sub: '1400 × 2400 mm',
+      apply: () => {
+        playSwitchSound();
+        setArchType('none');
+        setStructure({
+          width: 1400,
+          height: 2400,
+          verticalDividers: [700],
+          horizontalDividers: [1950],
+          cellTypes: {
+            '0-0': 'glass_fixed',
+            '0-1': 'glass_fixed',
+            '1-0': 'sash_left',
+            '1-1': 'sash_right',
+          },
+        });
+      },
+    },
+    {
+      id: 'fenetre_allege_ob',
+      label: 'Fenêtre OB + Allège',
+      sub: '1000 × 1700 mm',
+      apply: () => {
+        playSwitchSound();
+        setArchType('none');
+        setStructure({
+          width: 1000,
+          height: 1700,
+          verticalDividers: [],
+          horizontalDividers: [600],
+          cellTypes: {
+            '0-0': 'glass_fixed',
+            '1-0': 'sash_tilt_turn',
+          },
+        });
+      },
+    },
+    {
+      id: 'porte_entree_soubassement',
+      label: 'Porte Entrée Panneau',
+      sub: '950 × 2150 mm',
+      apply: () => {
+        playSwitchSound();
+        setArchType('none');
+        setStructure({
+          width: 950,
+          height: 2150,
+          verticalDividers: [],
+          horizontalDividers: [850],
+          cellTypes: {
+            '0-0': 'sash_left',
+            '1-0': 'panel_solid',
+          },
+        });
+      },
+    },
+    {
+      id: 'chassis_3v_cintre',
+      label: 'Châssis 3V Plein Cintre',
+      sub: '2100 × 1800 mm',
+      apply: () => {
+        playSwitchSound();
+        setArchType('lowered_arch');
+        setArchHeightMm(350);
+        setStructure({
+          width: 2100,
+          height: 1800,
+          verticalDividers: [700, 1400],
+          horizontalDividers: [],
+          cellTypes: {
+            '0-0': 'glass_fixed',
+            '0-1': 'sash_left',
+            '0-2': 'glass_fixed',
+          },
+        });
+      },
+    },
+  ];
+
   return (
     <section
       id="cad-studio"
@@ -465,6 +565,31 @@ export const CadStudio2D: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* LEFT: 2D CAD SVG BLUEPRINT (7 cols) */}
           <div className="lg:col-span-7 flex flex-col gap-4">
+            {/* Quick Architectural Templates Strip */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs font-mono">
+              <span className={`text-[11px] font-medium shrink-0 flex items-center gap-1 ${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'}`}>
+                <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span>Gabarits :</span>
+              </span>
+              {cadPresets.map((pr) => (
+                <button
+                  key={pr.id}
+                  onClick={pr.apply}
+                  className={`px-3 py-1.5 rounded-xl border transition-all shrink-0 cursor-pointer btn-press hover-lift flex items-center gap-1.5 ${
+                    theme === 'light'
+                      ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-800 shadow-xs'
+                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300 hover:text-white'
+                  }`}
+                  title={pr.sub}
+                >
+                  <span className="font-bold">{pr.label}</span>
+                  <span className={`text-[10px] hidden sm:inline ${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'}`}>
+                    ({pr.sub})
+                  </span>
+                </button>
+              ))}
+            </div>
+
             {/* Toolbar */}
             <div className={`flex flex-wrap items-center justify-between p-2.5 rounded-2xl border text-xs gap-2 transition-colors ${
               theme === 'light'

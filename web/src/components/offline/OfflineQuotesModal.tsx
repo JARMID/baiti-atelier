@@ -22,7 +22,10 @@ import {
   Cpu,
   CheckCircle2,
   CloudUpload,
+  FileDown,
+  MessageCircle,
 } from 'lucide-react';
+import { generateClientDevisPdf } from '../../utils/pdfGenerator';
 import {
   exportLocalDatabaseToJson,
   importLocalDatabaseFromJson,
@@ -173,6 +176,36 @@ export const OfflineQuotesModal: React.FC<OfflineQuotesModalProps> = ({
         console.error('Error restoring quote:', err);
       }
     }
+  };
+
+  const handleDownloadQuotePdf = async (id: string) => {
+    playTactileClick();
+    const q = await loadOfflineQuote(id);
+    if (!q) return;
+    try {
+      const payload = JSON.parse(q.payload_json);
+      if (payload.config && payload.cost) {
+        await generateClientDevisPdf(
+          payload.config,
+          payload.cost,
+          q.client_name,
+          q.client_phone || '05 50 00 00 00',
+          q.client_wilaya || 'Alger'
+        );
+      }
+    } catch (err) {
+      console.error('Failed to parse quote payload for PDF', err);
+    }
+  };
+
+  const handleShareQuoteWhatsApp = async (qSummary: OfflineQuoteSummary) => {
+    playTactileClick();
+    const q = await loadOfflineQuote(qSummary.id);
+    const clientPhone = q?.client_phone || '';
+    const cleanPhone = clientPhone.replace(/\D/g, '');
+    const waPhone = cleanPhone.startsWith('0') ? '213' + cleanPhone.slice(1) : cleanPhone;
+    const msg = `*DEVIS BAITI ATELIER N° ${qSummary.id}*\nClient : ${qSummary.client_name}\nWilaya : ${qSummary.client_wilaya}\nMontant Total : ${qSummary.total_ttc_dzd.toLocaleString('fr-DZ')} DZD\n\nConçu avec Baiti Atelier (58 Wilayas Algérie)\nhttps://web-two-tan-31.vercel.app`;
+    window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const handleExportBackup = async () => {
@@ -657,20 +690,46 @@ export const OfflineQuotesModal: React.FC<OfflineQuotesModalProps> = ({
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <button
+                          onClick={() => handleDownloadQuotePdf(q.id)}
+                          className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer btn-press ${
+                            isLight
+                              ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200'
+                              : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20'
+                          }`}
+                          title="Télécharger le Devis PDF officiel"
+                        >
+                          <FileDown className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">PDF</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleShareQuoteWhatsApp(q)}
+                          className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer btn-press ${
+                            isLight
+                              ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20'
+                          }`}
+                          title="Partager le devis sur WhatsApp"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">WhatsApp</span>
+                        </button>
+
                         <button
                           onClick={() => {
                             playTactileClick();
                             handleRestoreQuote(q.id);
                           }}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer btn-press ${
+                          className={`px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer btn-press ${
                             isLight
                               ? 'bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 shadow-sm'
                               : 'bg-white/10 hover:bg-white/15 text-zinc-200'
                           }`}
                           title="Charger dans le configurateur 3D"
                         >
-                          <Upload className="w-3.5 h-3.5 text-emerald-500" />
+                          <Upload className="w-3.5 h-3.5 text-sky-500" />
                           <span>
                             {language === 'ar' ? 'فتح' : language === 'en' ? 'Open' : 'Ouvrir'}
                           </span>
