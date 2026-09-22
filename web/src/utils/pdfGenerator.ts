@@ -3066,6 +3066,229 @@ export async function generateQualityControlSheetPdf(
   doc.save(safeFilename);
 }
 
+export interface StockReceivingSlipPdfItem {
+  code: string;
+  name: string;
+  category: string;
+  quantityReceived: number;
+  unit: string;
+  unitCostDzd: number;
+  rackLocation?: string;
+  conformity: 'conforme' | 'reserves';
+  notes?: string;
+}
+
+export interface GenerateStockReceivingSlipParams {
+  receiptNumber: string;
+  supplierName: string;
+  supplierDeliveryNoteRef: string;
+  deliveryDate: string;
+  receiverName: string;
+  items: StockReceivingSlipPdfItem[];
+  totalValueDzd: number;
+  notes?: string;
+}
+
+export async function generateStockReceivingSlipPdf(
+  params: GenerateStockReceivingSlipParams
+): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryBlue: [number, number, number] = [0, 51, 102];
+  const goldAccent: [number, number, number] = [212, 175, 55];
+  const docRef = params.receiptNumber;
+
+  // 1. Top Header Banner
+  doc.setFillColor(...primaryBlue);
+  doc.rect(0, 0, 210, 22, 'F');
+
+  doc.setFillColor(...goldAccent);
+  doc.rect(0, 22, 210, 1.5, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER • BON DE RÉCEPTION FOURNISSEUR & ENTRÉE STOCK', 14, 10);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(220, 230, 242);
+  doc.text('Procédure de Réception Magasin, Pointage des Barres & Contrôle Qualité Matière', 14, 16);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`RÉF : ${docRef}`, 196, 10, { align: 'right' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(212, 175, 55);
+  doc.text(`Date arrivage : ${params.deliveryDate}`, 196, 16, { align: 'right' });
+
+  // 2. Metadata Box
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 28, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...primaryBlue);
+  doc.text('ORIGINE FOURNISSEUR & DÉTAILS DE LIVRAISON :', 18, 34);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(51, 65, 85);
+  doc.text(`Fournisseur : ${params.supplierName}`, 18, 40);
+  doc.text(`N° Bon de Livraison (BL) : ${params.supplierDeliveryNoteRef || 'Non renseigné'}`, 18, 46);
+
+  doc.text('Atelier réceptionnaire : Baiti Atelier Menuiserie', 110, 40);
+  doc.text(`Magasinier / Chef d Atelier : ${params.receiverName}`, 110, 46);
+
+  // 3. KPI Total Banner
+  doc.setDrawColor(16, 185, 129);
+  doc.setFillColor(236, 253, 245);
+  doc.roundedRect(14, 55, 182, 11, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(16, 185, 129);
+  const totalCount = params.items.reduce((sum, it) => sum + it.quantityReceived, 0);
+  const bannerText = `ARRIVAGE POINTÉ ET CONFORME • TOTAL : ${totalCount} UNITÉS / BARRES • VALEUR : ${params.totalValueDzd.toLocaleString('fr-DZ')} DZD`;
+  doc.text(bannerText, 105, 62, { align: 'center' });
+
+  // 4. Inward Stock Table
+  const tableRows = params.items.map((it, idx) => {
+    const lineTotal = it.quantityReceived * it.unitCostDzd;
+    const conformityLabel = it.conformity === 'conforme' ? 'CONFORME (OK)' : 'AVEC RÉSERVES';
+    return [
+      String(idx + 1),
+      it.code,
+      it.name,
+      it.rackLocation || 'CASIER-A',
+      `${it.quantityReceived} ${it.unit}`,
+      it.unitCostDzd > 0 ? `${it.unitCostDzd.toLocaleString('fr-DZ')} DA` : '-',
+      lineTotal > 0 ? `${lineTotal.toLocaleString('fr-DZ')} DA` : '-',
+      conformityLabel,
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 69,
+    head: [['N°', 'Code Réf', 'Désignation Matière / Profilé', 'Emplacement', 'Qté Reçue', 'P.U. HT', 'Total HT', 'État']],
+    body: tableRows,
+    theme: 'grid',
+    styles: {
+      fontSize: 7,
+      cellPadding: 2,
+      textColor: [30, 41, 59],
+      valign: 'middle',
+    },
+    headStyles: {
+      fillColor: primaryBlue,
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 7.5,
+      halign: 'center',
+    },
+    columnStyles: {
+      0: { cellWidth: 8, halign: 'center', fontStyle: 'bold' },
+      1: { cellWidth: 26, fontStyle: 'bold', textColor: [0, 51, 102] },
+      2: { cellWidth: 54 },
+      3: { cellWidth: 22, halign: 'center', fontStyle: 'bold', textColor: [100, 116, 139] },
+      4: { cellWidth: 18, halign: 'center', fontStyle: 'bold', textColor: [16, 185, 129] },
+      5: { cellWidth: 16, halign: 'right' },
+      6: { cellWidth: 18, halign: 'right', fontStyle: 'bold' },
+      7: { cellWidth: 20, halign: 'center', fontSize: 6.5, fontStyle: 'bold' },
+    },
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index === 7) {
+        const val = String(data.cell.raw);
+        if (val.includes('CONFORME')) {
+          data.cell.styles.textColor = [16, 185, 129];
+        } else {
+          data.cell.styles.textColor = [225, 29, 72];
+        }
+      }
+    },
+  });
+
+  const finalY = (doc as any).lastAutoTable.finalY + 4;
+  const isOverflow = finalY > 225;
+
+  if (isOverflow) {
+    doc.addPage();
+  }
+
+  const notesY = isOverflow ? 20 : finalY;
+
+  // 5. Notes & Observations
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, notesY, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('OBSERVATIONS DU MAGASINIER & RÉSERVES ÉVENTUELLES :', 18, notesY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  const notesText =
+    params.notes ||
+    'Colisage vérifié et pointé à l arrivée du camion. Barres aluminium 6m intactes sous film protecteur. Aucun défaut dimensionnel constaté.';
+  doc.text(doc.splitTextToSize(notesText, 174), 18, notesY + 11);
+
+  // 6. Signatures Box
+  const signY = notesY + 22;
+
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 24, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 24, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Le Chauffeur / Livreur Fournisseur :', 18, signY + 5.5);
+  doc.text('Le Magasinier / Réceptionnaire Atelier :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Signature & Date (Bon pour remise) :', 18, signY + 16);
+  doc.text(`Nom : ${params.receiverName}`, 135, signY + 11);
+  doc.text('Cachet & Signature (Bon pour entrée) :', 135, signY + 18);
+
+  // 7. Dynamic QR Authentication Code
+  try {
+    const qrPayload = `BAITI|BR|${docRef}|SUPP=${params.supplierName}|VAL=${params.totalValueDzd}|ART=${params.items.length}|DATE=${params.deliveryDate}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // QR Code fallback
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Document de gestion de stock généré par Baiti Atelier • ${docRef} • www.baitiatelier.dz`,
+    105,
+    288,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Bon_Reception_Stock_${docRef}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 

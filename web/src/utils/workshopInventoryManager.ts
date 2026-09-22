@@ -294,3 +294,72 @@ export function resetDefaultStock(): WorkshopStockItem[] {
   saveWorkshopStock(INITIAL_STOCK_ITEMS);
   return INITIAL_STOCK_ITEMS;
 }
+
+export interface StockInwardReceiptItem {
+  stockItemId: string;
+  code: string;
+  name: string;
+  category: WorkshopStockCategory;
+  quantityReceived: number;
+  unit: string;
+  unitCostDzd: number;
+  rackLocation?: string;
+  conformity: 'conforme' | 'reserves';
+  notes?: string;
+}
+
+export interface StockInwardReceipt {
+  receiptNumber: string;
+  supplierName: string;
+  supplierDeliveryNoteRef: string;
+  deliveryDate: string;
+  receiverName: string;
+  items: StockInwardReceiptItem[];
+  totalValueDzd: number;
+  notes?: string;
+}
+
+const RECEIPTS_STORAGE_KEY = 'baiti_workshop_stock_receipts_v1';
+
+export function getRecentStockReceipts(): StockInwardReceipt[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(RECEIPTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStockReceipt(receipt: StockInwardReceipt): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const current = getRecentStockReceipts();
+    const updated = [receipt, ...current].slice(0, 50);
+    localStorage.setItem(RECEIPTS_STORAGE_KEY, JSON.stringify(updated));
+  } catch {
+    // Storage quota fallback
+  }
+}
+
+export function recordStockInwardReceipt(receipt: StockInwardReceipt): WorkshopStockItem[] {
+  const current = getWorkshopStock();
+  const updated = current.map((item) => {
+    const received = receipt.items.find((r) => r.stockItemId === item.id || r.code === item.code);
+    if (received && received.quantityReceived > 0) {
+      return {
+        ...item,
+        currentQuantity: item.currentQuantity + received.quantityReceived,
+        rackLocation: received.rackLocation || item.rackLocation,
+        unitCostDzd: received.unitCostDzd > 0 ? received.unitCostDzd : item.unitCostDzd,
+        lastUpdated: new Date().toISOString(),
+      };
+    }
+    return item;
+  });
+
+  saveWorkshopStock(updated);
+  saveStockReceipt(receipt);
+  return updated;
+}
+

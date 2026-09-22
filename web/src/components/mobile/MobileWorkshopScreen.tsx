@@ -29,10 +29,12 @@ import {
   FileText,
   RotateCcw,
   ShieldCheck,
+  PackageCheck,
 } from 'lucide-react';
 import { playTactileClick, playClampSound, playSwitchSound } from '../../utils/audioFeedback';
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
 import { WorkshopQualityModal } from './WorkshopQualityModal';
+import { StockReceivingModal } from './StockReceivingModal';
 import { getJobQualityInspection, computeQualityScore } from '../../utils/qualityControlManager';
 import {
   generateInstallationAcceptancePdf,
@@ -326,6 +328,16 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
     playTactileClick();
     setQualityJob(job);
     setIsQualityModalOpen(true);
+  };
+
+  // Stock Receiving modal state
+  const [isStockReceivingModalOpen, setIsStockReceivingModalOpen] = useState<boolean>(false);
+  const [receivingPreselectedItem, setReceivingPreselectedItem] = useState<WorkshopStockItem | null>(null);
+
+  const handleOpenStockReceiving = (item?: WorkshopStockItem) => {
+    playTactileClick();
+    setReceivingPreselectedItem(item || null);
+    setIsStockReceivingModalOpen(true);
   };
 
   const handleStockDelta = (id: string, delta: number) => {
@@ -1065,15 +1077,24 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
         })}
       </div>
 
-      {/* 4. PROCUREMENT ACTIONS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {/* 4. PROCUREMENT & RECEIVING ACTIONS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <button
+          type="button"
+          onClick={() => handleOpenStockReceiving()}
+          className="w-full py-2.5 rounded-2xl bg-sky-500/15 border border-sky-500/40 text-sky-400 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px] hover:bg-sky-500/25 active:scale-98 transition-all shadow-xs"
+        >
+          <PackageCheck className="w-4 h-4" />
+          <span>Réceptionner Arrivage</span>
+        </button>
+
         <button
           type="button"
           onClick={handleDownloadPurchaseOrderPdf}
           className="w-full py-2.5 rounded-2xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px] hover:bg-[#D4AF37]/25 active:scale-98 transition-all shadow-xs"
         >
           <FileText className="w-4 h-4" />
-          <span>Bon de Commande Fournisseur (PDF)</span>
+          <span>Bon de Commande (PDF)</span>
         </button>
 
         <button
@@ -1082,7 +1103,7 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
           className="w-full py-2.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px] hover:bg-emerald-500/20 active:scale-98 transition-all shadow-xs"
         >
           <MessageCircle className="w-4 h-4" />
-          <span>WhatsApp Réappro Fournisseur</span>
+          <span>WhatsApp Réappro</span>
         </button>
       </div>
 
@@ -1248,6 +1269,15 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
                       title="Ajouter 5 unités"
                     >
                       +5
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenStockReceiving(item)}
+                      className="px-2 py-1.5 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 font-bold text-[10px] cursor-pointer hover:bg-sky-500/25 flex items-center gap-1 active:scale-95 transition-all"
+                      title="Créer un bon de réception pour cet article"
+                    >
+                      <PackageCheck className="w-3 h-3" />
+                      <span>Arrivage</span>
                     </button>
                   </div>
                 </div>
@@ -1907,6 +1937,24 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
           job={qualityJob}
           onInspectionSaved={() => {
             setQaRefreshKey((k) => k + 1);
+          }}
+        />
+      )}
+
+      {/* Stock Receiving Modal */}
+      {isStockReceivingModalOpen && (
+        <StockReceivingModal
+          isOpen={isStockReceivingModalOpen}
+          onClose={() => {
+            setIsStockReceivingModalOpen(false);
+            setReceivingPreselectedItem(null);
+          }}
+          stockItems={stockItems}
+          preselectedItem={receivingPreselectedItem}
+          onStockUpdated={(updated) => {
+            setStockItems(updated);
+            setPaymentToast('Arrivage de stock réceptionné et inventaire mis à jour !');
+            setTimeout(() => setPaymentToast(null), 3500);
           }}
         />
       )}
