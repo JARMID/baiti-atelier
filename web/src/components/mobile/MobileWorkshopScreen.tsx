@@ -35,9 +35,10 @@ import { playTactileClick, playClampSound, playSwitchSound } from '../../utils/a
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
 import { WorkshopQualityModal } from './WorkshopQualityModal';
 import { StockReceivingModal } from './StockReceivingModal';
+import { InstallationAcceptanceModal } from './InstallationAcceptanceModal';
 import { getJobQualityInspection, computeQualityScore } from '../../utils/qualityControlManager';
+import { getJobInstallationAcceptance } from '../../utils/installationAcceptanceManager';
 import {
-  generateInstallationAcceptancePdf,
   generateFabricationOrderPdf,
   generateSupplierPurchaseOrderPdf,
 } from '../../utils/pdfGenerator';
@@ -330,6 +331,16 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
     setIsQualityModalOpen(true);
   };
 
+  // Installation Reception (PV de Pose) modal state
+  const [pvJob, setPvJob] = useState<WorkshopJob | null>(null);
+  const [isPvModalOpen, setIsPvModalOpen] = useState<boolean>(false);
+
+  const handleOpenPvModal = (job: WorkshopJob) => {
+    playTactileClick();
+    setPvJob(job);
+    setIsPvModalOpen(true);
+  };
+
   // Stock Receiving modal state
   const [isStockReceivingModalOpen, setIsStockReceivingModalOpen] = useState<boolean>(false);
   const [receivingPreselectedItem, setReceivingPreselectedItem] = useState<WorkshopStockItem | null>(null);
@@ -498,26 +509,6 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
       job.wilaya.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStage && matchesSearch;
   });
-
-  const handleDownloadPvPdf = async (job: WorkshopJob) => {
-    playClampSound();
-    await generateInstallationAcceptancePdf({
-      jobId: job.id,
-      clientName: job.clientName,
-      clientPhone: job.clientPhone,
-      wilaya: job.wilaya,
-      description: job.description,
-      itemCount: job.itemCount,
-      totalAmountDzd: job.totalAmountDzd,
-      depositDzd: job.depositDzd,
-      profileSystem: job.profileSystem,
-      installationDate: new Date().toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      }),
-    });
-  };
 
   const handleDownloadFabricationOrderPdf = async (job: WorkshopJob) => {
     playClampSound();
@@ -738,6 +729,7 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
             const isCompleted = job.stage === 'termine';
             const qaInspection = getJobQualityInspection(job.id);
             const qaScore = computeQualityScore(qaInspection);
+            const pvAcceptance = getJobInstallationAcceptance(job);
 
             return (
               <div
@@ -776,19 +768,37 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
                     >
                       {stageInfo.labelFr}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenQualityModal(job)}
-                      className={`text-[9px] px-2 py-0.5 rounded-full font-bold border cursor-pointer transition-all flex items-center gap-1 ${
-                        qaScore.isFullyCompliant
-                          ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20'
-                          : 'bg-amber-500/10 border-amber-500/25 text-amber-400 hover:bg-amber-500/20'
-                      }`}
-                      title="Ouvrir la Fiche Contrôle Qualité Atelier"
-                    >
-                      <ShieldCheck className="w-2.5 h-2.5" />
-                      <span>QA {qaScore.conformeCount + qaScore.corrigeCount}/8 {qaScore.isFullyCompliant ? '✓' : ''}</span>
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenQualityModal(job)}
+                        className={`text-[9px] px-2 py-0.5 rounded-full font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+                          qaScore.isFullyCompliant
+                            ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20'
+                            : 'bg-amber-500/10 border-amber-500/25 text-amber-400 hover:bg-amber-500/20'
+                        }`}
+                        title="Ouvrir la Fiche Contrôle Qualité Atelier"
+                      >
+                        <ShieldCheck className="w-2.5 h-2.5" />
+                        <span>QA {qaScore.conformeCount + qaScore.corrigeCount}/8 {qaScore.isFullyCompliant ? '✓' : ''}</span>
+                      </button>
+
+                      {(job.stage === 'pose' || job.stage === 'termine') && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenPvModal(job)}
+                          className={`text-[9px] px-2 py-0.5 rounded-full font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+                            pvAcceptance.clientSignatureDataUrl
+                              ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20'
+                              : 'bg-[#D4AF37]/10 border-[#D4AF37]/30 text-[#D4AF37] hover:bg-[#D4AF37]/20'
+                          }`}
+                          title="Ouvrir le Procès-Verbal de Réception de Pose"
+                        >
+                          <FileCheck className="w-2.5 h-2.5" />
+                          <span>{pvAcceptance.clientSignatureDataUrl ? 'PV Signé ✓' : 'PV Pose'}</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -908,7 +918,7 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
 
                   <button
                     type="button"
-                    onClick={() => handleDownloadPvPdf(job)}
+                    onClick={() => handleOpenPvModal(job)}
                     className={`flex-1 py-2 px-2 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px] active:scale-98 transition-all ${
                       job.stage === 'pose' || job.stage === 'termine'
                         ? 'bg-[#D4AF37]/15 border-[#D4AF37]/40 text-[#D4AF37] hover:bg-[#D4AF37]/25 shadow-xs'
@@ -916,7 +926,7 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
                         ? 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
                         : 'bg-white/5 border-white/10 text-zinc-300 hover:bg-white/10'
                     }`}
-                    title="Générer le Procès-Verbal de Réception de Pose officiel (PDF)"
+                    title="Ouvrir le Procès-Verbal de Réception de Pose interactif (Signatures, Réserves, Solde & PDF)"
                   >
                     <FileCheck className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
                     <span>PV de Pose</span>
@@ -1954,6 +1964,44 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
           onStockUpdated={(updated) => {
             setStockItems(updated);
             setPaymentToast('Arrivage de stock réceptionné et inventaire mis à jour !');
+            setTimeout(() => setPaymentToast(null), 3500);
+          }}
+        />
+      )}
+
+      {/* Installation Reception (PV de Pose) Modal */}
+      {pvJob && (
+        <InstallationAcceptanceModal
+          key={pvJob.id}
+          isOpen={isPvModalOpen}
+          onClose={() => {
+            setIsPvModalOpen(false);
+            setPvJob(null);
+          }}
+          job={pvJob}
+          onAcceptanceSaved={(acc) => {
+            if (acc.paidOnSiteDzd > 0) {
+              const currentJob = jobs.find((j) => j.id === acc.jobId);
+              if (currentJob) {
+                const updatedDeposit = Math.min(
+                  currentJob.totalAmountDzd,
+                  currentJob.depositDzd + acc.paidOnSiteDzd
+                );
+                updateJob(acc.jobId, { depositDzd: updatedDeposit });
+                setJobs((prev) =>
+                  prev.map((j) => (j.id === acc.jobId ? { ...j, depositDzd: updatedDeposit } : j))
+                );
+              }
+            }
+            setPaymentToast('PV de pose enregistré avec succès !');
+            setTimeout(() => setPaymentToast(null), 3000);
+          }}
+          onJobCompleted={(jobId) => {
+            updateJob(jobId, { stage: 'termine' });
+            setJobs((prev) =>
+              prev.map((j) => (j.id === jobId ? { ...j, stage: 'termine' } : j))
+            );
+            setPaymentToast('Affaire clôturée et réceptionnée sans réserve !');
             setTimeout(() => setPaymentToast(null), 3500);
           }}
         />

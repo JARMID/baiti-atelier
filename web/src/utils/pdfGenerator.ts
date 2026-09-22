@@ -1465,6 +1465,13 @@ export function generateLinearCuttingPlanPdf(params: LinearCuttingPlanPdfParams)
   doc.save(`Fiche_Debit_Scie_${refNumber}.pdf`);
 }
 
+export interface InstallationCheckPointItem {
+  id: string;
+  label: string;
+  standard: string;
+  verdict: 'CONFORME' | 'AVEC RESERVE' | 'NON APPLICABLE';
+}
+
 export interface InstallationAcceptancePdfParams {
   jobId: string;
   clientName: string;
@@ -1478,6 +1485,10 @@ export interface InstallationAcceptancePdfParams {
   installationDate?: string;
   hasReservations?: boolean;
   reservationNotes?: string;
+  clientSignatureDataUrl?: string;
+  installerSignatureDataUrl?: string;
+  paidOnSiteDzd?: number;
+  checkPoints?: InstallationCheckPointItem[];
 }
 
 /**
@@ -1498,7 +1509,9 @@ export async function generateInstallationAcceptancePdf(params: InstallationAcce
     year: 'numeric',
   });
 
-  const balanceDue = Math.max(0, params.totalAmountDzd - params.depositDzd);
+  const initialBalanceDue = Math.max(0, params.totalAmountDzd - params.depositDzd);
+  const paidOnSite = Math.min(initialBalanceDue, Math.max(0, params.paidOnSiteDzd || 0));
+  const finalBalanceDue = Math.max(0, initialBalanceDue - paidOnSite);
 
   // 1. Official Header
   doc.setFillColor(15, 23, 42); // Deep slate #0F172A
@@ -1567,7 +1580,7 @@ export async function generateInstallationAcceptancePdf(params: InstallationAcce
   doc.text(`Volume Réceptionné : ${params.itemCount} châssis menuiserie`, 110, 65);
 
   // 3. Technical Inspection Matrix Table
-  const inspectionPoints = [
+  const defaultInspectionPoints: Array<[string, string, string, string]> = [
     ['1', 'Aplomb, horizontalité et niveau des dormants', 'Tolérance conforme (≤ 2 mm par mètre courant)', 'CONFORME'],
     ['2', 'Fixations mécaniques et ancrages maçonnerie', 'Chevilles adaptées, calage d\'assise imputrescible', 'CONFORME'],
     ['3', 'Étanchéité périphérique extérieure', 'Cordon continu mastic élastomère 1ère catégorie', 'CONFORME'],
@@ -1578,10 +1591,19 @@ export async function generateInstallationAcceptancePdf(params: InstallationAcce
     ['8', 'Nettoyage et repliement du chantier', 'Films de protection déposés, zone rendue propre', 'CONFORME'],
   ];
 
+  const inspectionTableRows = params.checkPoints && params.checkPoints.length > 0
+    ? params.checkPoints.map((cp, idx) => [
+        String(idx + 1),
+        cp.label,
+        cp.standard,
+        cp.verdict,
+      ])
+    : defaultInspectionPoints;
+
   autoTable(doc, {
     startY: 77,
     head: [['N°', 'Point de Contrôle Technique', 'Critère d\'Appréciation / Norme', 'Verdict']],
-    body: inspectionPoints,
+    body: inspectionTableRows,
     theme: 'grid',
     headStyles: {
       fillColor: [15, 23, 42],
@@ -1590,60 +1612,99 @@ export async function generateInstallationAcceptancePdf(params: InstallationAcce
       fontStyle: 'bold',
     },
     bodyStyles: {
-      fontSize: 7.5,
+      fontSize: 7,
       textColor: [15, 23, 42],
+      cellPadding: 1.5,
     },
     columnStyles: {
-      0: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
-      1: { cellWidth: 74 },
-      2: { cellWidth: 74 },
-      3: { cellWidth: 24, halign: 'center', fontStyle: 'bold', textColor: [4, 120, 87] },
+      0: { cellWidth: 8, halign: 'center', fontStyle: 'bold' },
+      1: { cellWidth: 76 },
+      2: { cellWidth: 70 },
+      3: { cellWidth: 28, halign: 'center', fontStyle: 'bold' },
+    },
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index === 3) {
+        const val = String(data.cell.raw);
+        if (val === 'AVEC RESERVE') {
+          data.cell.styles.textColor = [180, 83, 9];
+        } else if (val === 'NON APPLICABLE') {
+          data.cell.styles.textColor = [100, 116, 139];
+        } else {
+          data.cell.styles.textColor = [4, 120, 87];
+        }
+      }
     },
   });
 
-  const tableEnd = (doc as any).lastAutoTable.finalY + 6;
+  let currentY = (doc as any).lastAutoTable.finalY + 4;
+
+  // Optional: Reservation Details Box
+  if (params.hasReservations && params.reservationNotes && params.reservationNotes.trim().length > 0) {
+    doc.setDrawColor(245, 158, 11);
+    doc.setFillColor(254, 243, 199);
+    doc.roundedRect(14, currentY, 182, 14, 2, 2, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(180, 83, 9);
+    doc.text('Réserves formulées par le Maître d\'Ouvrage (Délai de levée : 15 jours ouvrés) :', 18, currentY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(120, 53, 15);
+    const splitNotes = doc.splitTextToSize(params.reservationNotes, 172);
+    doc.text(splitNotes.slice(0, 2), 18, currentY + 9);
+
+    currentY += 17;
+  }
 
   // 4. Financial Status Box
   doc.setDrawColor(226, 232, 240);
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(14, tableEnd, 182, 22, 2, 2, 'FD');
+  doc.roundedRect(14, currentY, 182, 20, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  doc.text('2. Règlement Financier des Travaux :', 20, currentY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Montant global convenu : ${params.totalAmountDzd.toLocaleString('fr-DZ')} DZD`, 20, currentY + 11);
+  doc.text(`Acomptes perçus : ${params.depositDzd.toLocaleString('fr-DZ')} DZD`, 20, currentY + 16);
+
+  if (paidOnSite > 0) {
+    doc.setTextColor(4, 120, 87);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Encaissé sur chantier : ${paidOnSite.toLocaleString('fr-DZ')} DZD`, 95, currentY + 11);
+  }
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
-  doc.setTextColor(15, 23, 42);
-  doc.text('2. Règlement Financier des Travaux :', 20, tableEnd + 6);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(71, 85, 105);
-  doc.text(`Montant global convenu : ${params.totalAmountDzd.toLocaleString('fr-DZ')} DZD`, 20, tableEnd + 13);
-  doc.text(`Acomptes perçus : ${params.depositDzd.toLocaleString('fr-DZ')} DZD`, 20, tableEnd + 18);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(balanceDue > 0 ? 180 : 4, balanceDue > 0 ? 83 : 120, balanceDue > 0 ? 9 : 87);
-  doc.text(`Solde net à régler à réception : ${balanceDue.toLocaleString('fr-DZ')} DZD`, 105, tableEnd + 15);
+  doc.setTextColor(finalBalanceDue > 0 ? 180 : 4, finalBalanceDue > 0 ? 83 : 120, finalBalanceDue > 0 ? 9 : 87);
+  doc.text(`Solde final restant : ${finalBalanceDue.toLocaleString('fr-DZ')} DZD`, 95, currentY + 16);
 
   // 5. Legal Guarantee Terms Box
-  const termsY = tableEnd + 26;
+  currentY += 23;
   doc.setDrawColor(226, 232, 240);
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(14, termsY, 182, 21, 2, 2, 'FD');
+  doc.roundedRect(14, currentY, 182, 19, 2, 2, 'FD');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('3. Régime des Garanties Légales :', 20, termsY + 6);
+  doc.text('3. Régime des Garanties Légales :', 20, currentY + 5);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   doc.setTextColor(71, 85, 105);
-  doc.text('• Garantie de parfait achèvement (1 an) couvrant toute non-conformité signalée lors de l\'exploitation.', 20, termsY + 11);
-  doc.text('• Garantie biennale de bon fonctionnement (2 ans) sur la quincaillerie, galets, compas et accessoires.', 20, termsY + 15);
-  doc.text('• Garantie décennale (10 ans) relative à la solidité de fixation et l\'étanchéité à l\'eau du gros œuvre.', 20, termsY + 19);
+  doc.text('• Garantie de parfait achèvement (1 an) couvrant toute non-conformité signalée lors de l\'exploitation.', 20, currentY + 9.5);
+  doc.text('• Garantie biennale de bon fonctionnement (2 ans) sur la quincaillerie, galets, compas et accessoires.', 20, currentY + 13.5);
+  doc.text('• Garantie décennale (10 ans) relative à la solidité de fixation et l\'étanchéité à l\'eau du gros œuvre.', 20, currentY + 17);
 
   // 6. Signatures and Stamp Block
-  const signY = termsY + 25;
+  currentY += 22;
   const qrDataUrl = await QRCode.toDataURL(
     `https://web-two-tan-31.vercel.app/verify/pv?job=${params.jobId}&ref=${pvNumber}`,
     { width: 120, margin: 1 }
@@ -1651,33 +1712,49 @@ export async function generateInstallationAcceptancePdf(params: InstallationAcce
 
   doc.setDrawColor(203, 213, 225);
   doc.setFillColor(255, 255, 255);
-  doc.roundedRect(14, signY, 88, 30, 2, 2, 'FD');
-  doc.roundedRect(108, signY, 88, 30, 2, 2, 'FD');
+  doc.roundedRect(14, currentY, 88, 30, 2, 2, 'FD');
+  doc.roundedRect(108, currentY, 88, 30, 2, 2, 'FD');
 
+  // Client Signature Box
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('Le Maître d\'Ouvrage (Client) :', 20, signY + 6);
+  doc.text('Le Maître d\'Ouvrage (Client) :', 20, currentY + 5.5);
   doc.setFont('helvetica', 'italic');
-  doc.setFontSize(6.5);
+  doc.setFontSize(6);
   doc.setTextColor(100, 116, 139);
-  doc.text('« Lu et approuvé, bon pour réception des travaux »', 20, signY + 11);
-  doc.text(`Nom : ${params.clientName}`, 20, signY + 16);
-  doc.text(`Date : ${pvDate}`, 20, signY + 21);
+  doc.text('« Lu et approuvé, bon pour réception des travaux »', 20, currentY + 9.5);
+  doc.text(`Nom : ${params.clientName} • Date : ${pvDate}`, 20, currentY + 13.5);
 
+  if (params.clientSignatureDataUrl) {
+    try {
+      doc.addImage(params.clientSignatureDataUrl, 'PNG', 20, currentY + 14.5, 45, 13.5);
+    } catch {
+      // ignore
+    }
+  }
+
+  // Installer Signature Box
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(15, 23, 42);
-  doc.text('Pour l\'Entreprise (Baiti Atelier) :', 114, signY + 6);
+  doc.text('Pour l\'Entreprise (Baiti Atelier) :', 114, currentY + 5.5);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
+  doc.setFontSize(6);
   doc.setTextColor(100, 116, 139);
-  doc.text('Cachet de l\'Atelier & Signature du Conducteur :', 114, signY + 11);
-  doc.text('BAITI ATELIER ALGERIE', 114, signY + 16);
-  doc.text('Validé conforme aux règles de l\'art', 114, signY + 21);
+  doc.text('Cachet de l\'Atelier & Signature du Poseur :', 114, currentY + 9.5);
+  doc.text('BAITI ATELIER ALGERIE • Conforme DTU 36.5', 114, currentY + 13.5);
+
+  if (params.installerSignatureDataUrl) {
+    try {
+      doc.addImage(params.installerSignatureDataUrl, 'PNG', 114, currentY + 14.5, 45, 13.5);
+    } catch {
+      // ignore
+    }
+  }
 
   // QR Code embedded inside stamp area
-  doc.addImage(qrDataUrl, 'PNG', 166, signY + 10, 18, 18);
+  doc.addImage(qrDataUrl, 'PNG', 170, currentY + 8, 20, 20);
 
   // Footer Note
   doc.setFont('helvetica', 'italic');
