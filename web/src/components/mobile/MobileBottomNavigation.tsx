@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Sparkles,
+  Box,
   Grid,
   Scissors,
   FileText,
@@ -59,7 +59,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
           onClick={() => scrollToSection('configurator')}
           className="flex flex-col items-center justify-center py-1.5 px-2 rounded-xl text-[10px] font-mono transition-colors min-w-[56px] min-h-[44px] cursor-pointer hover:text-[#D4AF37]"
         >
-          <Sparkles className="w-4 h-4 mb-0.5 text-[#D4AF37]" />
+          <Box className="w-4 h-4 mb-0.5 text-[#D4AF37]" />
           <span>{language === 'ar' ? 'ثلاثي الأبعاد' : '3D'}</span>
         </button>
 

@@ -9,7 +9,7 @@ import {
   Rotate3d,
   Layers,
   Expand,
-  Sparkles,
+  Compass,
   Scissors,
   ArrowLeftRight,
   Tag,
@@ -108,8 +108,8 @@ export const WindowCanvas: React.FC = () => {
                 : 'bg-black/50 border-white/10 text-zinc-300'
             }`}
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            3D Studio WebGL
+            <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+            Vue 3D Châssis
           </span>
           <span
             className={`hidden sm:inline-block px-3 py-1 rounded-full border text-xs font-mono backdrop-blur-md ${
@@ -186,7 +186,7 @@ export const WindowCanvas: React.FC = () => {
                 : 'text-zinc-300 hover:text-white hover:bg-white/5'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Compass className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{openLabel}</span>
           </button>
 

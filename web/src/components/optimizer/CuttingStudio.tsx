@@ -8,7 +8,7 @@ import {
   Scissors,
   Grid,
   Layers,
-  Sparkles,
+  Download,
   ZoomIn,
   ZoomOut,
   Plus,
@@ -384,7 +384,7 @@ export const CuttingStudio: React.FC = () => {
                     : 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-200'
                 }`}
               >
-                <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <Download className="w-3.5 h-3.5 text-[#D4AF37]" />
                 <span>{t.importCurrentWindow}</span>
               </button>
             </div>

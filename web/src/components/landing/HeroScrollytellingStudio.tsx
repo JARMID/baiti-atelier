@@ -5,6 +5,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import { useScroll } from 'framer-motion';
 import { useConfigStore } from '../../store/configStore';
+import { useDeviceType } from '../../hooks/useDeviceType';
 import type { TradeCategory } from '../../types/trades';
 import type { FinishColor } from '../../types/window';
 import { Hero3DWorkpiece, type WindowModelType } from '../3d/Hero3DWorkpiece';
@@ -32,39 +33,42 @@ interface CameraRigProps {
   scrollProgress: number;
   mouseOffset: { x: number; y: number };
   is360Active: boolean;
+  isMobile: boolean;
 }
 
-const CameraRig: React.FC<CameraRigProps> = ({ scrollProgress, mouseOffset, is360Active }) => {
+const CameraRig: React.FC<CameraRigProps> = ({ scrollProgress, mouseOffset, is360Active, isMobile }) => {
   useFrame(({ camera }) => {
     if (is360Active) return;
 
+    const baseZ = isMobile ? 4.4 : 3.6;
+
     // Stage 1 (0.0 - 0.35): Overview perspective
     let targetX = 0;
-    let targetY = 0.05;
-    let targetZ = 3.6;
+    let targetY = isMobile ? 0.08 : 0.05;
+    let targetZ = baseZ;
     let lookX = 0;
     let lookY = 0;
 
     if (scrollProgress >= 0.35 && scrollProgress < 0.7) {
       // Stage 2: Technical zoom on profile & interior assembly
       const t = (scrollProgress - 0.35) / 0.35;
-      targetX = THREE.MathUtils.lerp(0, 0.45, t);
-      targetY = THREE.MathUtils.lerp(0.05, 0.2, t);
-      targetZ = THREE.MathUtils.lerp(3.6, 2.2, t);
-      lookX = THREE.MathUtils.lerp(0, 0.25, t);
+      targetX = isMobile ? 0 : THREE.MathUtils.lerp(0, 0.45, t);
+      targetY = THREE.MathUtils.lerp(targetY, 0.2, t);
+      targetZ = THREE.MathUtils.lerp(baseZ, isMobile ? 2.9 : 2.2, t);
+      lookX = isMobile ? 0 : THREE.MathUtils.lerp(0, 0.25, t);
       lookY = THREE.MathUtils.lerp(0, 0.1, t);
     } else if (scrollProgress >= 0.7) {
       // Stage 3: Dynamic cinematic multi-angle inspection view
       const t = (scrollProgress - 0.7) / 0.3;
-      targetX = THREE.MathUtils.lerp(0.45, 0, t);
+      targetX = isMobile ? 0 : THREE.MathUtils.lerp(0.45, 0, t);
       targetY = THREE.MathUtils.lerp(0.2, 0.1, t);
-      targetZ = THREE.MathUtils.lerp(2.2, 3.2, t);
+      targetZ = THREE.MathUtils.lerp(isMobile ? 2.9 : 2.2, isMobile ? 4.1 : 3.2, t);
       lookX = 0;
       lookY = 0;
     }
 
-    const mouseX = mouseOffset.x * 0.14;
-    const mouseY = mouseOffset.y * 0.1;
+    const mouseX = mouseOffset.x * (isMobile ? 0.06 : 0.14);
+    const mouseY = mouseOffset.y * (isMobile ? 0.05 : 0.1);
 
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX + mouseX, 0.08);
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY + mouseY, 0.08);
@@ -83,6 +87,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
   const orbitRef = useRef<OrbitControlsImpl | null>(null);
 
   const { language, config, setFinishColor, theme } = useConfigStore();
+  const { isMobile } = useDeviceType();
   const isLight = theme === 'light';
   const isRtl = language === 'ar';
 
@@ -185,7 +190,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-[260vh] select-none transition-colors duration-300 ${
+      className={`relative w-full h-[200vh] md:h-[260vh] select-none transition-colors duration-300 ${
         isLight ? 'bg-[#F8FAFC] text-slate-900' : 'bg-[#06080C] text-white'
       }`}
       onMouseMove={handleMouseMove}
@@ -260,6 +265,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
               scrollProgress={scrollVal}
               mouseOffset={mouseOffset}
               is360Active={is360Active || isStage3}
+              isMobile={isMobile}
             />
 
             {(is360Active || isStage3) && (
@@ -433,7 +439,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
 
         {/* BOTTOM METRIC HUD TAPE */}
         <div
-          className={`absolute bottom-20 sm:bottom-24 left-0 right-0 z-20 flex items-center justify-between px-4 sm:px-8 text-[11px] font-mono pointer-events-none transition-colors ${
+          className={`absolute bottom-44 sm:bottom-24 left-0 right-0 z-20 hidden sm:flex items-center justify-between px-4 sm:px-8 text-[11px] font-mono pointer-events-none transition-colors ${
             isLight ? 'text-slate-500' : 'text-zinc-500'
           }`}
         >
@@ -453,7 +459,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
         </div>
 
         {/* FLOATING LUXURY CUSTOMIZER DOCK */}
-        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-full max-w-[96vw] sm:max-w-max flex justify-center">
+        <div className="absolute bottom-28 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-full max-w-[96vw] sm:max-w-max flex justify-center">
           <div
             className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full border backdrop-blur-2xl transition-colors shadow-2xl overflow-x-auto no-scrollbar max-w-full whitespace-nowrap scroll-smooth ${
               isLight

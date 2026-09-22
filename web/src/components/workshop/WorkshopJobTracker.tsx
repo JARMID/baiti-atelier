@@ -24,7 +24,7 @@ import {
   Search,
   CheckCircle2,
   X,
-  Sparkles,
+  Download,
 } from 'lucide-react';
 
 export const WorkshopJobTracker: React.FC = () => {
@@ -520,7 +520,7 @@ export const WorkshopJobTracker: React.FC = () => {
             {/* Quick Action: Pre-fill from 3D Config */}
             <div className="my-4 p-3 rounded-2xl bg-[#D4AF37]/10 border border-[#D4AF37]/20 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs">
-                <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                <Download className="w-4 h-4 text-[#D4AF37] shrink-0" />
                 <span>Importer dimensions & chiffrage du configurateur 3D actuel ({config.width} × {config.height} mm)</span>
               </div>
               <button

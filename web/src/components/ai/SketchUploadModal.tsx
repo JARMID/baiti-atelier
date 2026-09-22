@@ -5,7 +5,6 @@ import { getTranslation } from '../../utils/i18n';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
 import {
   Camera,
-  Sparkles,
   CheckCircle2,
   X,
   Loader2,
@@ -91,10 +90,10 @@ export const SketchUploadModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   const analyzingText =
     language === 'ar'
-      ? 'جاري تحليل الصورة بالذكاء الاصطناعي...'
+      ? 'جاري قراءة وتحديد أبعاد المخطط...'
       : language === 'en'
-      ? 'Analyzing image via vision engine...'
-      : 'Analyse par vision en cours...';
+      ? 'Analyzing image dimensions...'
+      : 'Analyse et détection des cotes...';
 
   const extractActionText =
     language === 'ar'
@@ -142,7 +141,7 @@ export const SketchUploadModal: React.FC<Props> = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-[#D4AF37]/20 border border-[#D4AF37]/30 flex items-center justify-center text-[#D4AF37] shrink-0">
-              <Sparkles className="w-5 h-5" />
+              <Camera className="w-5 h-5" />
             </div>
             <div>
               <h3 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
@@ -237,7 +236,7 @@ export const SketchUploadModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
+                    <Camera className="w-4 h-4" />
                     <span>{extractActionText}</span>
                   </>
                 )}

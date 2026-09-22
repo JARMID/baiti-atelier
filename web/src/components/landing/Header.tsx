@@ -4,7 +4,7 @@ import { getTranslation } from '../../utils/i18n';
 import {
   Hammer,
   MapPin,
-  Sparkles,
+  Camera,
   HardDrive,
   Sun,
   Moon,
@@ -338,7 +338,7 @@ export const Header: React.FC<HeaderProps> = ({
           {deferredPrompt && (
             <button
               onClick={handleInstallPwa}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-mono font-bold hover:brightness-110 cursor-pointer btn-press animate-pulse"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-mono font-bold hover:brightness-110 cursor-pointer btn-press"
               title="Installer Baiti Atelier sur cet appareil (PWA hors-ligne)"
             >
               <Smartphone className="w-3.5 h-3.5" />
@@ -386,7 +386,7 @@ export const Header: React.FC<HeaderProps> = ({
                         : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
                     }`}
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
                     <span>{isOnline ? 'En Ligne' : 'Hors-Ligne'}</span>
                   </div>
                 </div>
@@ -419,10 +419,10 @@ export const Header: React.FC<HeaderProps> = ({
                       className="flex items-center justify-between p-2 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left"
                     >
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+                        <Camera className="w-4 h-4 text-[#D4AF37]" />
                         <span>Scanner Croquis & Cotes</span>
                       </div>
-                      <span className="text-[10px] font-mono text-zinc-500">IA Vision</span>
+                      <span className="text-[10px] font-mono text-zinc-500">Relevé Photo</span>
                     </button>
                   )}
                 </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Sparkles, Scale, Wrench } from 'lucide-react';
+import { Layers, Boxes, Scale, Wrench } from 'lucide-react';
 import { useConfigStore } from '../../store/configStore';
 import { playTactileClick } from '../../utils/audioFeedback';
 
@@ -68,7 +68,7 @@ export const MethodologySection: React.FC = () => {
     },
     {
       num: 3,
-      icon: Sparkles,
+      icon: Boxes,
       iconColor: 'text-amber-500',
       iconBg: 'bg-amber-500/10 border-amber-500/20',
       title:

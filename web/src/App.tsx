@@ -28,7 +28,7 @@ import { isTauriDesktop } from './services/desktopBridge';
 import { useConfigStore } from './store/configStore';
 import { getTranslation } from './utils/i18n';
 import { Footer } from './components/landing/Footer';
-import { Scissors, Layers, CheckCircle2, Sparkles, Building2 } from 'lucide-react';
+import { Camera, AppWindow, Building2, CheckCircle2, Layers, Scissors } from 'lucide-react';
 import { playTactileClick, playSwitchSound } from './utils/audioFeedback';
 import './App.css';
 
@@ -190,7 +190,7 @@ export function App() {
                           : 'bg-white/5 hover:bg-white/10 border-[#C5A880]/30 text-zinc-200'
                       }`}
                     >
-                      <Sparkles className="w-4 h-4 text-[#C5A880] group-hover:rotate-12 transition-transform" />
+                      <Camera className="w-4 h-4 text-[#C5A880]" />
                       <span>{t.sketchPrompt}</span>
                       <span className="text-[#D4AF37] font-bold underline ml-1">{t.sketchScanLink}</span>
                     </button>
@@ -217,7 +217,7 @@ export function App() {
                             : 'text-zinc-400 hover:text-white'
                         }`}
                       >
-                        <Sparkles className="w-3.5 h-3.5" />
+                        <AppWindow className="w-3.5 h-3.5" />
                         <span>{t.singleWindow}</span>
                       </button>
                       <button

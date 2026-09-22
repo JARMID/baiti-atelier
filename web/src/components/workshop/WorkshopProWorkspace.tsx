@@ -20,7 +20,7 @@ import {
   TrendingUp,
   HardDrive,
   Printer,
-  Sparkles,
+  Camera,
   Sun,
   Moon,
   Volume2,
@@ -273,10 +273,10 @@ export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
                 ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
                 : 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300'
             }`}
-            title="Scanner un croquis chantier avec l'IA"
+            title="Relever un croquis ou des cotes chantier"
           >
-            <Sparkles className="w-4 h-4 text-[#D4AF37]" />
-            <span className="hidden xl:inline font-mono text-[11px]">Scanner Croquis</span>
+            <Camera className="w-4 h-4 text-[#D4AF37]" />
+            <span className="hidden xl:inline font-mono text-[11px]">Relevé Croquis</span>
           </button>
 
           {/* Quotes Disk */}

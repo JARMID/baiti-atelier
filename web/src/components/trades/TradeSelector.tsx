@@ -1,6 +1,6 @@
 import React from 'react';
 import type { TradeCategory } from '../../types/trades';
-import { Layers, Axe, ShieldAlert, Sparkles } from 'lucide-react';
+import { Layers, Axe, ShieldAlert, Palette } from 'lucide-react';
 import { useConfigStore } from '../../store/configStore';
 import { getTranslation } from '../../utils/i18n';
 import { playSwitchSound } from '../../utils/audioFeedback';
@@ -66,7 +66,7 @@ export const TradeSelector: React.FC<TradeSelectorProps> = ({
           : language === 'en'
           ? 'Custom Couches, Curtains & Drapery'
           : 'Rideaux, Salons & Voilages',
-      icon: <Sparkles className="w-4 h-4" />,
+      icon: <Palette className="w-4 h-4" />,
     },
   ];
 
@@ -146,7 +146,7 @@ export const TradeSelector: React.FC<TradeSelectorProps> = ({
                   {item.icon}
                 </div>
                 {isSelected && (
-                  <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
                 )}
               </div>
               <div>

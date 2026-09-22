@@ -15,7 +15,7 @@ import {
   Layers,
   Axe,
   ShieldAlert,
-  Sparkles,
+  Palette,
 } from 'lucide-react';
 import { playTactileClick, playClampSound, playSwitchSound } from '../../utils/audioFeedback';
 
@@ -242,7 +242,7 @@ export const ProductsShowcase: React.FC = () => {
     {
       id: 'tapestry',
       label: language === 'ar' ? 'تنجيد وستائر' : language === 'en' ? 'Upholstery & Drapery' : 'Tapisserie & Rideaux',
-      icon: <Sparkles className="w-3.5 h-3.5" />,
+      icon: <Palette className="w-3.5 h-3.5" />,
     },
   ];
 

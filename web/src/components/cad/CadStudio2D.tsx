@@ -30,7 +30,7 @@ import {
   ScanLine,
   FileText,
   Compass,
-  Sparkles,
+  LayoutTemplate,
 } from 'lucide-react';
 import { CuttingAssemblyTerminal } from '../optimizer/CuttingAssemblyTerminal';
 import { ProfileCrossSectionViewer } from './ProfileCrossSectionViewer';
@@ -568,7 +568,7 @@ export const CadStudio2D: React.FC = () => {
             {/* Quick Architectural Templates Strip */}
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs font-mono">
               <span className={`text-[11px] font-medium shrink-0 flex items-center gap-1 ${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'}`}>
-                <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <LayoutTemplate className="w-3.5 h-3.5 text-[#D4AF37]" />
                 <span>Gabarits :</span>
               </span>
               {cadPresets.map((pr) => (
