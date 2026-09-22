@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SmoothScrollProvider } from './components/layout/SmoothScrollProvider';
 import { Header } from './components/landing/Header';
 import { HeroScrollytellingStudio } from './components/landing/HeroScrollytellingStudio';
@@ -54,6 +54,18 @@ export function App() {
     }
     return false;
   });
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== 'undefined' && localStorage.getItem('baiti_mobile_mode') === null) {
+        const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        const shouldBeMobile = window.innerWidth < 768 || (isTouch && window.innerWidth <= 1024);
+        setIsMobileMode(shouldBeMobile);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleToggleMobileMode = (val?: boolean) => {
     setIsMobileMode((prev) => {

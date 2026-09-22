@@ -369,37 +369,37 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
 
         <div className="grid grid-cols-2 gap-2 text-xs font-mono">
           <div>
-            <label className="text-[10px] text-zinc-500 block mb-1">Nom du Client</label>
+            <label className={`text-[10px] block mb-1 ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-500'}`}>Nom du Client</label>
             <input
               type="text"
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
               className={`w-full p-2 rounded-xl border ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/10 text-white'
+                isLight ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-black/30 border-white/10 text-white'
               }`}
             />
           </div>
 
           <div>
-            <label className="text-[10px] text-zinc-500 block mb-1">Téléphone</label>
+            <label className={`text-[10px] block mb-1 ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-500'}`}>Téléphone</label>
             <input
               type="text"
               value={clientPhone}
               onChange={(e) => setClientPhone(e.target.value)}
               className={`w-full p-2 rounded-xl border ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/10 text-white'
+                isLight ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-black/30 border-white/10 text-white'
               }`}
             />
           </div>
 
           <div className="col-span-2">
-            <label className="text-[10px] text-zinc-500 block mb-1">Intitulé / Adresse Chantier</label>
+            <label className={`text-[10px] block mb-1 ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-500'}`}>Intitulé / Adresse Chantier</label>
             <input
               type="text"
               value={projectSite}
               onChange={(e) => setProjectSite(e.target.value)}
               className={`w-full p-2 rounded-xl border ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/10 text-white'
+                isLight ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-black/30 border-white/10 text-white'
               }`}
             />
           </div>
@@ -500,19 +500,19 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
               <div className="space-y-0.5">
                 <div className="font-bold flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-                  <span className={isLight ? 'text-slate-900' : 'text-white'}>{op.roomName}</span>
+                  <span className={isLight ? 'text-slate-900 font-bold' : 'text-white'}>{op.roomName}</span>
                 </div>
-                <div className="text-[10px] text-zinc-400 pl-3">
+                <div className={`text-[10px] pl-3 ${isLight ? 'text-slate-700 font-medium' : 'text-zinc-400'}`}>
                   {op.width} × {op.height} mm
                   <span className="text-[#D4AF37] ml-1 font-semibold">
                     (Allège : {op.allegeMm !== undefined ? op.allegeMm : (op.height > 2000 ? 0 : 900)} mm)
                   </span>
                   {' • Qté : '}{op.quantity}
                 </div>
-                <div className="text-[9px] text-zinc-500 pl-3">
+                <div className={`text-[9px] pl-3 ${isLight ? 'text-slate-600' : 'text-zinc-500'}`}>
                   {formatOpeningTypeFr(op.openingType)} • {formatProfileSystemFr(op.profileSystem)}
                 </div>
-                <div className="text-[9px] text-zinc-500 pl-3">
+                <div className={`text-[9px] pl-3 ${isLight ? 'text-slate-600' : 'text-zinc-500'}`}>
                   {formatGlassTypeFr(op.glassType)} • {formatShutterTypeFr(op.shutterType)}
                 </div>
               </div>
@@ -594,7 +594,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
             />
 
             <div className="col-span-6">
-              <label className="text-[9px] text-zinc-500 block mb-0.5">Type Ouverture</label>
+              <label className={`text-[9px] block mb-0.5 ${isLight ? 'text-slate-700 font-medium' : 'text-zinc-500'}`}>Type Ouverture</label>
               <select
                 value={newOpeningType}
                 onChange={(e) => setNewOpeningType(e.target.value as OpeningType)}
@@ -612,7 +612,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
             </div>
 
             <div className="col-span-6">
-              <label className="text-[9px] text-zinc-500 block mb-0.5">Profilé</label>
+              <label className={`text-[9px] block mb-0.5 ${isLight ? 'text-slate-700 font-medium' : 'text-zinc-500'}`}>Profilé</label>
               <select
                 value={newProfile}
                 onChange={(e) => setNewProfile(e.target.value as ProfileSystem)}
@@ -629,7 +629,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
 
             {/* Width */}
             <div className="col-span-6 sm:col-span-3">
-              <div className="flex items-center justify-between text-[9px] text-zinc-500 mb-0.5">
+              <div className={`flex items-center justify-between text-[9px] mb-0.5 ${isLight ? 'text-slate-700 font-medium' : 'text-zinc-500'}`}>
                 <span>Largeur (mm)</span>
                 <div className="flex gap-1">
                   <button
@@ -661,7 +661,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
 
             {/* Height */}
             <div className="col-span-6 sm:col-span-3">
-              <div className="flex items-center justify-between text-[9px] text-zinc-500 mb-0.5">
+              <div className={`flex items-center justify-between text-[9px] mb-0.5 ${isLight ? 'text-slate-700 font-medium' : 'text-zinc-500'}`}>
                 <span>Hauteur (mm)</span>
                 <div className="flex gap-1">
                   <button
@@ -693,7 +693,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
 
             {/* Allège (Cill Height) */}
             <div className="col-span-6 sm:col-span-3">
-              <div className="flex items-center justify-between text-[9px] text-zinc-500 mb-0.5">
+              <div className={`flex items-center justify-between text-[9px] mb-0.5 ${isLight ? 'text-slate-700 font-medium' : 'text-zinc-500'}`}>
                 <span>Allège (mm)</span>
                 <div className="flex gap-1">
                   <button
@@ -735,7 +735,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
 
             {/* Quantity */}
             <div className="col-span-6 sm:col-span-3">
-              <label className="text-[9px] text-zinc-500 block mb-0.5">Quantité</label>
+              <label className={`text-[9px] block mb-0.5 ${isLight ? 'text-slate-700 font-medium' : 'text-zinc-500'}`}>Quantité</label>
               <input
                 type="number"
                 placeholder="1"
@@ -749,7 +749,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
             </div>
 
             <div className="col-span-6">
-              <label className="text-[9px] text-zinc-500 block mb-0.5">Vitrage</label>
+              <label className={`text-[9px] block mb-0.5 ${isLight ? 'text-slate-700 font-medium' : 'text-zinc-500'}`}>Vitrage</label>
               <select
                 value={newGlass}
                 onChange={(e) => setNewGlass(e.target.value as GlassType)}
@@ -765,7 +765,7 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
             </div>
 
             <div className="col-span-6">
-              <label className="text-[9px] text-zinc-500 block mb-0.5">Volet Roulant</label>
+              <label className={`text-[9px] block mb-0.5 ${isLight ? 'text-slate-700 font-medium' : 'text-zinc-500'}`}>Volet Roulant</label>
               <select
                 value={newShutter}
                 onChange={(e) => setNewShutter(e.target.value as ShutterType)}
