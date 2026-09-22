@@ -23,6 +23,8 @@ import { SketchUploadModal } from './components/ai/SketchUploadModal';
 import { OfflineQuotesModal } from './components/offline/OfflineQuotesModal';
 import { MaterialMarketModal } from './components/materials/MaterialMarketModal';
 import { WorkshopProWorkspace } from './components/workshop/WorkshopProWorkspace';
+import { MobileBottomNavigation } from './components/mobile/MobileBottomNavigation';
+import { MobilePriceStickyBar } from './components/mobile/MobilePriceStickyBar';
 import { isTauriDesktop } from './services/desktopBridge';
 import { useConfigStore } from './store/configStore';
 import { getTranslation } from './utils/i18n';
@@ -32,7 +34,7 @@ import { playTactileClick, playSwitchSound } from './utils/audioFeedback';
 import './App.css';
 
 export function App() {
-  const { language, theme, isMaterialMarketOpen, setMaterialMarketOpen } = useConfigStore();
+  const { language, theme, isMaterialMarketOpen, setMaterialMarketOpen, setQuoteModalOpen } = useConfigStore();
   const t = getTranslation(language);
   const isLight = theme === 'light';
   const [isSketchModalOpen, setIsSketchModalOpen] = useState(false);
@@ -95,6 +97,13 @@ export function App() {
         <MaterialMarketModal
           isOpen={isMaterialMarketOpen}
           onClose={() => setMaterialMarketOpen(false)}
+        />
+
+        {/* Mobile Bottom Thumb Dock for Phone & Tablet */}
+        <MobileBottomNavigation
+          isWorkshopMode={isWorkshopMode}
+          onToggleWorkshopMode={handleToggleWorkshopMode}
+          onOpenOfflineQuotes={() => setIsOfflineModalOpen(true)}
         />
       </div>
     );
@@ -371,6 +380,18 @@ export function App() {
 
         {/* Footer */}
         <Footer />
+
+        {/* Mobile Sticky Price & Fast Quote Bar (Phone only) */}
+        <MobilePriceStickyBar
+          onOpenQuoteModal={() => setQuoteModalOpen(true)}
+        />
+
+        {/* Mobile Bottom Thumb Dock for Phone & Tablet */}
+        <MobileBottomNavigation
+          isWorkshopMode={isWorkshopMode}
+          onToggleWorkshopMode={handleToggleWorkshopMode}
+          onOpenOfflineQuotes={() => setIsOfflineModalOpen(true)}
+        />
       </div>
     </SmoothScrollProvider>
   );
