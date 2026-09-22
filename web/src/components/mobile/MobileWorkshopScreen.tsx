@@ -34,6 +34,7 @@ import {
   Recycle,
   CreditCard,
   Truck,
+  Wrench,
 } from 'lucide-react';
 import { playTactileClick, playClampSound, playSwitchSound } from '../../utils/audioFeedback';
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
@@ -44,6 +45,8 @@ import { BladeMaintenanceModal } from './BladeMaintenanceModal';
 import { OffcutScrapBinModal } from './OffcutScrapBinModal';
 import { BaridiMobReconciliationModal } from './BaridiMobReconciliationModal';
 import { SiteDeliveryManifestModal } from './SiteDeliveryManifestModal';
+import { MachineMaintenanceModal } from './MachineMaintenanceModal';
+import { getWorkshopMachines, type WorkshopMachine } from '../../utils/machineMaintenanceManager';
 import { getJobQualityInspection, computeQualityScore } from '../../utils/qualityControlManager';
 import { getJobInstallationAcceptance } from '../../utils/installationAcceptanceManager';
 import { getScrapBins, type ScrapBin } from '../../utils/workshopScrapManager';
@@ -345,6 +348,14 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
 
   const primaryBlade = sawBlades[0];
   const primaryBladeTelemetry = primaryBlade ? getBladeWearTelemetry(primaryBlade) : null;
+
+  // Machine Maintenance state
+  const [isMachineModalOpen, setIsMachineModalOpen] = useState<boolean>(false);
+  const [machinesList, setMachinesList] = useState<WorkshopMachine[]>(() => getWorkshopMachines());
+
+  const fleetOverdueCount = useMemo(() => {
+    return machinesList.reduce((sum, m) => sum + m.tasks.filter((t) => t.isOverdue).length, 0);
+  }, [machinesList]);
 
   // Offcuts & Scrap Bins state
   const [isOffcutModalOpen, setIsOffcutModalOpen] = useState<boolean>(false);
@@ -1163,6 +1174,23 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
         >
           <Disc className="w-4 h-4 shrink-0" />
           <span>Lames Scie ({primaryBladeTelemetry?.wearPercent ?? 71}%)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsMachineModalOpen(true);
+          }}
+          className={`w-full py-2.5 px-2 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] active:scale-98 transition-all shadow-xs ${
+            fleetOverdueCount > 0
+              ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 hover:bg-amber-500/25'
+              : 'bg-sky-500/15 border-sky-500/40 text-sky-400 hover:bg-sky-500/25'
+          }`}
+          title="Maintenance préventive, lubrification et purges du parc machines"
+        >
+          <Wrench className="w-4 h-4 shrink-0" />
+          <span>Machines ({fleetOverdueCount > 0 ? `⚠️ ${fleetOverdueCount}` : 'OK'})</span>
         </button>
 
         <button
@@ -2020,6 +2048,15 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
             setScrapBinsSummary(getScrapBins());
             setOffcutsCount(getOffcutInventory().length);
           }}
+        />
+      )}
+
+      {/* Workshop Machine Fleet Maintenance Modal */}
+      {isMachineModalOpen && (
+        <MachineMaintenanceModal
+          isOpen={isMachineModalOpen}
+          onClose={() => setIsMachineModalOpen(false)}
+          onMachinesUpdated={(updated) => setMachinesList([...updated])}
         />
       )}
 
