@@ -19,6 +19,7 @@ import {
   Grid,
   Layers,
   Download,
+  Smartphone,
 } from 'lucide-react';
 import {
   isSoundEnabled,
@@ -58,6 +59,7 @@ export const Header: React.FC<HeaderProps> = ({
   );
   const [isToolboxOpen, setIsToolboxOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const toolboxRef = useRef<HTMLDivElement>(null);
 
   const handleToggleSound = () => {
@@ -78,13 +80,31 @@ export const Header: React.FC<HeaderProps> = ({
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
     };
   }, []);
+
+  const handleInstallPwa = async () => {
+    if (!deferredPrompt) return;
+    playTactileClick();
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    if (choice?.outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
 
   // Close toolbox popover on outside click
   useEffect(() => {
@@ -313,6 +333,18 @@ export const Header: React.FC<HeaderProps> = ({
             <Download className="w-3.5 h-3.5 text-[#D4AF37]" />
             <span>App Desktop</span>
           </a>
+
+          {/* PWA Install Button (Promptable) */}
+          {deferredPrompt && (
+            <button
+              onClick={handleInstallPwa}
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-mono font-bold hover:brightness-110 cursor-pointer btn-press animate-pulse"
+              title="Installer Baiti Atelier sur cet appareil (PWA hors-ligne)"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Installer PWA</span>
+            </button>
+          )}
 
           {/* Artisan Toolbox Dropdown (Local Quotes & AI Scanner) */}
           <div className="relative" ref={toolboxRef}>
@@ -557,6 +589,19 @@ export const Header: React.FC<HeaderProps> = ({
                   <span>Carnet Devis Hors-Ligne</span>
                 </div>
                 <span className="text-[10px] text-zinc-500">Local</span>
+              </button>
+            )}
+
+            {deferredPrompt && (
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleInstallPwa();
+                }}
+                className="flex items-center justify-center gap-2 p-2.5 min-h-[44px] rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold cursor-pointer"
+              >
+                <Smartphone className="w-4 h-4" />
+                <span>Installer l'App Baiti Atelier (PWA)</span>
               </button>
             )}
 

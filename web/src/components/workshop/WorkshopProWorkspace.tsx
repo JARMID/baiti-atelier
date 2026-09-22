@@ -161,9 +161,9 @@ export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
           </div>
         </div>
 
-        {/* Center: Primary Tab Switcher */}
+        {/* Center: Primary Tab Switcher (Desktop >= lg) */}
         <nav
-          className={`flex items-center gap-1 p-1 rounded-2xl border text-xs font-mono overflow-x-auto no-scrollbar max-w-full ${
+          className={`hidden lg:flex items-center gap-1 p-1 rounded-2xl border text-xs font-mono overflow-x-auto no-scrollbar max-w-full ${
             isLight
               ? 'bg-slate-100 border-slate-200 text-slate-700'
               : 'bg-white/5 border-white/10 text-zinc-400'
@@ -362,6 +362,98 @@ export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
           </button>
         </div>
       </header>
+
+      {/* MOBILE / TABLET TAB STRIP (< lg) */}
+      <div
+        className={`lg:hidden px-3 py-2 border-b backdrop-blur-xl flex items-center gap-1.5 overflow-x-auto no-scrollbar font-mono text-xs ${
+          isLight ? 'bg-white/95 border-slate-200 shadow-xs' : 'bg-[#090C14]/95 border-white/10'
+        }`}
+      >
+        <button
+          onClick={() => {
+            playTactileClick();
+            setActiveTab('cad');
+          }}
+          className={`px-3.5 py-2 min-h-[44px] rounded-xl flex items-center gap-1.5 transition-all cursor-pointer font-bold shrink-0 ${
+            activeTab === 'cad'
+              ? 'bg-[#D4AF37] text-slate-950 shadow-sm'
+              : isLight
+              ? 'bg-slate-100 text-slate-700'
+              : 'bg-white/5 text-zinc-300'
+          }`}
+        >
+          <Grid className="w-4 h-4" />
+          <span>CAO 2D</span>
+        </button>
+
+        <button
+          onClick={() => {
+            playTactileClick();
+            setActiveTab('optimizer');
+          }}
+          className={`px-3.5 py-2 min-h-[44px] rounded-xl flex items-center gap-1.5 transition-all cursor-pointer font-bold shrink-0 ${
+            activeTab === 'optimizer'
+              ? 'bg-[#D4AF37] text-slate-950 shadow-sm'
+              : isLight
+              ? 'bg-slate-100 text-slate-700'
+              : 'bg-white/5 text-zinc-300'
+          }`}
+        >
+          <Scissors className="w-4 h-4" />
+          <span>Débit 1D/2D</span>
+        </button>
+
+        <button
+          onClick={() => {
+            playTactileClick();
+            setActiveTab('terminal');
+          }}
+          className={`px-3.5 py-2 min-h-[44px] rounded-xl flex items-center gap-1.5 transition-all cursor-pointer font-bold shrink-0 ${
+            activeTab === 'terminal'
+              ? 'bg-[#D4AF37] text-slate-950 shadow-sm'
+              : isLight
+              ? 'bg-slate-100 text-slate-700'
+              : 'bg-white/5 text-zinc-300'
+          }`}
+        >
+          <HardDrive className="w-4 h-4" />
+          <span>Terminal Scie</span>
+        </button>
+
+        <button
+          onClick={() => {
+            playTactileClick();
+            setActiveTab('tracking');
+          }}
+          className={`px-3.5 py-2 min-h-[44px] rounded-xl flex items-center gap-1.5 transition-all cursor-pointer font-bold shrink-0 ${
+            activeTab === 'tracking'
+              ? 'bg-[#D4AF37] text-slate-950 shadow-sm'
+              : isLight
+              ? 'bg-slate-100 text-slate-700'
+              : 'bg-white/5 text-zinc-300'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>Suivi Fabrication</span>
+        </button>
+
+        <button
+          onClick={() => {
+            playTactileClick();
+            setActiveTab('settings');
+          }}
+          className={`px-3.5 py-2 min-h-[44px] rounded-xl flex items-center gap-1.5 transition-all cursor-pointer font-bold shrink-0 ${
+            activeTab === 'settings'
+              ? 'bg-[#D4AF37] text-slate-950 shadow-sm'
+              : isLight
+              ? 'bg-slate-100 text-slate-700'
+              : 'bg-white/5 text-zinc-300'
+          }`}
+        >
+          <Sliders className="w-4 h-4" />
+          <span>Marge & Coûts</span>
+        </button>
+      </div>
 
       {/* WORKSPACE STATUS TICKER */}
       <div
