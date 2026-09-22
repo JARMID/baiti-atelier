@@ -9,8 +9,11 @@ import {
   Download,
   MessageCircle,
   FileDown,
+  ScanLine,
 } from 'lucide-react';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
+import { CuttingAssemblyTerminal } from '../optimizer/CuttingAssemblyTerminal';
+import { computeDetailedBOM } from '../../utils/cadEngine';
 
 export const MobileCuttingScreen: React.FC = () => {
   const { config, language, theme } = useConfigStore();
@@ -61,6 +64,20 @@ export const MobileCuttingScreen: React.FC = () => {
   const [newQty, setNewQty] = useState(2);
   const [newLabel, setNewLabel] = useState('Nouvelle Pièce');
   const [kerfMm, setKerfMm] = useState<number>(3.0);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+
+  const currentBom = useMemo(() => {
+    return computeDetailedBOM(
+      {
+        width: config.width,
+        height: config.height,
+        verticalDividers: [Math.round(config.width / 2)],
+        horizontalDividers: [],
+        cellTypes: { '0-0': 'sash_slide', '0-1': 'sash_slide' },
+      },
+      config
+    );
+  }, [config]);
 
   // Compute 1D optimization
   const optimizationResult: LinearOptimizationResult = useMemo(() => {
@@ -289,22 +306,36 @@ export const MobileCuttingScreen: React.FC = () => {
         </div>
 
         {/* Export & Action Buttons */}
-        <div className="pt-1 grid grid-cols-2 gap-2">
+        <div className="pt-1 space-y-2">
           <button
-            onClick={handleShareWhatsAppCutSheet}
-            className="w-full py-2.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:bg-emerald-500/20 active:scale-98 transition-all"
+            type="button"
+            onClick={() => {
+              playClampSound();
+              setIsTerminalOpen(true);
+            }}
+            className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-[#C5A880] to-[#D4AF37] text-slate-950 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[46px] hover:brightness-110 active:scale-98 transition-all shadow-md"
           >
-            <MessageCircle className="w-4 h-4" />
-            <span>WhatsApp Scie</span>
+            <ScanLine className="w-4 h-4" />
+            <span>Terminal Scie & Assemblage Atelier</span>
           </button>
 
-          <button
-            onClick={handleDownloadCsv}
-            className="w-full py-2.5 rounded-2xl bg-[#D4AF37] text-slate-950 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:brightness-110 active:scale-98 transition-all shadow-md"
-          >
-            <FileDown className="w-4 h-4" />
-            <span>Télécharger CSV</span>
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={handleShareWhatsAppCutSheet}
+              className="w-full py-2.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:bg-emerald-500/20 active:scale-98 transition-all"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>WhatsApp Scie</span>
+            </button>
+
+            <button
+              onClick={handleDownloadCsv}
+              className="w-full py-2.5 rounded-2xl bg-black/10 dark:bg-white/10 border border-black/10 dark:border-white/10 text-zinc-300 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:bg-black/20 dark:hover:bg-white/15 active:scale-98 transition-all"
+            >
+              <FileDown className="w-4 h-4 text-[#D4AF37]" />
+              <span>Télécharger CSV</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -393,6 +424,15 @@ export const MobileCuttingScreen: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* 4. TOUCHSCREEN ASSEMBLY TERMINAL MODAL */}
+      <CuttingAssemblyTerminal
+        isOpen={isTerminalOpen}
+        onClose={() => setIsTerminalOpen(false)}
+        bom={currentBom}
+        config={config}
+        jobName="Débit Scie Mobile Atelier"
+      />
     </div>
   );
 };
