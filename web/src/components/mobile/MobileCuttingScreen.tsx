@@ -14,6 +14,8 @@ import {
   ChevronDown,
   ChevronUp,
   ClipboardList,
+  Check,
+  X,
 } from 'lucide-react';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
 import { CuttingAssemblyTerminal } from '../optimizer/CuttingAssemblyTerminal';
@@ -216,6 +218,52 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
       standardBarLength: 6000,
     });
   }, [demands, remnants, kerfMm]);
+
+  // Recoverable off-cuts from optimization plan (remnants >= 600 mm)
+  const recoverableRemnants = useMemo(() => {
+    return optimizationResult.bars
+      .filter((b) => b.wasteLength >= 600)
+      .map((b) => ({
+        length: b.wasteLength,
+        originBar: b.barIndex,
+      }));
+  }, [optimizationResult.bars]);
+
+  const [remnantToastMessage, setRemnantToastMessage] = useState<string | null>(null);
+
+  const handleIntegrateRecoverableRemnants = () => {
+    playClampSound();
+    if (recoverableRemnants.length === 0) return;
+    const newItems: StockBar1D[] = recoverableRemnants.map((r, idx) => ({
+      id: `chute_gen_${Date.now()}_${idx}`,
+      length: r.length,
+      isRemnant: true,
+      profileCode: 'CHUTE-REPRISE',
+    }));
+    const updated = [...remnants, ...newItems];
+    saveRemnants(updated);
+    setRemnantToastMessage(`${newItems.length} chute(s) réintégrée(s) dans le stock d'atelier !`);
+    setTimeout(() => setRemnantToastMessage(null), 3500);
+  };
+
+  const handlePurgeConsumedRemnants = () => {
+    playTactileClick();
+    const consumedLengths = optimizationResult.bars
+      .filter((b) => b.stockLength < 6000)
+      .map((b) => b.stockLength);
+    if (consumedLengths.length === 0) return;
+
+    const remaining = [...remnants];
+    consumedLengths.forEach((len) => {
+      const idx = remaining.findIndex((r) => r.length === len);
+      if (idx !== -1) {
+        remaining.splice(idx, 1);
+      }
+    });
+    saveRemnants(remaining);
+    setRemnantToastMessage(`${consumedLengths.length} chute(s) consommée(s) déduite(s) du stock.`);
+    setTimeout(() => setRemnantToastMessage(null), 3500);
+  };
 
   const handleAddDemand = () => {
     if (newLength <= 0 || newQty <= 0) return;
@@ -689,6 +737,54 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
           ))}
         </div>
 
+        {/* RECOVERABLE OFF-CUTS STRIP */}
+        {recoverableRemnants.length > 0 && (
+          <div
+            className={`p-3 rounded-2xl border flex items-center justify-between gap-2 text-xs font-mono transition-all ${
+              isLight
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-xs'
+                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
+            }`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Recycle className="w-4 h-4 text-emerald-500 shrink-0" />
+              <div className="min-w-0">
+                <span className="font-bold block truncate">
+                  {recoverableRemnants.length} chute{recoverableRemnants.length > 1 ? 's' : ''} valorisable{recoverableRemnants.length > 1 ? 's' : ''} (≥ 600 mm)
+                </span>
+                <span className={`text-[10px] block truncate ${isLight ? 'text-slate-600' : 'text-zinc-400'}`}>
+                  {recoverableRemnants.map((r) => `${r.length} mm`).join(' • ')}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleIntegrateRecoverableRemnants}
+              className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-[11px] shrink-0 cursor-pointer hover:bg-emerald-500 active:scale-95 transition-all shadow-xs"
+              title="Ajouter ces chutes au stock d'atelier pour les prochains débits"
+            >
+              Réintégrer Stock
+            </button>
+          </div>
+        )}
+
+        {/* CONSUMED REMNANTS NOTIFICATION */}
+        {optimizationResult.bars.some((b) => b.stockLength < 6000) && (
+          <div className="flex items-center justify-between text-[11px] font-mono px-1">
+            <span className={isLight ? 'text-slate-600' : 'text-zinc-400'}>
+              {optimizationResult.bars.filter((b) => b.stockLength < 6000).length} chute(s) utilisée(s) du stock
+            </span>
+            <button
+              type="button"
+              onClick={handlePurgeConsumedRemnants}
+              className="text-[#D4AF37] hover:underline cursor-pointer font-bold"
+            >
+              Déduire du stock
+            </button>
+          </div>
+        )}
+
         {/* Export & Action Buttons */}
         <div className="pt-1 space-y-2">
           <button
@@ -934,6 +1030,25 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
         config={config}
         jobName="Débit Scie Mobile Atelier"
       />
+
+      {/* Floating Remnant Action Toast */}
+      {remnantToastMessage && (
+        <div className="fixed bottom-24 left-4 right-4 z-50 flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-900/95 text-white border border-emerald-500/40 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+              <Check className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-mono font-medium truncate">{remnantToastMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRemnantToastMessage(null)}
+            className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white shrink-0 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
