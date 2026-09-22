@@ -30,14 +30,21 @@ import {
   RotateCcw,
   ShieldCheck,
   PackageCheck,
+  Disc,
 } from 'lucide-react';
 import { playTactileClick, playClampSound, playSwitchSound } from '../../utils/audioFeedback';
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
 import { WorkshopQualityModal } from './WorkshopQualityModal';
 import { StockReceivingModal } from './StockReceivingModal';
 import { InstallationAcceptanceModal } from './InstallationAcceptanceModal';
+import { BladeMaintenanceModal } from './BladeMaintenanceModal';
 import { getJobQualityInspection, computeQualityScore } from '../../utils/qualityControlManager';
 import { getJobInstallationAcceptance } from '../../utils/installationAcceptanceManager';
+import {
+  getWorkshopBlades,
+  getBladeWearTelemetry,
+  type WorkshopSawBlade,
+} from '../../utils/workshopBladeMaintenanceManager';
 import {
   generateFabricationOrderPdf,
   generateSupplierPurchaseOrderPdf,
@@ -350,6 +357,13 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
     setReceivingPreselectedItem(item || null);
     setIsStockReceivingModalOpen(true);
   };
+
+  // Saw Blades Maintenance state
+  const [sawBlades, setSawBlades] = useState<WorkshopSawBlade[]>(() => getWorkshopBlades());
+  const [isBladeModalOpen, setIsBladeModalOpen] = useState<boolean>(false);
+
+  const primaryBlade = sawBlades[0];
+  const primaryBladeTelemetry = primaryBlade ? getBladeWearTelemetry(primaryBlade) : null;
 
   const handleStockDelta = (id: string, delta: number) => {
     playTactileClick();
@@ -1087,35 +1101,101 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
         })}
       </div>
 
-      {/* 4. PROCUREMENT & RECEIVING ACTIONS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      {/* 4. PROCUREMENT, RECEIVING & MACHINE MAINTENANCE ACTIONS */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <button
           type="button"
           onClick={() => handleOpenStockReceiving()}
-          className="w-full py-2.5 rounded-2xl bg-sky-500/15 border border-sky-500/40 text-sky-400 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px] hover:bg-sky-500/25 active:scale-98 transition-all shadow-xs"
+          className="w-full py-2.5 px-2 rounded-2xl bg-sky-500/15 border border-sky-500/40 text-sky-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:bg-sky-500/25 active:scale-98 transition-all shadow-xs"
         >
-          <PackageCheck className="w-4 h-4" />
-          <span>Réceptionner Arrivage</span>
+          <PackageCheck className="w-4 h-4 shrink-0" />
+          <span>Réceptionner</span>
         </button>
 
         <button
           type="button"
           onClick={handleDownloadPurchaseOrderPdf}
-          className="w-full py-2.5 rounded-2xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px] hover:bg-[#D4AF37]/25 active:scale-98 transition-all shadow-xs"
+          className="w-full py-2.5 px-2 rounded-2xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:bg-[#D4AF37]/25 active:scale-98 transition-all shadow-xs"
         >
-          <FileText className="w-4 h-4" />
-          <span>Bon de Commande (PDF)</span>
+          <FileText className="w-4 h-4 shrink-0" />
+          <span>Bon Commande</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsBladeModalOpen(true);
+          }}
+          className={`w-full py-2.5 px-2 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] active:scale-98 transition-all shadow-xs ${
+            primaryBladeTelemetry?.isNearingAffutage
+              ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 hover:bg-amber-500/25'
+              : 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/25'
+          }`}
+          title="Maintenance des lames de scie circulaire & affûtage carbure"
+        >
+          <Disc className="w-4 h-4 shrink-0" />
+          <span>Lames Scie ({primaryBladeTelemetry?.wearPercent ?? 71}%)</span>
         </button>
 
         <button
           type="button"
           onClick={handleWhatsAppSupplierReorder}
-          className="w-full py-2.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px] hover:bg-emerald-500/20 active:scale-98 transition-all shadow-xs"
+          className="w-full py-2.5 px-2 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:bg-emerald-500/20 active:scale-98 transition-all shadow-xs"
         >
-          <MessageCircle className="w-4 h-4" />
-          <span>WhatsApp Réappro</span>
+          <MessageCircle className="w-4 h-4 shrink-0" />
+          <span>WhatsApp</span>
         </button>
       </div>
+
+      {/* 4B. QUICK SAW BLADE WEAR TELEMETRY BANNER */}
+      {primaryBlade && primaryBladeTelemetry && (
+        <div
+          onClick={() => {
+            playTactileClick();
+            setIsBladeModalOpen(true);
+          }}
+          className={`p-3 rounded-2xl border flex items-center justify-between gap-3 text-xs font-mono cursor-pointer transition-all ${
+            primaryBladeTelemetry.isNearingAffutage
+              ? isLight
+                ? 'bg-amber-50 border-amber-300 hover:bg-amber-100'
+                : 'bg-amber-500/10 border-amber-500/25 hover:bg-amber-500/15'
+              : isLight
+              ? 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+              : 'bg-black/30 border-white/10 hover:bg-black/40'
+          }`}
+          title="Cliquer pour gérer la maintenance et l affûtage des lames"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              className={`w-7 h-7 rounded-xl border flex items-center justify-center shrink-0 ${
+                primaryBladeTelemetry.isNearingAffutage
+                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
+                  : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+              }`}
+            >
+              <Disc className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="font-bold flex items-center gap-1.5 truncate">
+                <span className={isLight ? 'text-slate-900' : 'text-white'}>
+                  {primaryBlade.code}
+                </span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${primaryBladeTelemetry.badgeClass}`}>
+                  {primaryBladeTelemetry.statusLabelFr}
+                </span>
+              </div>
+              <div className="text-[10px] text-zinc-500 truncate">
+                {primaryBlade.currentCutCount} / {primaryBlade.maxCutsBeforeResharpen} coupes • Pression : {primaryBlade.pneumaticPressureBar} bars • Huile : {primaryBlade.lubricationOilLevelPercent}%
+              </div>
+            </div>
+          </div>
+
+          <span className="text-[11px] font-bold text-[#D4AF37] shrink-0">
+            Détails →
+          </span>
+        </div>
+      )}
 
       {/* 5. STOCK ITEMS LIST */}
       <div className="space-y-3 font-mono">
@@ -2004,6 +2084,15 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
             setPaymentToast('Affaire clôturée et réceptionnée sans réserve !');
             setTimeout(() => setPaymentToast(null), 3500);
           }}
+        />
+      )}
+
+      {/* Saw Blade Maintenance Modal */}
+      {isBladeModalOpen && (
+        <BladeMaintenanceModal
+          isOpen={isBladeModalOpen}
+          onClose={() => setIsBladeModalOpen(false)}
+          onBladesUpdated={(updated) => setSawBlades([...updated])}
         />
       )}
 
