@@ -49,7 +49,8 @@ export function App() {
       if (saved !== null) {
         return saved === 'true';
       }
-      return window.innerWidth < 768;
+      const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      return window.innerWidth < 768 || (isTouch && window.innerWidth <= 1024);
     }
     return false;
   });
