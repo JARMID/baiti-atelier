@@ -63,7 +63,7 @@ export const DedicatedMobileApp: React.FC<DedicatedMobileAppProps> = ({
         {activeTab === 'cad' && <MobileCadScreen />}
         {activeTab === 'cutting' && <MobileCuttingScreen onNavigateTab={setActiveTab} />}
         {activeTab === 'field_quotes' && <MobileFieldMeasurementScreen onNavigateTab={setActiveTab} />}
-        {activeTab === 'workshop' && <MobileWorkshopScreen />}
+        {activeTab === 'workshop' && <MobileWorkshopScreen onNavigateTab={setActiveTab} />}
       </main>
 
       {/* 3. NATIVE BOTTOM NAVIGATION BAR */}
