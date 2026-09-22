@@ -3365,7 +3365,235 @@ export async function generateStockReceivingSlipPdf(
   doc.save(safeFilename);
 }
 
+export interface GenerateStoreRequisitionPdfParams {
+  slipNumber: string;
+  date: string;
+  projectTitle: string;
+  clientName: string;
+  sawOperator: string;
+  storekeeper: string;
+  totalBars6m: number;
+  items: {
+    code: string;
+    name: string;
+    quantity: number;
+    rackLocation: string;
+    unitCostDzd: number;
+    totalCostDzd: number;
+    isAvailable: boolean;
+  }[];
+  notes?: string;
+}
 
+export async function generateStoreRequisitionPdf(
+  params: GenerateStoreRequisitionPdfParams
+): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
 
+  const primaryBlue: [number, number, number] = [0, 51, 102];
+  const goldAccent: [number, number, number] = [212, 175, 55];
+  const darkSlate: [number, number, number] = [15, 23, 42];
 
+  // 1. Header Banner
+  doc.setFillColor(...primaryBlue);
+  doc.rect(0, 0, 210, 28, 'F');
 
+  doc.setFillColor(...goldAccent);
+  doc.rect(0, 28, 210, 1.5, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BON DE SORTIE DE STOCK & PRÉLÈVEMENT MATIÈRE', 14, 13);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(226, 232, 240);
+  doc.text(
+    'Alimentation du poste de coupe scie 1D • Traçabilité des barres 6.00m et casiers',
+    14,
+    20
+  );
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...goldAccent);
+  doc.text(`RÉF : ${params.slipNumber}`, 196, 13, { align: 'right' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Date : ${params.date}`, 196, 20, { align: 'right' });
+
+  // 2. Project & Participants Metadata Container
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 34, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...darkSlate);
+  doc.text('Affaire / Projet :', 18, 41);
+  doc.setFont('helvetica', 'normal');
+  doc.text(params.projectTitle, 50, 41);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Client :', 18, 48);
+  doc.setFont('helvetica', 'normal');
+  doc.text(params.clientName, 50, 48);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Demandeur (Scie) :', 115, 41);
+  doc.setFont('helvetica', 'normal');
+  doc.text(params.sawOperator, 150, 41);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Délivré par (Magasin) :', 115, 48);
+  doc.setFont('helvetica', 'normal');
+  doc.text(params.storekeeper, 150, 48);
+
+  // 3. KPI Summary Banner
+  const totalValueDzd = params.items.reduce((sum, item) => sum + item.totalCostDzd, 0);
+
+  doc.setFillColor(241, 245, 249);
+  doc.roundedRect(14, 60, 182, 14, 1.5, 1.5, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...primaryBlue);
+  doc.text(
+    `TOTAL BARRES 6.00M SORTIES : ${params.totalBars6m} UNITÉS`,
+    20,
+    69
+  );
+
+  doc.setTextColor(...darkSlate);
+  doc.text(
+    `VALEUR MATIÈRE : ${totalValueDzd.toLocaleString('fr-DZ')} DZD HT`,
+    190,
+    69,
+    { align: 'right' }
+  );
+
+  // 4. AutoTable of Requisitioned Bars
+  const tableRows = params.items.map((item, idx) => [
+    (idx + 1).toString(),
+    item.code,
+    item.name,
+    item.rackLocation,
+    `${item.quantity} barre(s)`,
+    `${item.unitCostDzd.toLocaleString('fr-DZ')} DZD`,
+    `${item.totalCostDzd.toLocaleString('fr-DZ')} DZD`,
+    item.isAvailable ? '[ X ] Servie' : '[ ! ] Rupture',
+  ]);
+
+  autoTable(doc, {
+    startY: 78,
+    head: [
+      [
+        'N°',
+        'Code Réf',
+        'Désignation Profilé (6.00m)',
+        'Emplacement Casier',
+        'Quantité',
+        'P.U. HT',
+        'Total HT',
+        'État Sortie',
+      ],
+    ],
+    body: tableRows,
+    theme: 'grid',
+    headStyles: {
+      fillColor: primaryBlue,
+      textColor: [255, 255, 255],
+      fontSize: 8,
+      fontStyle: 'bold',
+      halign: 'center',
+    },
+    bodyStyles: {
+      fontSize: 7.5,
+      textColor: darkSlate,
+      valign: 'middle',
+    },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
+      1: { cellWidth: 26, fontStyle: 'bold' },
+      2: { cellWidth: 54 },
+      3: { cellWidth: 28, halign: 'center' },
+      4: { cellWidth: 20, halign: 'center', fontStyle: 'bold' },
+      5: { cellWidth: 20, halign: 'right' },
+      6: { cellWidth: 24, halign: 'right', fontStyle: 'bold' },
+      7: { cellWidth: 0, halign: 'center' },
+    },
+  });
+
+  const finalY = (doc as any).lastAutoTable.finalY || 160;
+
+  // 5. Notes Container
+  const notesY = finalY + 6;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, notesY, 182, 18, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...darkSlate);
+  doc.text('Instructions de Prélèvement & Sécurité Atelier :', 18, notesY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  const notesText =
+    params.notes ||
+    'Contrôler la planéité et l absence de rayures sur le thermolaquage avant transfert au banc de scie. Les chutes réutilisables supérieures à 800 mm générées en fin de débit devront être réétiquetées et replacées dans leur casier d origine.';
+  doc.text(doc.splitTextToSize(notesText, 174), 18, notesY + 11);
+
+  // 6. Dual Signatures Box
+  const signY = notesY + 22;
+
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 24, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 24, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Le Magasinier Atelier :', 18, signY + 5.5);
+  doc.text('L Opérateur Scie / Chef d Atelier :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Nom : ${params.storekeeper}`, 18, signY + 11);
+  doc.text('Visa & Date (Délivré par) :', 18, signY + 18);
+  doc.text(`Nom : ${params.sawOperator}`, 135, signY + 11);
+  doc.text('Visa & Date (Pris en charge) :', 135, signY + 18);
+
+  // 7. Dynamic QR Code
+  try {
+    const qrPayload = `BAITI|BS|${params.slipNumber}|BARRES=${params.totalBars6m}|VAL=${totalValueDzd}|DATE=${params.date}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Document de prélèvement de matière généré par Baiti Atelier • ${params.slipNumber} • www.baitiatelier.dz`,
+    105,
+    288,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Bon_Sortie_Matiere_${params.slipNumber}.pdf`;
+  doc.save(safeFilename);
+}

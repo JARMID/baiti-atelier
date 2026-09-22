@@ -17,11 +17,14 @@ import {
   Check,
   X,
   Tag,
+  Boxes,
 } from 'lucide-react';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
 import { CuttingAssemblyTerminal } from '../optimizer/CuttingAssemblyTerminal';
 import { computeDetailedBOM } from '../../utils/cadEngine';
 import { generateLinearCuttingPlanPdf, generatePieceLabelsPdf, type PieceLabelItem } from '../../utils/pdfGenerator';
+import { CuttingStockPreCheckModal } from './CuttingStockPreCheckModal';
+import { buildCuttingRequisitionMatrix } from '../../utils/cuttingMaterialRequisition';
 import type { MobileNavTab } from './MobileBottomNavigation';
 
 let remnantSequence = 100;
@@ -323,6 +326,12 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
   }, [optimizationResult.bars]);
 
   const [remnantToastMessage, setRemnantToastMessage] = useState<string | null>(null);
+  const [isPreCheckModalOpen, setIsPreCheckModalOpen] = useState(false);
+
+  // Material requisition summary for stock verification
+  const requisitionSummary = useMemo(() => {
+    return buildCuttingRequisitionMatrix(optimizationResult.bars);
+  }, [optimizationResult.bars]);
 
   const handleIntegrateRecoverableRemnants = () => {
     playClampSound();
@@ -731,6 +740,40 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
 
       {/* 1. TOP STATS CARDS */}
       <div className="space-y-2 font-mono">
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          {/* Stock Availability Pre-Check & Store Requisition Button */}
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick();
+              setIsPreCheckModalOpen(true);
+            }}
+            className={`col-span-2 py-2.5 px-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-between cursor-pointer min-h-[44px] active:scale-98 transition-all ${
+              requisitionSummary.hasShortage
+                ? 'bg-rose-500/15 border-rose-500/30 text-rose-300 hover:bg-rose-500/20'
+                : isLight
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100 shadow-xs'
+                : 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20'
+            }`}
+            title="Vérifier la disponibilité en stock des barres de 6m et éditer le bon de sortie magasin"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Boxes className="w-4 h-4 shrink-0 text-[#D4AF37]" />
+              <span className="truncate">Disponibilité Stock & Bon Sortie ({requisitionSummary.totalRequiredBars} barres 6m)</span>
+            </div>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${
+                requisitionSummary.hasShortage
+                  ? 'bg-rose-500 text-white'
+                  : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+              }`}
+            >
+              {requisitionSummary.hasShortage
+                ? `Manque ${requisitionSummary.totalShortageBars}u ⚠️`
+                : 'Stock 100% OK ✓'}
+            </span>
+          </button>
+        </div>
         <div className="grid grid-cols-3 gap-2 text-center">
           <div
             className={`p-3 rounded-2xl border ${
@@ -1174,6 +1217,17 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
         config={config}
         jobName="Débit Scie Mobile Atelier"
       />
+
+      {/* Cutting Batch Stock Pre-Check & Requisition Modal */}
+      {isPreCheckModalOpen && (
+        <CuttingStockPreCheckModal
+          isOpen={isPreCheckModalOpen}
+          onClose={() => setIsPreCheckModalOpen(false)}
+          summary={requisitionSummary}
+          projectTitle={surveyProjectData?.info?.clientName ? `Chantier ${surveyProjectData.info.clientName}` : 'Débit Scie 1D'}
+          clientName={surveyProjectData?.info?.clientName || 'Client Atelier'}
+        />
+      )}
 
       {/* Floating Remnant Action Toast */}
       {remnantToastMessage && (
