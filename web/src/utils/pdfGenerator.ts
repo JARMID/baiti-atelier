@@ -71,8 +71,10 @@ export function formatGlassTypeFr(glassType: string): string {
 export function formatShutterTypeFr(shutterType: string): string {
   const map: Record<string, string> = {
     none: 'Sans volet roulant',
-    manual: 'Volet roulant manuel',
-    motorized: 'Volet roulant motorisé',
+    manual: 'Volet roulant manuel à sangle',
+    manual_crank: 'Volet manuel à treuil & manivelle',
+    motorized: 'Volet motorisé filaire (inverseur)',
+    motorized_radio: 'Volet motorisé radio RTS (télécommande)',
   };
   return map[shutterType] || shutterType;
 }

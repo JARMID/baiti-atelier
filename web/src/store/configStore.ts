@@ -1,5 +1,15 @@
 import { create } from 'zustand';
-import type { CostBreakdown, FinishColor, GlassType, OpeningType, ProfileSystem, ShutterType, WindowConfig } from '../types/window';
+import type {
+  CostBreakdown,
+  FinishColor,
+  GlassType,
+  OpeningType,
+  ProfileSystem,
+  ShutterType,
+  ShutterSlatType,
+  ShutterBoxType,
+  WindowConfig,
+} from '../types/window';
 import { calculateWindowCost } from '../utils/pricingEngine';
 import {
   type WorkshopMarginCalibration,
@@ -28,6 +38,8 @@ interface ConfigState {
   setGlassType: (glass: GlassType) => void;
   setSpacerType: (spacer: 'standard_alu' | 'warm_edge') => void;
   setShutterType: (shutter: ShutterType) => void;
+  setShutterSlatType: (slat: ShutterSlatType) => void;
+  setShutterBoxType: (box: ShutterBoxType) => void;
   setShutterPosition: (pos: number) => void;
   toggleOpen: () => void;
   setOpenPercent: (percent: number) => void;
@@ -52,6 +64,8 @@ const initialConfig: WindowConfig = {
   glassType: 'double_clear',
   spacerType: 'standard_alu',
   shutterType: 'none',
+  shutterSlatType: 'alu_foam_43',
+  shutterBoxType: 'monobloc_165',
   isOpen: false,
   openPercent: 0,
   explodedView: false,
@@ -120,6 +134,18 @@ export const useConfigStore = create<ConfigState>((set) => ({
   setShutterType: (shutterType) =>
     set((state) => {
       const nextConfig = { ...state.config, shutterType };
+      return { config: nextConfig, cost: calculateWindowCost(nextConfig, state.calibration) };
+    }),
+
+  setShutterSlatType: (shutterSlatType) =>
+    set((state) => {
+      const nextConfig = { ...state.config, shutterSlatType };
+      return { config: nextConfig, cost: calculateWindowCost(nextConfig, state.calibration) };
+    }),
+
+  setShutterBoxType: (shutterBoxType) =>
+    set((state) => {
+      const nextConfig = { ...state.config, shutterBoxType };
       return { config: nextConfig, cost: calculateWindowCost(nextConfig, state.calibration) };
     }),
 

@@ -31,9 +31,21 @@ export type GlassType =
   | 'securit_tempered';      // Verre trempé Sécurit 8mm anti-choc
 
 export type ShutterType =
-  | 'none'       // Sans volet
-  | 'manual'     // Volet roulant manuel à sangle / manivelle
-  | 'motorized'; // Volet roulant motorisé avec commande filaire/télécommande
+  | 'none'            // Sans volet
+  | 'manual'          // Volet roulant manuel à sangle standard
+  | 'manual_crank'    // Volet roulant manuel à treuil & manivelle
+  | 'motorized'       // Volet roulant motorisé filaire standard
+  | 'motorized_radio';// Volet roulant motorisé radio RTS avec télécommande
+
+export type ShutterSlatType =
+  | 'alu_foam_43'     // Lame alu double paroi isolée 43mm mousse PU
+  | 'alu_extruded_45' // Lame alu extrudé haute sécurité 45mm
+  | 'pvc_cellular_40';// Lame PVC alvéolaire 40mm
+
+export type ShutterBoxType =
+  | 'monobloc_165'    // Coffre monobloc intérieur 165mm
+  | 'monobloc_200'    // Coffre monobloc intérieur 200mm
+  | 'renovation_45';  // Coffre extérieur pan coupé 45°
 
 export interface WindowConfig {
   width: number;       // Largeur en mm (ex: 1200)
@@ -44,6 +56,8 @@ export interface WindowConfig {
   glassType: GlassType;
   spacerType?: 'standard_alu' | 'warm_edge'; // Intercalaire standard alu ou warm-edge à rupture
   shutterType: ShutterType;
+  shutterSlatType?: ShutterSlatType;
+  shutterBoxType?: ShutterBoxType;
   isOpen: boolean;     // Animation state (open/close)
   openPercent: number; // 0 to 100%
   explodedView: boolean; // 3D exploded assembly view

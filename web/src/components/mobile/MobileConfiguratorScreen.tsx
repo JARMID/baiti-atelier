@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useConfigStore } from '../../store/configStore';
 import { WindowCanvas } from '../3d/WindowCanvas';
-import type { OpeningType, ProfileSystem, GlassType, ShutterType } from '../../types/window';
+import type { OpeningType, ProfileSystem, GlassType } from '../../types/window';
 import {
   MessageCircle,
   FileDown,
@@ -20,12 +20,14 @@ import {
   Sun,
   Shield,
   Palette,
+  SlidersHorizontal,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   playTactileClick,
   playSwitchSound,
   playClampSound,
+  playSlideTick,
 } from '../../utils/audioFeedback';
 import {
   generateClientDevisPdf,
@@ -52,6 +54,15 @@ import {
   getFinishSpec,
   formatFinishTreatmentBadge,
 } from '../../utils/finishSpecifications';
+import {
+  SHUTTER_MECHANISMS,
+  SHUTTER_SLATS,
+  SHUTTER_BOXES,
+  getShutterMechanismSpec,
+  getShutterSlatSpec,
+  getShutterBoxSpec,
+  computeShutterBOM,
+} from '../../utils/shutterSpecifications';
 
 interface PresetItem {
   id: string;
@@ -126,6 +137,9 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
     setGlassType,
     setSpacerType,
     setShutterType,
+    setShutterSlatType,
+    setShutterBoxType,
+    setShutterPosition,
   } = useConfigStore();
 
   const isLight = theme === 'light';
@@ -148,6 +162,32 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const acousticRating = useMemo(() => formatAcousticRating(effectiveRw), [effectiveRw]);
   const thermalRating = useMemo(() => formatThermalRating(effectiveUg), [effectiveUg]);
   const currentFinishSpec = useMemo(() => getFinishSpec(config.finishColor), [config.finishColor]);
+
+  const activeSlatType = config.shutterSlatType || 'alu_foam_43';
+  const activeBoxType = config.shutterBoxType || 'monobloc_165';
+  const currentShutterMech = useMemo(
+    () => getShutterMechanismSpec(config.shutterType),
+    [config.shutterType]
+  );
+  const currentSlatSpec = useMemo(
+    () => getShutterSlatSpec(activeSlatType),
+    [activeSlatType]
+  );
+  const currentBoxSpec = useMemo(
+    () => getShutterBoxSpec(activeBoxType),
+    [activeBoxType]
+  );
+  const shutterBom = useMemo(
+    () =>
+      computeShutterBOM(
+        config.width,
+        config.height,
+        config.shutterType,
+        activeSlatType,
+        activeBoxType
+      ),
+    [config.width, config.height, config.shutterType, activeSlatType, activeBoxType]
+  );
 
   const currentWilaya = useMemo(() => {
     return (
@@ -433,12 +473,6 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
     { id: 'gamme_45_thermal', name: 'Gamme 45 RPT', tag: 'Thermique' },
     { id: 'gamme_67_slide', name: 'Coulissant 67 Lourd', tag: 'Grandes Baies' },
     { id: 'pvc_70_chamber', name: 'PVC 70 Multi-Chambres', tag: 'Haute Isolation' },
-  ];
-
-  const SHUTTER_OPTIONS: { id: ShutterType; label: string }[] = [
-    { id: 'none', label: 'Sans Volet' },
-    { id: 'manual', label: 'Volet Manuel' },
-    { id: 'motorized', label: 'Volet Motorisé' },
   ];
 
   return (
@@ -957,30 +991,235 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
             </div>
           </div>
         )}
+      </div>
 
-        {/* Shutter Select Integrated */}
-        <div className="space-y-1.5 pt-1 border-t border-white/5">
-          <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
-            <span>Volet Roulant Intégré</span>
-            <span className="text-[10px] text-zinc-500">Occultation & Sécurité</span>
+      {/* 8. INTEGRATED ROLLER SHUTTER & MOTORIZATION CONFIGURATOR */}
+      <div
+        className={`p-3.5 rounded-2xl border space-y-3 ${
+          isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-[#0B0F19] border-white/10'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
+            <span className={`text-xs font-mono font-bold ${isLight ? 'text-slate-800' : 'text-zinc-200'}`}>
+              Volet Roulant Monobloc & Motorisation
+            </span>
           </div>
-          <select
-            value={config.shutterType}
-            onChange={(e) => {
-              playSwitchSound();
-              setShutterType(e.target.value as ShutterType);
-            }}
-            className={`w-full p-2.5 rounded-2xl border text-xs font-mono min-h-[44px] cursor-pointer ${
-              isLight ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-black/30 border-white/10 text-white'
+          <span
+            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+              config.shutterType === 'none'
+                ? 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
+                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
             }`}
           >
-            {SHUTTER_OPTIONS.map((sh) => (
-              <option key={sh.id} value={sh.id}>
-                {sh.label}
-              </option>
-            ))}
-          </select>
+            {config.shutterType === 'none'
+              ? 'Sans Volet'
+              : `${currentShutterMech.labelFr.split(' ')[0]} • ${shutterBom.totalPriceDzd.toLocaleString('fr-DZ')} DZD`}
+          </span>
         </div>
+
+        {/* Mechanism Selector Pills */}
+        <div className="space-y-1">
+          <span className="text-[10px] font-mono text-zinc-400 block">Type de manœuvre</span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+            {SHUTTER_MECHANISMS.map((mech) => {
+              const isSelected = config.shutterType === mech.id;
+              const priceTag =
+                mech.id === 'none'
+                  ? 'Inclus'
+                  : `${mech.basePriceDzd.toLocaleString('fr-DZ')} DA`;
+              return (
+                <button
+                  key={mech.id}
+                  type="button"
+                  onClick={() => {
+                    playTactileClick();
+                    setShutterType(mech.id);
+                  }}
+                  className={`p-2 rounded-2xl border text-left transition-all cursor-pointer min-h-[46px] flex flex-col justify-between ${
+                    isSelected
+                      ? 'border-emerald-500 bg-emerald-500/15 shadow-xs font-bold'
+                      : isLight
+                      ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      : 'bg-white/5 border-white/10 text-zinc-300 hover:bg-white/10'
+                  }`}
+                >
+                  <span className="text-[11px] font-mono leading-tight block truncate">
+                    {mech.labelFr.split('(')[0].trim()}
+                  </span>
+                  <span
+                    className={`text-[9px] font-mono block ${
+                      isSelected ? 'text-emerald-400 font-bold' : 'text-zinc-500'
+                    }`}
+                  >
+                    {priceTag}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Active Shutter Detailed Configurations */}
+        {config.shutterType !== 'none' && (
+          <div className="space-y-2.5 pt-1 border-t border-black/5 dark:border-white/5">
+            {/* Slats & Box Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Slat Type Selector */}
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono text-zinc-400 block">Modèle de Lame</span>
+                <select
+                  value={activeSlatType}
+                  onChange={(e) => {
+                    playSwitchSound();
+                    setShutterSlatType(e.target.value as any);
+                  }}
+                  className={`w-full p-2 rounded-xl border text-xs font-mono min-h-[40px] cursor-pointer ${
+                    isLight ? 'bg-white border-slate-200 text-slate-800' : 'bg-[#0B0F19] border-white/10 text-white'
+                  }`}
+                >
+                  {SHUTTER_SLATS.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.labelFr} ({s.surchargePerM2Dzd >= 0 ? `+${s.surchargePerM2Dzd}` : s.surchargePerM2Dzd} DA/m²)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Shutter Box Selector */}
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono text-zinc-400 block">Coffre / Caisson</span>
+                <select
+                  value={activeBoxType}
+                  onChange={(e) => {
+                    playSwitchSound();
+                    setShutterBoxType(e.target.value as any);
+                  }}
+                  className={`w-full p-2 rounded-xl border text-xs font-mono min-h-[40px] cursor-pointer ${
+                    isLight ? 'bg-white border-slate-200 text-slate-800' : 'bg-[#0B0F19] border-white/10 text-white'
+                  }`}
+                >
+                  {SHUTTER_BOXES.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.labelFr}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Live Interactive Shutter Position Slider */}
+            <div
+              className={`p-2.5 rounded-xl border space-y-1.5 ${
+                isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'
+              }`}
+            >
+              <div className="flex items-center justify-between text-[11px] font-mono">
+                <span className="text-zinc-400">Position du tablier (Animation 3D)</span>
+                <span className="font-bold text-emerald-400">
+                  {Math.round(config.shutterPosition ?? 0)}%{' '}
+                  {config.shutterPosition === 0
+                    ? '(Relevé)'
+                    : config.shutterPosition === 100
+                    ? '(Fermé)'
+                    : '(Partiel)'}
+                </span>
+              </div>
+
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={config.shutterPosition ?? 0}
+                onChange={(e) => {
+                  playSlideTick();
+                  setShutterPosition(Number(e.target.value));
+                }}
+                className="w-full accent-emerald-500 cursor-pointer h-1.5 bg-black/10 dark:bg-white/10 rounded-lg"
+              />
+
+              <div className="flex items-center justify-between text-[9px] font-mono text-zinc-500 pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playTactileClick();
+                    setShutterPosition(0);
+                  }}
+                  className="hover:text-emerald-400 cursor-pointer"
+                >
+                  0% (Relevé)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playTactileClick();
+                    setShutterPosition(50);
+                  }}
+                  className="hover:text-emerald-400 cursor-pointer"
+                >
+                  50% (Ajouré)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playTactileClick();
+                    setShutterPosition(100);
+                  }}
+                  className="hover:text-emerald-400 cursor-pointer"
+                >
+                  100% (Occulté)
+                </button>
+              </div>
+            </div>
+
+            {/* Shutter Workshop Telemetry Card */}
+            <div
+              className={`p-2.5 rounded-xl border text-xs font-mono space-y-1.5 ${
+                isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/40 border-white/5'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className={`font-bold text-[11px] ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  Fiche Technique Tablier Atelier
+                </span>
+                <span className="text-[10px] text-emerald-400 font-bold">
+                  {shutterBom.totalPriceDzd.toLocaleString('fr-DZ')} DZD
+                </span>
+              </div>
+
+              {/* 4 Mini KPI Badges */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px]">
+                <div className={`p-1.5 rounded-lg border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                  <span className="text-zinc-500 block text-[9px]">Lames à couper</span>
+                  <span className="font-bold text-amber-400">{shutterBom.slatCount} × {shutterBom.slatCutLengthMm} mm</span>
+                </div>
+                <div className={`p-1.5 rounded-lg border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                  <span className="text-zinc-500 block text-[9px]">Poids tablier</span>
+                  <span className="font-bold text-cyan-400">{shutterBom.curtainWeightKg} kg</span>
+                </div>
+                <div className={`p-1.5 rounded-lg border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                  <span className="text-zinc-500 block text-[9px]">Axe octogonal</span>
+                  <span className="font-bold text-slate-300">{shutterBom.octagonalAxleLengthMm} mm</span>
+                </div>
+                <div className={`p-1.5 rounded-lg border ${isLight ? 'bg-white border-slate-200' : 'bg-white/5 border-white/10'}`}>
+                  <span className="text-zinc-500 block text-[9px]">Couple moteur</span>
+                  <span className="font-bold text-emerald-400">
+                    {shutterBom.motorTorqueNm > 0 ? `${shutterBom.motorTorqueNm} Nm` : 'Manuel'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-[10px] text-zinc-500 pt-0.5 flex items-center justify-between">
+                <span className="truncate max-w-[50%]">{currentSlatSpec.securityLevelFr}</span>
+                <span className="truncate text-zinc-400 text-right">
+                  Coffre {currentBoxSpec.boxHeightMm} mm • {shutterBom.lockingStrapsCount} verrous
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* WILAYA & CONFORMITÉ THERMIQUE DTR C3-2 */}

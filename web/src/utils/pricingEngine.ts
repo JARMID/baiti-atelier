@@ -1,6 +1,7 @@
 import type { CostBreakdown, GlassType, ProfileSystem, WindowConfig } from '../types/window';
 import type { WorkshopMarginCalibration } from './materialMarketData';
 import { getFinishSpec } from './finishSpecifications';
+import { computeShutterBOM } from './shutterSpecifications';
 
 export function calculateWindowCost(
   config: WindowConfig,
@@ -116,10 +117,15 @@ export function calculateWindowCost(
 
   // Shutter cost
   let shutterCost = 0;
-  if (config.shutterType === 'manual') {
-    shutterCost = Math.round(areaM2 * 8500 + 4000);
-  } else if (config.shutterType === 'motorized') {
-    shutterCost = Math.round(areaM2 * 9200 + 15500);
+  if (config.shutterType !== 'none') {
+    const shutterBom = computeShutterBOM(
+      config.width,
+      config.height,
+      config.shutterType,
+      config.shutterSlatType,
+      config.shutterBoxType
+    );
+    shutterCost = shutterBom.totalPriceDzd;
   }
 
   // Labor

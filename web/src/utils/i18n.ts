@@ -130,8 +130,10 @@ export const DICTIONARY = {
 
     // Shutters
     none: 'Sans volet roulant',
-    manual: 'Volet roulant manuel (Sangle / Manivelle)',
-    motorized: 'Volet motorisé électrique filaire / télécommande',
+    manual: 'Volet manuel à sangle',
+    manual_crank: 'Volet manuel à treuil & manivelle',
+    motorized: 'Volet motorisé filaire (inverseur mural)',
+    motorized_radio: 'Volet motorisé radio RTS (télécommande)',
 
     // 2D CAD Studio
     cadBadge: 'CAO Paramétrique Métier 2D',
@@ -330,7 +332,9 @@ export const DICTIONARY = {
     // Shutters
     none: 'بدون ستار دوار',
     manual: 'ستار دوار يدوي (شريط سحب)',
-    motorized: 'ستار دوار كهربائي بمحرك وجهاز تحكم',
+    manual_crank: 'ستار دوار يدوي بذراع تدوير ومسنن',
+    motorized: 'ستار كهربائي سلكي بمفتاح جداري',
+    motorized_radio: 'ستار كهربائي لاسلكي بجهاز تحكم',
 
     // 2D CAD Studio
     cadBadge: 'الرسم الهندسي والتقطيع 2D',
@@ -528,8 +532,10 @@ export const DICTIONARY = {
 
     // Shutters
     none: 'No roller shutter',
-    manual: 'Manual strap/crank roller shutter',
-    motorized: 'Motorized electric roller shutter with remote',
+    manual: 'Manual strap roller shutter',
+    manual_crank: 'Manual crank and winch roller shutter',
+    motorized: 'Wired motorized roller shutter (wall switch)',
+    motorized_radio: 'Radio RTS motorized roller shutter (remote)',
 
     // 2D CAD Studio
     cadBadge: 'Parametric 2D CAD Studio',
