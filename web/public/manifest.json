@@ -1,0 +1,19 @@
+{
+  "name": "Baiti | بيتي - Plateforme Menuiserie Algérie",
+  "short_name": "Baiti",
+  "description": "Plateforme industrielle de chiffrage paramétrique, CAO 2D/3D et optimisation de débit pour ateliers d'aluminium, bois, ferronnerie et tapisserie en Algérie.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080A0E",
+  "theme_color": "#D4AF37",
+  "orientation": "any",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

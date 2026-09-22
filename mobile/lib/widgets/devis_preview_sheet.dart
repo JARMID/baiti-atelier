@@ -1,0 +1,959 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart' hide TextDirection;
+import 'package:url_launcher/url_launcher.dart';
+import '../models/opening_spec.dart';
+
+class DevisPreviewSheet extends StatefulWidget {
+  final String projectName;
+  final List<OpeningSpec> specs;
+
+  final int initialTab;
+
+  const DevisPreviewSheet({
+    super.key,
+    required this.projectName,
+    required this.specs,
+    this.initialTab = 0,
+  });
+
+  static void show(
+    BuildContext context,
+    String projectName,
+    List<OpeningSpec> specs, {
+    int initialTab = 0,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DevisPreviewSheet(
+        projectName: projectName,
+        specs: specs,
+        initialTab: initialTab,
+      ),
+    );
+  }
+
+  @override
+  State<DevisPreviewSheet> createState() => _DevisPreviewSheetState();
+}
+
+class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
+  late int _activeTab;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeTab = widget.initialTab;
+  }
+
+  String _formatDzd(double amount) {
+    final formatter = NumberFormat('#,###', 'fr_FR');
+    return '${formatter.format(amount.round())} DZD';
+  }
+
+  String _generateQuotationText(
+    double totalHt,
+    double tva19,
+    double totalTtc,
+    double acompte40,
+    double solde60,
+    String wilaya,
+    String quoteId,
+  ) {
+    final buffer = StringBuffer();
+    buffer.writeln('========================================');
+    buffer.writeln('DEVIS CLIENT ET FACTURE PROFORMA');
+    buffer.writeln('BAITI ATELIER: MENUISERIE & FERMETURES');
+    buffer.writeln('========================================');
+    buffer.writeln('Référence Devis: $quoteId');
+    buffer.writeln('Date: ${DateTime.now().toLocal().toString().split(' ')[0]}');
+    buffer.writeln('Chantier: ${widget.projectName}');
+    buffer.writeln('Wilaya: $wilaya');
+    buffer.writeln('Nombre d\'ouvrages: ${widget.specs.length}');
+    buffer.writeln('Norme: Conforme Document Technique Réglementaire DTR C3-2');
+    buffer.writeln('----------------------------------------');
+    buffer.writeln('DETAIL DES OUVRAGES FACTURES:');
+
+    for (int i = 0; i < widget.specs.length; i++) {
+      final s = widget.specs[i];
+      final c = s.calculateCost();
+      final ref = s.openingReference.isNotEmpty ? s.openingReference : 'F${i + 1}';
+      final itemTotal = (c['grandTotal'] ?? 0.0).round();
+      buffer.writeln('');
+      buffer.writeln('[$ref] ${s.title}');
+      buffer.writeln('  Cotes: ${s.widthMm.toInt()} x ${s.heightMm.toInt()} mm (Qte: ${s.quantity})');
+      buffer.writeln('  Systeme: ${s.profileSystem} | Teinte: ${s.finishColor}');
+      buffer.writeln('  Vitrage: ${s.glassType}');
+      buffer.writeln('  Sous-total: ${_formatDzd(itemTotal.toDouble())}');
+    }
+
+    buffer.writeln('');
+    buffer.writeln('----------------------------------------');
+    buffer.writeln('RECAPITULATIF FINANCIER ATELIER:');
+    buffer.writeln('Total Ouvrages HT: ${_formatDzd(totalHt)}');
+    buffer.writeln('TVA Legale 19%: ${_formatDzd(tva19)}');
+    buffer.writeln('TOTAL GENERAL TTC: ${_formatDzd(totalTtc)}');
+    buffer.writeln('');
+    buffer.writeln('CONDITIONS DE REGLEMENT:');
+    buffer.writeln('Acompte a la commande (40%): ${_formatDzd(acompte40)}');
+    buffer.writeln('Solde apres pose et reception (60%): ${_formatDzd(solde60)}');
+    buffer.writeln('Validite de l\'offre: 30 jours');
+    buffer.writeln('Delai moyen de fabrication: 15 a 21 jours ouvrables');
+    buffer.writeln('========================================');
+    buffer.writeln('Document genere via Baiti Atelier Mobile');
+
+    return buffer.toString();
+  }
+
+  String _generateCollectiveCutSheetText(String wilaya) {
+    final buffer = StringBuffer();
+    buffer.writeln('========================================');
+    buffer.writeln('BAITI ATELIER | بيتي: FICHE DE DÉBIT COLLECTIVE');
+    buffer.writeln('CHANTIER: ${widget.projectName} | WILAYA: $wilaya');
+    buffer.writeln('DATE: ${DateTime.now().toLocal().toString().split(' ')[0]}');
+    buffer.writeln('TOTAL OUVRAGES: ${widget.specs.length}');
+    buffer.writeln('========================================');
+
+    double totalLinearCutMm = 0;
+    double totalGlassM2 = 0;
+
+    for (int i = 0; i < widget.specs.length; i++) {
+      final s = widget.specs[i];
+      final cuts = s.computeCutList();
+      final ref = s.openingReference.isNotEmpty ? s.openingReference : 'F${i + 1}';
+      buffer.writeln('');
+      buffer.writeln('--- OUVRAGE [$ref] : ${s.title} ---');
+      buffer.writeln('Dimensions: ${s.widthMm.toInt()} x ${s.heightMm.toInt()} mm | Qte: ${s.quantity}');
+      buffer.writeln('Système: ${s.profileSystem} | Teinte: ${s.finishColor}');
+      buffer.writeln('Vitrage: ${s.glassType}');
+      buffer.writeln('DÉBITS DE SCIAGE:');
+      for (int j = 0; j < cuts.length; j++) {
+        final c = cuts[j];
+        buffer.writeln('  ${j + 1}. ${c.label}: ${c.lengthMm.toInt()} mm (${c.cutAngles}) x ${c.quantity}');
+        if (c.role != 'Vitrage') {
+          totalLinearCutMm += c.lengthMm * c.quantity;
+        }
+      }
+      final glassArea = (s.calculateCost()['areaM2'] ?? 0.0);
+      totalGlassM2 += glassArea;
+    }
+
+    final totalBars6m = (totalLinearCutMm / 6000.0).ceil();
+
+    buffer.writeln('');
+    buffer.writeln('========================================');
+    buffer.writeln('RÉSUMÉ MATIÈRE PREMIÈRE CHANTIER:');
+    buffer.writeln('Estimation Barres de Stock (6.00m): $totalBars6m barres');
+    buffer.writeln('Linéaire Total Usiné: ${(totalLinearCutMm / 1000).toStringAsFixed(1)} m');
+    buffer.writeln('Surface Totale Vitrage Net: ${totalGlassM2.toStringAsFixed(2)} m²');
+    buffer.writeln('========================================');
+    buffer.writeln('Généré via Baiti Atelier Mobile | Conforme DTR C3-2');
+    return buffer.toString();
+  }
+
+  Future<void> _shareViaWhatsApp(BuildContext context, String text) async {
+    final uri = Uri.parse('whatsapp://send?text=${Uri.encodeComponent(text)}');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Impossible d\'ouvrir WhatsApp sur cet appareil')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur WhatsApp: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final wilaya = widget.specs.isNotEmpty ? widget.specs.first.clientWilaya : 'Alger';
+    final quoteId = 'DEV-26-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+
+    final totalHt = widget.specs.fold<double>(
+      0.0,
+      (sum, s) => sum + (s.calculateCost()['grandTotal'] ?? 0.0),
+    );
+    final tva19 = totalHt * 0.19;
+    final totalTtc = totalHt + tva19;
+    final acompte40 = totalTtc * 0.40;
+    final solde60 = totalTtc * 0.60;
+
+    final quotationText = _generateQuotationText(
+      totalHt,
+      tva19,
+      totalTtc,
+      acompte40,
+      solde60,
+      wilaya,
+      quoteId,
+    );
+
+    final cutSheetText = _generateCollectiveCutSheetText(wilaya);
+
+    // Aggregate saw statistics across all openings
+    double aggregateLinearCutMm = 0;
+    double aggregateGlassM2 = 0;
+    int totalPiecesCount = 0;
+
+    for (final s in widget.specs) {
+      final cuts = s.computeCutList();
+      for (final c in cuts) {
+        totalPiecesCount += c.quantity;
+        if (c.role != 'Vitrage') {
+          aggregateLinearCutMm += c.lengthMm * c.quantity;
+        }
+      }
+      aggregateGlassM2 += (s.calculateCost()['areaM2'] ?? 0.0);
+    }
+    final aggregateBars6m = (aggregateLinearCutMm / 6000.0).ceil();
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.96,
+      builder: (ctx, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF0F1422),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(top: BorderSide(color: Color(0xFF334155), width: 1.5)),
+          ),
+          child: Column(
+            children: [
+              // Sheet Drag Handle
+              Center(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 10, bottom: 8),
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF475569),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              // Sheet Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.receipt_long_rounded, color: Color(0xFFD4AF37), size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Text(
+                                'Baiti Atelier',
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'بيتي',
+                                textDirection: TextDirection.rtl,
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37)),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '${widget.projectName} • $quoteId',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontFamily: 'monospace'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Color(0xFF94A3B8)),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Segmented Tab Switcher: Devis Financier vs Fiche Débit Atelier
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF131927),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF1E293B)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() => _activeTab = 0);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _activeTab == 0 ? const Color(0xFFD4AF37).withValues(alpha: 0.18) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(9),
+                            border: Border.all(
+                              color: _activeTab == 0 ? const Color(0xFFD4AF37) : Colors.transparent,
+                              width: 1.2,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.receipt_long_rounded,
+                                size: 14,
+                                color: _activeTab == 0 ? const Color(0xFFD4AF37) : const Color(0xFF64748B),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Devis Proforma',
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 11,
+                                  fontWeight: _activeTab == 0 ? FontWeight.bold : FontWeight.normal,
+                                  color: _activeTab == 0 ? Colors.white : const Color(0xFF94A3B8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() => _activeTab = 1);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _activeTab == 1 ? const Color(0xFF38BDF8).withValues(alpha: 0.18) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(9),
+                            border: Border.all(
+                              color: _activeTab == 1 ? const Color(0xFF38BDF8) : Colors.transparent,
+                              width: 1.2,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.content_cut_rounded,
+                                size: 14,
+                                color: _activeTab == 1 ? const Color(0xFF38BDF8) : const Color(0xFF64748B),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Débit Scie & Verre',
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 11,
+                                  fontWeight: _activeTab == 1 ? FontWeight.bold : FontWeight.normal,
+                                  color: _activeTab == 1 ? Colors.white : const Color(0xFF94A3B8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Divider(color: Color(0xFF1E293B), height: 1),
+
+              // Document Sheet Body
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    if (_activeTab == 0) ...[
+                      // TAB 0: FINANCIAL PROFORMA QUOTATION
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF131927),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF1E293B)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'BAITI ATELIER SARL | بيتي',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    const Text(
+                                      'Menuiserie Aluminium, PVC & Agencement',
+                                      style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                    ),
+                                  ],
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                                  ),
+                                  child: const Text(
+                                    'DTR C3-2 VALIDE',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF10B981),
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            const Divider(color: Color(0xFF1E293B), height: 1),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('CLIENT & CHANTIER', style: TextStyle(fontSize: 9, color: Color(0xFF64748B), fontFamily: 'monospace')),
+                                    const SizedBox(height: 2),
+                                    Text(widget.projectName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                                    Text('Wilaya de $wilaya', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    const Text('DATE EMISSION', style: TextStyle(fontSize: 9, color: Color(0xFF64748B), fontFamily: 'monospace')),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      DateTime.now().toLocal().toString().split(' ')[0],
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'monospace'),
+                                    ),
+                                    const Text('Validite: 30 jours', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Table of Items
+                      const Text(
+                        'NOMENCLATURE DES OUVRAGES',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8), letterSpacing: 0.8),
+                      ),
+                      const SizedBox(height: 8),
+
+                      ...widget.specs.asMap().entries.map((entry) {
+                        final i = entry.key;
+                        final s = entry.value;
+                        final c = s.calculateCost();
+                        final ref = s.openingReference.isNotEmpty ? s.openingReference : 'F${i + 1}';
+                        final itemTotal = (c['grandTotal'] ?? 0.0).round();
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF131927),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFF1E293B)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  ref,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFD4AF37),
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      s.title,
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      '${s.widthMm.toInt()} x ${s.heightMm.toInt()} mm (Qte: ${s.quantity}) • ${s.profileSystem}',
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                    ),
+                                    Text(
+                                      '${s.finishColor} • ${s.glassType}',
+                                      style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                _formatDzd(itemTotal.toDouble()),
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+
+                      const SizedBox(height: 16),
+
+                      // Financial Summary Card
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF131927),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF1E293B)),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Sous-total Châssis HT', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                                Text(_formatDzd(totalHt), style: const TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'monospace')),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('TVA Fiscale Légale (19%)', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                                Text(_formatDzd(tva19), style: const TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'monospace')),
+                              ],
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: Divider(color: Color(0xFF1E293B), height: 1),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('TOTAL GENERAL TTC', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+                                Text(
+                                  _formatDzd(totalTtc),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFFD4AF37),
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // Payment Schedule Badges
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0F231D),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFF059669).withValues(alpha: 0.4)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('ACOMPTE REQUIS (40%)', style: TextStyle(fontSize: 9, color: Color(0xFF10B981), fontFamily: 'monospace', fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 3),
+                                  Text(_formatDzd(acompte40), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF181E2E),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.4)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('SOLDE APRES POSE (60%)', style: TextStyle(fontSize: 9, color: Color(0xFF60A5FA), fontFamily: 'monospace', fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 3),
+                                  Text(_formatDzd(solde60), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF60A5FA))),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      // TAB 1: WORKSHOP COLLECTIVE SAW CUT SHEET & GLAZING LIST
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF131927),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.content_cut_rounded, size: 18, color: Color(0xFF38BDF8)),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'RÉSUMÉ DÉBITS CHANTIER',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '${widget.specs.length} châssis • $totalPiecesCount pièces',
+                                    style: const TextStyle(fontSize: 10, color: Color(0xFF38BDF8), fontFamily: 'monospace', fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            const Divider(color: Color(0xFF1E293B), height: 1),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text('STOCK BARRES 6M', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8), fontFamily: 'monospace')),
+                                        const SizedBox(height: 3),
+                                        Text('$aggregateBars6m barres', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF10B981), fontFamily: 'monospace')),
+                                        Text('${(aggregateLinearCutMm / 1000).toStringAsFixed(1)} m linéaires', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text('VITRAGE TOTAL NET', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8), fontFamily: 'monospace')),
+                                        const SizedBox(height: 3),
+                                        Text('${aggregateGlassM2.toStringAsFixed(2)} m²', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8), fontFamily: 'monospace')),
+                                        const Text('Surface vitrière totale', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        'DÉTAIL DES COUPES PAR CHÂSSIS',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8), letterSpacing: 0.8),
+                      ),
+                      const SizedBox(height: 8),
+
+                      ...widget.specs.asMap().entries.map((entry) {
+                        final i = entry.key;
+                        final s = entry.value;
+                        final cuts = s.computeCutList();
+                        final ref = s.openingReference.isNotEmpty ? s.openingReference : 'F${i + 1}';
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF131927),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFF1E293B)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          ref,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF38BDF8),
+                                            fontFamily: 'monospace',
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        s.title,
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    '${s.widthMm.toInt()} × ${s.heightMm.toInt()} mm',
+                                    style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Color(0xFFD4AF37), fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E293B),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Expanded(flex: 5, child: Text('PIÈCE', style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold))),
+                                    Expanded(flex: 3, child: Text('COTE', textAlign: TextAlign.right, style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold))),
+                                    Expanded(flex: 2, child: Text('ANGLES', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold))),
+                                    Expanded(flex: 2, child: Text('QTÉ', textAlign: TextAlign.right, style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold))),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              ...cuts.map((c) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 5,
+                                        child: Text(
+                                          c.label,
+                                          style: const TextStyle(fontSize: 10.5, color: Colors.white70),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 3,
+                                        child: Text(
+                                          '${c.lengthMm.toInt()} mm',
+                                          textAlign: TextAlign.right,
+                                          style: const TextStyle(
+                                            fontFamily: 'monospace',
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF38BDF8),
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          c.cutAngles,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            fontFamily: 'monospace',
+                                            fontSize: 9,
+                                            color: Color(0xFF94A3B8),
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          '${c.quantity}x',
+                                          textAlign: TextAlign.right,
+                                          style: const TextStyle(
+                                            fontFamily: 'monospace',
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+
+              // Action Toolbar: adapts dynamically to current active tab
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0B0F17),
+                  border: Border(top: BorderSide(color: Color(0xFF1E293B))),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF94A3B8),
+                          side: const BorderSide(color: Color(0xFF334155)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () {
+                          final textToCopy = _activeTab == 0 ? quotationText : cutSheetText;
+                          Clipboard.setData(ClipboardData(text: textToCopy));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                _activeTab == 0
+                                    ? 'Devis formel copié dans le presse-papier.'
+                                    : 'Fiche de débit collective copiée dans le presse-papier.',
+                              ),
+                              backgroundColor: const Color(0xFF059669),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.copy_rounded, size: 16),
+                        label: Text(
+                          _activeTab == 0 ? 'Copier Devis' : 'Copier Fiche Débit',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _activeTab == 0 ? const Color(0xFF10B981) : const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () {
+                          final textToSend = _activeTab == 0 ? quotationText : cutSheetText;
+                          _shareViaWhatsApp(context, textToSend);
+                        },
+                        icon: Icon(
+                          _activeTab == 0 ? Icons.send_rounded : Icons.content_cut_rounded,
+                          size: 16,
+                        ),
+                        label: Text(
+                          _activeTab == 0 ? 'WhatsApp Client' : 'WhatsApp Atelier',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

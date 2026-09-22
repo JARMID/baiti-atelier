@@ -1,0 +1,609 @@
+import React, { useRef, useState, useEffect, useCallback, Suspense } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, ContactShadows } from '@react-three/drei';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import * as THREE from 'three';
+import { useScroll } from 'framer-motion';
+import { useConfigStore } from '../../store/configStore';
+import type { TradeCategory } from '../../types/trades';
+import type { FinishColor } from '../../types/window';
+import { Hero3DWorkpiece, type WindowModelType } from '../3d/Hero3DWorkpiece';
+import {
+  ArrowRight,
+  Rotate3d,
+  Layers,
+  Compass,
+  Download,
+} from 'lucide-react';
+import {
+  playTactileClick,
+  playSwitchSound,
+  playSlideTick,
+} from '../../utils/audioFeedback';
+
+interface HeroScrollytellingStudioProps {
+  activeTrade?: TradeCategory;
+  onSelectTrade?: (trade: TradeCategory) => void;
+}
+
+// Smooth Camera Controller that choreographs based on scrollProgress
+interface CameraRigProps {
+  scrollProgress: number;
+  mouseOffset: { x: number; y: number };
+  is360Active: boolean;
+}
+
+const CameraRig: React.FC<CameraRigProps> = ({ scrollProgress, mouseOffset, is360Active }) => {
+  useFrame(({ camera }) => {
+    if (is360Active) return;
+
+    // Stage 1 (0.0 - 0.35): Overview perspective
+    let targetX = 0;
+    let targetY = 0.05;
+    let targetZ = 3.6;
+    let lookX = 0;
+    let lookY = 0;
+
+    if (scrollProgress >= 0.35 && scrollProgress < 0.7) {
+      // Stage 2: Technical zoom on profile & interior assembly
+      const t = (scrollProgress - 0.35) / 0.35;
+      targetX = THREE.MathUtils.lerp(0, 0.45, t);
+      targetY = THREE.MathUtils.lerp(0.05, 0.2, t);
+      targetZ = THREE.MathUtils.lerp(3.6, 2.2, t);
+      lookX = THREE.MathUtils.lerp(0, 0.25, t);
+      lookY = THREE.MathUtils.lerp(0, 0.1, t);
+    } else if (scrollProgress >= 0.7) {
+      // Stage 3: Dynamic cinematic multi-angle inspection view
+      const t = (scrollProgress - 0.7) / 0.3;
+      targetX = THREE.MathUtils.lerp(0.45, 0, t);
+      targetY = THREE.MathUtils.lerp(0.2, 0.1, t);
+      targetZ = THREE.MathUtils.lerp(2.2, 3.2, t);
+      lookX = 0;
+      lookY = 0;
+    }
+
+    const mouseX = mouseOffset.x * 0.14;
+    const mouseY = mouseOffset.y * 0.1;
+
+    camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX + mouseX, 0.08);
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY + mouseY, 0.08);
+    camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, 0.08);
+    camera.lookAt(lookX, lookY, 0);
+  });
+
+  return null;
+};
+
+export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> = ({
+  activeTrade = 'aluminum',
+  onSelectTrade,
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const orbitRef = useRef<OrbitControlsImpl | null>(null);
+
+  const { language, config, setFinishColor, theme } = useConfigStore();
+  const isLight = theme === 'light';
+  const isRtl = language === 'ar';
+
+  const [selectedTrade, setSelectedTrade] = useState<TradeCategory>(activeTrade);
+  const [windowModel, setWindowModel] = useState<WindowModelType>('sliding');
+  const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
+  const [is360Active, setIs360Active] = useState(false);
+  const [isExploded, setIsExploded] = useState(false);
+
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end end'],
+  });
+
+  const [scrollVal, setScrollVal] = useState(0);
+
+  useEffect(() => {
+    return scrollYProgress.on('change', (v) => {
+      setScrollVal(v);
+    });
+  }, [scrollYProgress]);
+
+  // Mouse tilt parallax
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+    setMouseOffset({ x, y });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setMouseOffset({ x: 0, y: 0 });
+  }, []);
+
+  const handleTradeSwitch = (trade: TradeCategory) => {
+    playSwitchSound();
+    setSelectedTrade(trade);
+    if (onSelectTrade) {
+      onSelectTrade(trade);
+    }
+  };
+
+  const handleColorSwitch = (color: FinishColor) => {
+    playSlideTick();
+    setFinishColor(color);
+  };
+
+  const handleToggle360 = () => {
+    playTactileClick();
+    setIs360Active(!is360Active);
+  };
+
+  const handleToggleExploded = () => {
+    playSwitchSound();
+    setIsExploded(!isExploded);
+  };
+
+  const isStage1 = scrollVal < 0.35;
+  const isStage2 = scrollVal >= 0.35 && scrollVal < 0.7;
+  const isStage3 = scrollVal >= 0.7;
+
+  const colorSwatches: { id: FinishColor; label: string; hex: string }[] = [
+    { id: 'ral_9016', label: 'Blanc RAL 9016', hex: '#FFFFFF' },
+    { id: 'ral_7016', label: 'Gris Anthracite 7016', hex: '#374151' },
+    { id: 'faux_bois', label: 'Chêne Doré', hex: '#8B5A2B' },
+    { id: 'ral_9005', label: 'Noir Sablé 9005', hex: '#111827' },
+    { id: 'bronze_ano', label: 'Bronze Anodisé', hex: '#6A5641' },
+  ];
+
+  const tradePills: { id: TradeCategory; label: string; arabic: string }[] = [
+    { id: 'aluminum', label: 'Aluminium 45 RPT', arabic: 'ألمنيوم RPT' },
+    { id: 'woodworking', label: 'Ébénisterie Bois', arabic: 'نجارة الخشب' },
+    { id: 'metalwork', label: 'Ferronnerie d’Art', arabic: 'الحدادة الفنية' },
+    { id: 'tapestry', label: 'Tapisserie & Draperie', arabic: 'الستائر والأثاث' },
+  ];
+
+  const windowModelPills: { id: WindowModelType; label: string; arabic: string }[] = [
+    { id: 'sliding', label: 'Coulissant 2V', arabic: 'سحاب 2 درف' },
+    { id: 'tilt_and_turn', label: 'Oscillo-Battant', arabic: 'قلاب متحرك' },
+    { id: 'french_casement', label: 'Battant 2V', arabic: 'مفصلي 2 درف' },
+  ];
+
+  return (
+    <div
+      ref={containerRef}
+      className={`relative w-full h-[260vh] select-none transition-colors duration-300 ${
+        isLight ? 'bg-[#F8FAFC] text-slate-900' : 'bg-[#06080C] text-white'
+      }`}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      dir={isRtl ? 'rtl' : 'ltr'}
+    >
+      {/* STICKY FULLSCREEN 3D VIEWPORT */}
+      <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-between">
+        {/* Ambient Radial Lighting in Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div
+            className={`absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-[140px] ${
+              isLight ? 'bg-amber-400/10' : 'bg-[#D4AF37]/6'
+            }`}
+          />
+          <div
+            className={`absolute bottom-10 right-1/4 w-[500px] h-[500px] rounded-full blur-[120px] ${
+              isLight ? 'bg-sky-400/10' : 'bg-[#38BDF8]/5'
+            }`}
+          />
+        </div>
+
+        {/* TOP BRAND EMBLEM (Architectural Clean Design) */}
+        <div className="relative z-20 pt-6 px-6 sm:px-12 flex items-center justify-between pointer-events-none">
+          <div className="flex items-center gap-3 pointer-events-auto">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#C5A880] to-[#D4AF37] p-0.5 flex items-center justify-center shadow-lg shadow-[#D4AF37]/20">
+              <div
+                className={`w-full h-full rounded-[6px] flex items-center justify-center ${
+                  isLight ? 'bg-white text-slate-900' : 'bg-[#07090E] text-[#D4AF37]'
+                }`}
+              >
+                <Compass className="w-4 h-4 text-[#D4AF37]" />
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`font-serif tracking-[0.22em] text-xs uppercase font-bold ${
+                    isLight ? 'text-slate-900' : 'text-zinc-100'
+                  }`}
+                >
+                  BAITI ATELIER
+                </span>
+                <span className="text-xs text-[#D4AF37] font-bold font-arabic">بيتي</span>
+              </div>
+              <span
+                className={`text-[9px] font-mono tracking-widest uppercase -mt-0.5 ${
+                  isLight ? 'text-slate-500' : 'text-zinc-500'
+                }`}
+              >
+                ATELIER NUMÉRIQUE & DÉBITAGE · 58 WILAYAS
+              </span>
+            </div>
+          </div>
+
+          <div className="hidden md:flex items-center gap-4 text-[10px] font-mono tracking-widest uppercase pointer-events-auto">
+            <span className={isLight ? 'text-slate-600' : 'text-zinc-400'}>DTR C3-2 COMPLIANT</span>
+            <span className="text-zinc-400">•</span>
+            <span className={isLight ? 'text-slate-600' : 'text-zinc-400'}>TOLÉRANCE 0.1 MM</span>
+            <span className="text-zinc-400">•</span>
+            <a
+              href="/downloads/baiti-atelier-desktop-setup.exe"
+              download
+              className={`px-3 py-1 rounded-full border text-[10px] font-mono tracking-wider transition-all flex items-center gap-1.5 cursor-pointer hover-lift ${
+                isLight
+                  ? 'bg-white border-slate-300 text-slate-800 hover:border-[#D4AF37]'
+                  : 'bg-white/5 border-white/15 text-zinc-200 hover:border-white/30'
+              }`}
+            >
+              <Download className="w-3 h-3 text-[#D4AF37]" />
+              <span>App Atelier (.exe)</span>
+            </a>
+          </div>
+        </div>
+
+        {/* 3D WEBGL CANVAS */}
+        <div className="absolute inset-0 z-10">
+          <Canvas
+            camera={{ position: [0, 0.05, 3.6], fov: 42 }}
+            gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+          >
+            {isLight ? (
+              <>
+                <ambientLight intensity={1.1} color="#FFFFFF" />
+                <directionalLight position={[5, 8, 5]} intensity={1.7} color="#FFFBF5" castShadow />
+                <directionalLight position={[-5, 6, -2]} intensity={0.7} color="#E0F2FE" />
+                <directionalLight position={[0, -2, 3]} intensity={0.5} color="#D4AF37" />
+              </>
+            ) : (
+              <>
+                <ambientLight intensity={0.6} color="#FFFFFF" />
+                <directionalLight position={[4, 6, 4]} intensity={1.8} color="#FFF5EA" castShadow />
+                <directionalLight position={[-4, 5, -2]} intensity={2.0} color="#38BDF8" />
+                <directionalLight position={[0, -3, 2]} intensity={0.9} color="#D4AF37" />
+              </>
+            )}
+
+            <Suspense fallback={null}>
+              <Hero3DWorkpiece
+                trade={selectedTrade}
+                finishColor={config.finishColor}
+                scrollProgress={scrollVal}
+                isExploded={isExploded}
+                isOpen={scrollVal >= 0.35}
+                windowModel={windowModel}
+              />
+              <ContactShadows
+                position={[0, -1.05, 0]}
+                opacity={isLight ? 0.35 : 0.65}
+                scale={6}
+                blur={2.2}
+                far={3}
+                color={isLight ? '#64748B' : '#000000'}
+              />
+            </Suspense>
+
+            <CameraRig
+              scrollProgress={scrollVal}
+              mouseOffset={mouseOffset}
+              is360Active={is360Active || isStage3}
+            />
+
+            {(is360Active || isStage3) && (
+              <OrbitControls
+                ref={orbitRef}
+                enableZoom={false}
+                enablePan={false}
+                rotateSpeed={0.8}
+                minPolarAngle={Math.PI / 4}
+                maxPolarAngle={Math.PI * 0.75}
+              />
+            )}
+          </Canvas>
+        </div>
+
+        {/* DYNAMIC SCROLLYTELLING OVERLAY CONTENT */}
+        <div className="relative z-20 flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-20 pointer-events-none">
+          {/* STAGE 1: HERO OVERVIEW (0.0 to 0.35) */}
+          <div
+            className={`max-w-xl transition-all duration-700 ${
+              isStage1
+                ? 'opacity-100 translate-y-0 pointer-events-auto'
+                : 'opacity-0 -translate-y-8 pointer-events-none hidden'
+            }`}
+          >
+            <div
+              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-mono mb-4 backdrop-blur-md ${
+                isLight
+                  ? 'bg-white/80 border-slate-200 text-slate-700 shadow-xs'
+                  : 'bg-white/5 border-white/10 text-[#D4AF37]'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+              <span>CONCEPTION & DÉBITAGE INDUSTRIEL</span>
+            </div>
+
+            <h1
+              className={`text-4xl sm:text-6xl lg:text-7xl font-serif tracking-tight leading-[1.05] ${
+                isLight ? 'text-slate-900' : 'text-white'
+              }`}
+            >
+              L'ART DU DÉBIT <br />
+              <span className="italic font-normal text-[#C5A880] font-serif">en</span>{' '}
+              <span className="bg-gradient-to-r from-[#C5A880] via-[#D4AF37] to-[#E2C799] bg-clip-text text-transparent font-bold">
+                PRÉCISION
+              </span>
+            </h1>
+
+            <p
+              className={`mt-4 text-sm sm:text-base font-light leading-relaxed max-w-lg ${
+                isLight ? 'text-slate-600' : 'text-zinc-400'
+              }`}
+            >
+              Châssis aluminium à rupture thermique, agencements d'ébénisterie, ferronnerie d'art et draperie architecturale pour les maîtres ateliers des 58 Wilayas.
+            </p>
+
+            <div className="mt-8 flex items-center gap-4">
+              <a
+                href="#cad-studio"
+                onClick={() => playTactileClick()}
+                className="px-6 py-3.5 rounded-full border border-white/20 bg-[#D4AF37] hover:bg-[#C5A880] text-slate-950 text-xs font-mono tracking-wider uppercase transition-all duration-300 shadow-xl flex items-center gap-2 group cursor-pointer hover-lift btn-press"
+              >
+                <span>OUVRIR LE STUDIO CAO</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </a>
+            </div>
+          </div>
+
+          {/* STAGE 2: CRAFTSMANSHIP & TECHNICAL REVEAL (0.35 to 0.70) */}
+          <div
+            className={`max-w-2xl mx-auto text-center transition-all duration-700 ${
+              isStage2
+                ? 'opacity-100 translate-y-0 pointer-events-auto'
+                : 'opacity-0 translate-y-8 pointer-events-none hidden'
+            }`}
+          >
+            <div
+              className={`inline-flex items-center gap-2 px-3.5 py-1 rounded-full border text-xs font-mono mb-3 backdrop-blur-md ${
+                isLight
+                  ? 'bg-white/80 border-slate-200 text-slate-800 shadow-xs'
+                  : 'bg-[#D4AF37]/15 border-[#D4AF37]/30 text-[#D4AF37]'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
+              <span>CONFORMITÉ TECHNIQUE DTR C3-2 · TOLÉRANCE 0.1 MM</span>
+            </div>
+
+            <h2
+              className={`text-3xl sm:text-5xl font-serif tracking-tight leading-tight ${
+                isLight ? 'text-slate-900' : 'text-white'
+              }`}
+            >
+              COUPE & STRUCTURE <br />
+              <span className="bg-gradient-to-r from-[#C5A880] to-[#D4AF37] bg-clip-text text-transparent italic">
+                DÉVOILÉES
+              </span>
+            </h2>
+
+            <p
+              className={`mt-3 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed ${
+                isLight ? 'text-slate-600' : 'text-zinc-300'
+              }`}
+            >
+              Chaque profilé RPT, chaque chant ABS et chaque barreau forgé est calculé pour éliminer les chutes. L'isolation thermique Uw 1.4 W/m²K répond aux exigences des chantiers algériens.
+            </p>
+
+            {/* Technical Metric Chips */}
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <div
+                className={`px-4 py-2 rounded-2xl border backdrop-blur-xl text-xs font-mono ${
+                  isLight ? 'bg-white/90 border-slate-200 shadow-xs' : 'bg-black/60 border-white/15'
+                }`}
+              >
+                <span className={`block text-[10px] ${isLight ? 'text-slate-500' : 'text-zinc-500'}`}>
+                  ISOLATION THERMIQUE
+                </span>
+                <span className="text-[#D4AF37] font-bold text-sm">Uw = 1.4 W/m²K</span>
+              </div>
+              <div
+                className={`px-4 py-2 rounded-2xl border backdrop-blur-xl text-xs font-mono ${
+                  isLight ? 'bg-white/90 border-slate-200 shadow-xs' : 'bg-black/60 border-white/15'
+                }`}
+              >
+                <span className={`block text-[10px] ${isLight ? 'text-slate-500' : 'text-zinc-500'}`}>
+                  TAUX DE CHUTE ESTIMÉ
+                </span>
+                <span className="text-emerald-500 font-bold text-sm">&lt; 3.5% Chutes</span>
+              </div>
+              <div
+                className={`px-4 py-2 rounded-2xl border backdrop-blur-xl text-xs font-mono ${
+                  isLight ? 'bg-white/90 border-slate-200 shadow-xs' : 'bg-black/60 border-white/15'
+                }`}
+              >
+                <span className={`block text-[10px] ${isLight ? 'text-slate-500' : 'text-zinc-500'}`}>
+                  COUPE ONGLET CNC
+                </span>
+                <span className="text-cyan-500 font-bold text-sm">Tolérance 0.1 mm</span>
+              </div>
+            </div>
+          </div>
+
+          {/* STAGE 3: 360° INTERACTIVE MULTI-AXIS INSPECTION (0.70 to 1.0) */}
+          <div
+            className={`max-w-xl mx-auto text-center transition-all duration-700 ${
+              isStage3
+                ? 'opacity-100 translate-y-0 pointer-events-auto'
+                : 'opacity-0 translate-y-8 pointer-events-none hidden'
+            }`}
+          >
+            <span className="text-[11px] font-mono tracking-[0.25em] text-[#D4AF37] uppercase block mb-2">
+              INSPECTION TECHNIQUE 360°
+            </span>
+            <h2
+              className={`text-3xl sm:text-5xl font-serif tracking-tight leading-tight ${
+                isLight ? 'text-slate-900' : 'text-white'
+              }`}
+            >
+              EXAMINEZ CHAQUE ANGLE <br />
+              <span className={`italic font-serif ${isLight ? 'text-slate-600' : 'text-zinc-400'}`}>
+                de l'ouvrage en atelier
+              </span>
+            </h2>
+
+            <div
+              className={`mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-mono backdrop-blur-xl shadow-lg ${
+                isLight ? 'bg-white/90 border-slate-200 text-slate-800' : 'bg-white/10 border-white/20 text-zinc-200'
+              }`}
+            >
+              <Rotate3d className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span>CLIQUEZ ET FAITES GLISSER POUR PIVOTER EN TEMPS RÉEL</span>
+            </div>
+          </div>
+        </div>
+
+        {/* BOTTOM HUD / FOOTPRINT LABELS */}
+        <div
+          className={`relative z-20 px-6 sm:px-12 pb-24 flex items-center justify-between text-[11px] font-mono tracking-wider pointer-events-none ${
+            isLight ? 'text-slate-500' : 'text-zinc-500'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
+            <span>
+              {isStage1
+                ? 'FAITES DÉFILER POUR EXPLORER L’INTÉRIEUR'
+                : isStage2
+                ? 'VUE ÉCLATÉE & QUINCAILLERIE'
+                : 'INSPECTION 360° ACTIVE'}
+            </span>
+          </div>
+          <div>
+            <span>ALGER · ORAN · CONSTANTINE · 58 WILAYAS</span>
+          </div>
+        </div>
+
+        {/* FLOATING LUXURY CUSTOMIZER DOCK */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-auto max-w-[95vw]">
+          <div
+            className={`inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 rounded-3xl sm:rounded-full border backdrop-blur-2xl transition-colors shadow-2xl ${
+              isLight
+                ? 'bg-white/90 border-slate-200 text-slate-800 shadow-slate-300/50'
+                : 'bg-black/75 border-white/15 text-white shadow-black/80'
+            }`}
+          >
+            {/* SEGMENT 1: TRADE SELECTOR */}
+            <div className="flex items-center gap-1">
+              {tradePills.map((tr) => (
+                <button
+                  key={tr.id}
+                  onClick={() => handleTradeSwitch(tr.id)}
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] font-mono tracking-wide transition-all duration-200 cursor-pointer btn-press ${
+                    selectedTrade === tr.id
+                      ? 'bg-[#D4AF37] text-slate-950 font-bold shadow-md shadow-[#D4AF37]/30 scale-[1.03]'
+                      : isLight
+                      ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      : 'text-zinc-400 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <span>{language === 'ar' ? tr.arabic : tr.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* SEGMENT 1.5: WINDOW MODEL SELECTOR (WHEN ALUMINUM SELECTED) */}
+            {selectedTrade === 'aluminum' && (
+              <>
+                <div className={`hidden sm:block w-px h-5 ${isLight ? 'bg-slate-200' : 'bg-white/20'}`} />
+                <div className="flex items-center gap-1">
+                  {windowModelPills.map((wm) => (
+                    <button
+                      key={wm.id}
+                      onClick={() => {
+                        playSwitchSound();
+                        setWindowModel(wm.id);
+                      }}
+                      className={`px-2.5 py-1.5 rounded-full text-[10px] font-mono transition-all cursor-pointer btn-press ${
+                        windowModel === wm.id
+                          ? isLight
+                            ? 'bg-slate-900 text-white font-bold'
+                            : 'bg-white text-slate-950 font-bold'
+                          : isLight
+                          ? 'text-slate-600 hover:bg-slate-100'
+                          : 'text-zinc-400 hover:bg-white/10'
+                      }`}
+                    >
+                      {language === 'ar' ? wm.arabic : wm.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* DIVIDER */}
+            <div className={`hidden sm:block w-px h-5 ${isLight ? 'bg-slate-200' : 'bg-white/20'}`} />
+
+            {/* SEGMENT 2: FINISH PALETTE SWATCHES */}
+            <div className="flex items-center gap-2">
+              <span className={`hidden lg:inline text-[10px] font-mono uppercase ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>
+                TEINTE :
+              </span>
+              <div className="flex items-center gap-1.5">
+                {colorSwatches.map((sw) => (
+                  <button
+                    key={sw.id}
+                    onClick={() => handleColorSwitch(sw.id)}
+                    title={sw.label}
+                    className={`w-5 h-5 rounded-full border transition-all cursor-pointer ${
+                      config.finishColor === sw.id
+                        ? 'ring-2 ring-[#D4AF37] scale-125 border-white shadow-xs'
+                        : isLight
+                        ? 'opacity-80 hover:opacity-100 border-slate-300'
+                        : 'opacity-70 hover:opacity-100 border-white/30'
+                    }`}
+                    style={{ backgroundColor: sw.hex }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* DIVIDER */}
+            <div className={`w-px h-5 ${isLight ? 'bg-slate-200' : 'bg-white/20'}`} />
+
+            {/* SEGMENT 3: ACTION CONTROLS */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleToggleExploded}
+                title="Vue Éclatée"
+                className={`p-1.5 rounded-full border transition-all cursor-pointer ${
+                  isExploded
+                    ? 'bg-[#D4AF37] text-slate-950 border-[#D4AF37]'
+                    : isLight
+                    ? 'text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-100'
+                    : 'text-zinc-400 hover:text-white border-white/15 hover:bg-white/10'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={handleToggle360}
+                className={`px-3 py-1.5 rounded-full border text-[11px] font-mono tracking-wider uppercase transition-all flex items-center gap-1.5 cursor-pointer btn-press ${
+                  is360Active
+                    ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-md shadow-cyan-500/20'
+                    : isLight
+                    ? 'text-slate-700 border-slate-200 hover:border-slate-400 hover:bg-slate-100'
+                    : 'text-zinc-300 border-white/20 hover:border-white/40 hover:bg-white/10'
+                }`}
+              >
+                <Rotate3d className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span className="hidden sm:inline">360°</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
