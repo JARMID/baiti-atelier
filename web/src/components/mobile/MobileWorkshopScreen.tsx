@@ -28,9 +28,12 @@ import {
   AlertTriangle,
   FileText,
   RotateCcw,
+  ShieldCheck,
 } from 'lucide-react';
 import { playTactileClick, playClampSound, playSwitchSound } from '../../utils/audioFeedback';
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
+import { WorkshopQualityModal } from './WorkshopQualityModal';
+import { getJobQualityInspection, computeQualityScore } from '../../utils/qualityControlManager';
 import {
   generateInstallationAcceptancePdf,
   generateFabricationOrderPdf,
@@ -312,6 +315,17 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
     setPaymentToast(`Versement de ${paymentAmount.toLocaleString('fr-DZ')} DZD enregistré !`);
     setTimeout(() => setPaymentToast(null), 3500);
     setPaymentJob(null);
+  };
+
+  // Quality Control modal state
+  const [qualityJob, setQualityJob] = useState<WorkshopJob | null>(null);
+  const [isQualityModalOpen, setIsQualityModalOpen] = useState<boolean>(false);
+  const [, setQaRefreshKey] = useState<number>(0);
+
+  const handleOpenQualityModal = (job: WorkshopJob) => {
+    playTactileClick();
+    setQualityJob(job);
+    setIsQualityModalOpen(true);
   };
 
   const handleStockDelta = (id: string, delta: number) => {
@@ -710,6 +724,8 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
             const stageInfo = STAGE_CONFIG[job.stage];
             const balanceDue = job.totalAmountDzd - job.depositDzd;
             const isCompleted = job.stage === 'termine';
+            const qaInspection = getJobQualityInspection(job.id);
+            const qaScore = computeQualityScore(qaInspection);
 
             return (
               <div
@@ -740,13 +756,28 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
                     </h3>
                   </div>
 
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-[10px] font-bold border shrink-0 ${
-                      isLight ? stageInfo.bgLight : stageInfo.bgDark
-                    } ${stageInfo.color}`}
-                  >
-                    {stageInfo.labelFr}
-                  </span>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold border shrink-0 ${
+                        isLight ? stageInfo.bgLight : stageInfo.bgDark
+                      } ${stageInfo.color}`}
+                    >
+                      {stageInfo.labelFr}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenQualityModal(job)}
+                      className={`text-[9px] px-2 py-0.5 rounded-full font-bold border cursor-pointer transition-all flex items-center gap-1 ${
+                        qaScore.isFullyCompliant
+                          ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20'
+                          : 'bg-amber-500/10 border-amber-500/25 text-amber-400 hover:bg-amber-500/20'
+                      }`}
+                      title="Ouvrir la Fiche Contrôle Qualité Atelier"
+                    >
+                      <ShieldCheck className="w-2.5 h-2.5" />
+                      <span>QA {qaScore.conformeCount + qaScore.corrigeCount}/8 {qaScore.isFullyCompliant ? '✓' : ''}</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Job Description & Details */}
@@ -877,6 +908,22 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
                   >
                     <FileCheck className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
                     <span>PV de Pose</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenQualityModal(job)}
+                    className={`flex-1 py-2 px-2 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px] active:scale-98 transition-all ${
+                      qaScore.isFullyCompliant
+                        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 shadow-xs'
+                        : isLight
+                        ? 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 shadow-xs'
+                        : 'bg-amber-500/15 border-amber-500/30 text-amber-300 hover:bg-amber-500/25 shadow-xs'
+                    }`}
+                    title="Fiche de Contrôle Qualité Atelier & Bon de Sortie (PDF)"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>Fiche QA</span>
                   </button>
 
                   <button
@@ -1846,6 +1893,22 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Quality Control Modal */}
+      {qualityJob && (
+        <WorkshopQualityModal
+          key={qualityJob.id}
+          isOpen={isQualityModalOpen}
+          onClose={() => {
+            setIsQualityModalOpen(false);
+            setQualityJob(null);
+          }}
+          job={qualityJob}
+          onInspectionSaved={() => {
+            setQaRefreshKey((k) => k + 1);
+          }}
+        />
       )}
 
       {/* Floating Payment Toast */}

@@ -2832,5 +2832,240 @@ export async function generateHardwarePickListPdf(params: HardwarePickListPdfPar
   doc.save(safeFilename);
 }
 
+export interface QualityCheckItemRow {
+  id: string;
+  labelFr: string;
+  category: string;
+  descriptionFr: string;
+  standardToleranceFr: string;
+  status: 'conforme' | 'corrige' | 'non_applicable';
+}
+
+export interface GenerateQualityControlSheetParams {
+  jobId: string;
+  clientName: string;
+  clientPhone: string;
+  wilaya: string;
+  description: string;
+  itemCount: number;
+  dueDate: string;
+  inspectorName: string;
+  inspectedAt: string;
+  overallNotes: string;
+  items: QualityCheckItemRow[];
+  scorePercentage: number;
+  isApproved: boolean;
+}
+
+export async function generateQualityControlSheetPdf(
+  params: GenerateQualityControlSheetParams
+): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryBlue: [number, number, number] = [0, 51, 102];
+  const goldAccent: [number, number, number] = [212, 175, 55];
+  const docRef = `QA-${params.jobId}`;
+
+  // 1. Top Header Banner
+  doc.setFillColor(...primaryBlue);
+  doc.rect(0, 0, 210, 22, 'F');
+
+  doc.setFillColor(...goldAccent);
+  doc.rect(0, 22, 210, 1.5, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER • CONTRÔLE QUALITÉ & BON DE SORTIE ATELIER', 14, 10);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(220, 230, 242);
+  doc.text('Procédure de Réception Usine & Audit Technique Menuiserie Alu / PVC', 14, 16);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`RÉF : ${docRef}`, 196, 10, { align: 'right' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(212, 175, 55);
+  doc.text(`Date contrôle : ${params.inspectedAt}`, 196, 16, { align: 'right' });
+
+  // 2. Job Metadata Box
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 28, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...primaryBlue);
+  doc.text('DONNÉES DU CHANTIER & DE L AFFAIRE :', 18, 34);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(51, 65, 85);
+  doc.text(`Affaire : ${params.jobId} - ${params.clientName}`, 18, 40);
+  doc.text(`Téléphone : ${params.clientPhone || 'Non renseigné'}`, 18, 46);
+
+  doc.text(`Wilaya : ${params.wilaya}`, 110, 40);
+  doc.text(`Volume : ${params.itemCount} châssis`, 110, 46);
+
+  doc.text(`Date livraison prévue : ${params.dueDate}`, 155, 40);
+  doc.text(`Inspecteur : ${params.inspectorName}`, 155, 46);
+
+  // 3. Score & Approval Banner
+  const statusColor: [number, number, number] = params.isApproved ? [16, 185, 129] : [245, 158, 11];
+  doc.setDrawColor(...statusColor);
+  doc.setFillColor(params.isApproved ? 236 : 254, params.isApproved ? 253 : 243, params.isApproved ? 245 : 199);
+  doc.roundedRect(14, 55, 182, 11, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...statusColor);
+  const statusLabel = params.isApproved
+    ? `AUDIT CONFORME (${params.scorePercentage}%) • AUTORISATION DE SORTIE D ATELIER ACCORDÉE`
+    : `AUDIT AVEC RÉSERVES (${params.scorePercentage}%) • AJUSTEMENTS REQUIS AVANT CHARGEMENT`;
+  doc.text(statusLabel, 105, 62, { align: 'center' });
+
+  // 4. Quality Inspection Grid Table
+  const tableRows = params.items.map((it, idx) => {
+    let resultLabel = 'CONFORME';
+    if (it.status === 'corrige') resultLabel = 'AJUSTÉ & VALIDÉ';
+    if (it.status === 'non_applicable') resultLabel = 'SANS OBJET (N/A)';
+
+    let catLabel = 'Usinage';
+    if (it.category === 'etancheite_vitrage') catLabel = 'Étanchéité';
+    if (it.category === 'mecanique_quincaillerie') catLabel = 'Mécanique';
+    if (it.category === 'finition_emballage') catLabel = 'Finition';
+
+    return [
+      String(idx + 1),
+      catLabel,
+      it.labelFr,
+      it.standardToleranceFr,
+      resultLabel,
+      it.status === 'conforme' || it.status === 'corrige' ? 'VALIDE' : 'N/A',
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 69,
+    head: [['N°', 'Discipline', 'Point de Contrôle & Spécification Métier', 'Tolérance Requise', 'Résultat Audit', 'Visa']],
+    body: tableRows,
+    theme: 'grid',
+    styles: {
+      fontSize: 7,
+      cellPadding: 2,
+      textColor: [30, 41, 59],
+      valign: 'middle',
+    },
+    headStyles: {
+      fillColor: primaryBlue,
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 7.5,
+      halign: 'center',
+    },
+    columnStyles: {
+      0: { cellWidth: 8, halign: 'center', fontStyle: 'bold' },
+      1: { cellWidth: 20, fontStyle: 'bold', textColor: [0, 51, 102] },
+      2: { cellWidth: 64 },
+      3: { cellWidth: 50, fontSize: 6.5 },
+      4: { cellWidth: 26, halign: 'center', fontStyle: 'bold' },
+      5: { cellWidth: 14, halign: 'center', fontStyle: 'bold', textColor: [16, 185, 129] },
+    },
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index === 4) {
+        const val = String(data.cell.raw);
+        if (val.includes('CONFORME')) {
+          data.cell.styles.textColor = [16, 185, 129];
+        } else if (val.includes('AJUSTÉ')) {
+          data.cell.styles.textColor = [217, 119, 6];
+        } else {
+          data.cell.styles.textColor = [148, 163, 184];
+        }
+      }
+    },
+  });
+
+  const finalY = (doc as any).lastAutoTable.finalY + 4;
+  const isOverflow = finalY > 225;
+
+  if (isOverflow) {
+    doc.addPage();
+  }
+
+  const notesY = isOverflow ? 20 : finalY;
+
+  // 5. Overall Notes Box
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, notesY, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('OBSERVATIONS DU CHEF D ATELIER & DIRECTIVES CHANTIER :', 18, notesY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  const notesText = params.overallNotes || 'Tous les châssis ont fait l objet d un contrôle d équerrage et de bon fonctionnement mécanique. Prêts pour enlèvement.';
+  doc.text(doc.splitTextToSize(notesText, 174), 18, notesY + 11);
+
+  // 6. Signatures Box
+  const signY = notesY + 22;
+
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 24, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 24, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Le Responsable Qualité / Chef Atelier :', 18, signY + 5.5);
+  doc.text('Le Chauffeur-Livreur / Client :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Nom : ${params.inspectorName}`, 18, signY + 11);
+  doc.text('Date & Signature :', 18, signY + 18);
+
+  doc.text(`Nom : ${params.clientName}`, 135, signY + 11);
+  doc.text('Date & Signature (Bon pour départ) :', 135, signY + 18);
+
+  // 7. Dynamic QR Authentication Code
+  try {
+    const qrPayload = `BAITI|QA|${params.jobId}|SCORE=${params.scorePercentage}%|INSP=${params.inspectorName}|DATE=${params.inspectedAt}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // QR Code fallback
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Document de conformité technique généré par Baiti Atelier • ${docRef} • www.baitiatelier.dz`,
+    105,
+    288,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Fiche_Controle_Qualite_${docRef}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
