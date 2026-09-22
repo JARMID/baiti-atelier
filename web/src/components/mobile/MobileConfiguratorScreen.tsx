@@ -14,7 +14,10 @@ import {
   BookmarkPlus,
   X,
   FileCheck,
+  Scissors,
+  Compass,
 } from 'lucide-react';
+import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   playTactileClick,
   playSwitchSound,
@@ -62,28 +65,34 @@ const ACCESSORIES_LIST: AccessoryItem[] = [
   },
   {
     id: 'mosquito_screen',
-    name: 'Moustiquaire Intégrée',
-    desc: 'Toile fibre de verre enroulable',
+    name: 'Moustiquaire Enroulable',
+    desc: 'Toile fibre de verre intégrée',
     priceDzd: 8500,
   },
   {
-    id: 'silicone_seal_pack',
-    name: 'Pack Calfeutrement & Cales',
-    desc: 'Silicone neutre bâtiment et calage pro',
+    id: 'weather_seal_pack',
+    name: 'Pack Calfeutrement & Joint',
+    desc: 'Compribande et mastic silicone étanchéité',
     priceDzd: 2500,
   },
 ];
 
 const ALGERIAN_PRESETS: PresetItem[] = [
-  { id: 'p1', name: 'Fenêtre 120×120 Coulissante', w: 1200, h: 1200, opening: 'sliding_2' },
-  { id: 'p2', name: 'Baie Vitrée 215×180 (2V)', w: 1800, h: 2150, opening: 'sliding_2' },
+  { id: 'p1', name: 'Fenêtre Standard 120×120 (2V)', w: 1200, h: 1200, opening: 'sliding_2' },
+  { id: 'p2', name: 'Baie Vitrée Salon 215×180', w: 1800, h: 2150, opening: 'sliding_2' },
   { id: 'p3', name: 'Grande Baie 215×240 (3 Rails)', w: 2400, h: 2150, opening: 'sliding_3' },
   { id: 'p4', name: 'Fenêtre Chambre 100×120 OB', w: 1000, h: 1200, opening: 'tilt_turn' },
   { id: 'p5', name: 'Porte-Fenêtre 215×140 Battante', w: 1400, h: 2150, opening: 'casement_2' },
   { id: 'p6', name: 'Châssis Fixe Couloir 60×120', w: 600, h: 1200, opening: 'fixed' },
 ];
 
-export const MobileConfiguratorScreen: React.FC = () => {
+interface MobileConfiguratorScreenProps {
+  onNavigateTab?: (tab: MobileNavTab) => void;
+}
+
+export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> = ({
+  onNavigateTab,
+}) => {
   const {
     config,
     cost,
@@ -260,6 +269,133 @@ export const MobileConfiguratorScreen: React.FC = () => {
     setTimeout(() => setSurveyToastMessage(null), 3500);
   };
 
+  const handleSendToSawCutting = () => {
+    playClampSound();
+    const isSliding = config.openingType.startsWith('sliding');
+    const isFixed = config.openingType === 'fixed';
+    const isDoubleCasement = config.openingType === 'casement_2';
+
+    const cuts: Array<{
+      id: string;
+      length: number;
+      quantity: number;
+      miterLeft: 45 | 90;
+      miterRight: 45 | 90;
+      label: string;
+      profileCode: string;
+    }> = [];
+
+    // Frame (Dormant)
+    cuts.push({
+      id: `dorm_h_${Date.now()}_1`,
+      length: config.width,
+      quantity: 2,
+      miterLeft: 45,
+      miterRight: 45,
+      label: `Dormant Horiz. (${config.width} mm)`,
+      profileCode: 'DORMANT-CADRE',
+    });
+    cuts.push({
+      id: `dorm_v_${Date.now()}_2`,
+      length: config.height,
+      quantity: 2,
+      miterLeft: 45,
+      miterRight: 45,
+      label: `Montants Dormant (${config.height} mm)`,
+      profileCode: 'DORMANT-CADRE',
+    });
+
+    if (isFixed) {
+      cuts.push({
+        id: `parc_h_${Date.now()}_3`,
+        length: Math.max(100, config.width - 60),
+        quantity: 2,
+        miterLeft: 45,
+        miterRight: 45,
+        label: 'Parclose Horiz.',
+        profileCode: 'PARCLOSE-FIXE',
+      });
+      cuts.push({
+        id: `parc_v_${Date.now()}_4`,
+        length: Math.max(100, config.height - 60),
+        quantity: 2,
+        miterLeft: 45,
+        miterRight: 45,
+        label: 'Parclose Vert.',
+        profileCode: 'PARCLOSE-FIXE',
+      });
+    } else if (isSliding) {
+      const sashW = Math.round(config.width / (config.openingType === 'sliding_3' ? 3 : 2) + 15);
+      const sashH = Math.max(200, config.height - 75);
+      const qtySash = config.openingType === 'sliding_3' ? 6 : 4;
+      cuts.push({
+        id: `sash_h_${Date.now()}_3`,
+        length: sashW,
+        quantity: qtySash,
+        miterLeft: 45,
+        miterRight: 45,
+        label: `Traverse Ouvrant (${sashW} mm)`,
+        profileCode: 'OUVRANT-COULISSANT',
+      });
+      cuts.push({
+        id: `sash_v_${Date.now()}_4`,
+        length: sashH,
+        quantity: qtySash,
+        miterLeft: 45,
+        miterRight: 45,
+        label: `Montant Ouvrant (${sashH} mm)`,
+        profileCode: 'OUVRANT-COULISSANT',
+      });
+      cuts.push({
+        id: `chicane_${Date.now()}_5`,
+        length: sashH,
+        quantity: config.openingType === 'sliding_3' ? 4 : 2,
+        miterLeft: 90,
+        miterRight: 90,
+        label: `Chicane Centrale (${sashH} mm)`,
+        profileCode: 'CHICANE-CENTRALE',
+      });
+    } else {
+      // Casement or Tilt & Turn
+      const sashW = isDoubleCasement
+        ? Math.round((config.width - 85) / 2)
+        : Math.max(200, config.width - 80);
+      const sashH = Math.max(200, config.height - 80);
+      const sashQty = isDoubleCasement ? 4 : 2;
+      cuts.push({
+        id: `sash_h_${Date.now()}_3`,
+        length: sashW,
+        quantity: sashQty,
+        miterLeft: 45,
+        miterRight: 45,
+        label: `Traverse Vantail (${sashW} mm)`,
+        profileCode: 'OUVRANT-BATTANT',
+      });
+      cuts.push({
+        id: `sash_v_${Date.now()}_4`,
+        length: sashH,
+        quantity: sashQty,
+        miterLeft: 45,
+        miterRight: 45,
+        label: `Montant Vantail (${sashH} mm)`,
+        profileCode: 'OUVRANT-BATTANT',
+      });
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('baiti_cad_active_demands', JSON.stringify(cuts));
+        window.dispatchEvent(new Event('storage'));
+      } catch {
+        // Fallback
+      }
+    }
+
+    if (onNavigateTab) {
+      onNavigateTab('cutting');
+    }
+  };
+
   const OPENING_OPTIONS: { id: OpeningType; label: string; sub: string }[] = [
     { id: 'sliding_2', label: 'Coulissant 2V', sub: '2 Vantaux' },
     { id: 'sliding_3', label: 'Coulissant 3V', sub: '3 Rails' },
@@ -307,6 +443,60 @@ export const MobileConfiguratorScreen: React.FC = () => {
       >
         <WindowCanvas />
       </div>
+
+      {/* 1B. QUICK ARTISAN TOOLS DOCK */}
+      {onNavigateTab && (
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick();
+              onNavigateTab('cad');
+            }}
+            className={`px-3 py-2 rounded-2xl border text-[11px] font-mono font-medium flex items-center gap-1.5 shrink-0 cursor-pointer min-h-[44px] transition-all ${
+              isLight
+                ? 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50 shadow-xs'
+                : 'bg-white/5 border-white/10 text-zinc-300 hover:text-white hover:bg-white/10'
+            }`}
+            title="Ouvrir dans le Studio CAO 2D pour configurer traverses et meneaux"
+          >
+            <Compass className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span>Studio CAO 2D</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSendToSawCutting}
+            className={`px-3 py-2 rounded-2xl border text-[11px] font-mono font-bold flex items-center gap-1.5 shrink-0 cursor-pointer min-h-[44px] transition-all ${
+              isLight
+                ? 'bg-sky-50 border-sky-300 text-sky-900 hover:bg-sky-100 shadow-xs'
+                : 'bg-sky-500/15 border-sky-500/30 text-sky-300 hover:bg-sky-500/25'
+            }`}
+            title="Envoyer les débits à l'optimiseur de scie 1D"
+          >
+            <Scissors className="w-3.5 h-3.5 text-sky-400" />
+            <span>Débiter Scie 1D</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick();
+              onNavigateTab('field_quotes');
+            }}
+            className={`px-3 py-2 rounded-2xl border text-[11px] font-mono font-medium flex items-center gap-1.5 shrink-0 cursor-pointer min-h-[44px] transition-all ${
+              isLight
+                ? 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50 shadow-xs'
+                : 'bg-white/5 border-white/10 text-zinc-300 hover:text-white hover:bg-white/10'
+            }`}
+            title="Consulter le carnet de cotes relevées"
+          >
+            <BookmarkPlus className="w-3.5 h-3.5 text-amber-400" />
+            <span>Carnet Chantier</span>
+          </button>
+        </div>
+      )}
+
 
       {/* 2. QUICK ALGERIAN PRESETS CAROUSEL */}
       <div className="space-y-1.5">
@@ -836,14 +1026,45 @@ export const MobileConfiguratorScreen: React.FC = () => {
               <span>{isPdfGenerating ? 'Génération...' : 'Devis PDF'}</span>
             </button>
           </div>
+
+          {onNavigateTab && (
+            <button
+              type="button"
+              onClick={handleSendToSawCutting}
+              className={`w-full py-2.5 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px] transition-all active:scale-98 ${
+                isLight
+                  ? 'bg-sky-50 border-sky-300 text-sky-900 hover:bg-sky-100 shadow-xs'
+                  : 'bg-sky-500/15 border-sky-500/30 text-sky-300 hover:bg-sky-500/25'
+              }`}
+              title="Envoyer les coupes de ce châssis à l'optimiseur de scie"
+            >
+              <Scissors className="w-4 h-4 text-sky-400" />
+              <span>Optimiser le Débit Scie 1D</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* TOAST NOTIFICATION */}
       {surveyToastMessage && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-emerald-600 text-white font-mono font-bold text-xs shadow-xl flex items-center gap-2 animate-in fade-in duration-200">
-          <Check className="w-4 h-4" />
-          <span>{surveyToastMessage}</span>
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-emerald-600 text-white font-mono font-bold text-xs shadow-xl flex items-center gap-3 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2">
+            <Check className="w-4 h-4 shrink-0 text-emerald-200" />
+            <span>{surveyToastMessage}</span>
+          </div>
+          {onNavigateTab && (
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setSurveyToastMessage(null);
+                onNavigateTab('field_quotes');
+              }}
+              className="px-2.5 py-1 rounded-xl bg-white text-slate-950 font-bold text-[10px] cursor-pointer hover:bg-slate-100 active:scale-95 transition-all shrink-0 shadow-xs"
+            >
+              Voir Carnet
+            </button>
+          )}
         </div>
       )}
 

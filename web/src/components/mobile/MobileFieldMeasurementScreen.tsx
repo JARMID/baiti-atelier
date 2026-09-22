@@ -13,10 +13,12 @@ import {
   RotateCcw,
   Layers,
   Scissors,
+  FileCheck,
 } from 'lucide-react';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
 import {
   generateClientDevisPdf,
+  generateGlazierCuttingOrderPdf,
   formatOpeningTypeFr,
   formatProfileSystemFr,
   formatGlassTypeFr,
@@ -178,6 +180,7 @@ export const MobileFieldMeasurementScreen: React.FC<MobileFieldMeasurementScreen
   const [newGlass, setNewGlass] = useState<GlassType>('double_clear');
   const [newShutter, setNewShutter] = useState<ShutterType>('manual');
   const [newQty, setNewQty] = useState(1);
+  const [isGeneratingGlazierPdf, setIsGeneratingGlazierPdf] = useState(false);
 
   // Total project cost and surfaces calculation
   const totalProjectDzd = openings.reduce(
@@ -305,6 +308,41 @@ export const MobileFieldMeasurementScreen: React.FC<MobileFieldMeasurementScreen
       selectedWilaya,
       openings
     );
+  };
+
+  const handleDownloadGlazierOrderPdf = async () => {
+    playTactileClick();
+    if (openings.length === 0) return;
+    setIsGeneratingGlazierPdf(true);
+    try {
+      const items = openings.map((op, idx) => {
+        const isSliding = op.openingType.startsWith('sliding');
+        const sashesCount = op.openingType === 'sliding_3' ? 3 : isSliding || op.openingType === 'casement_2' ? 2 : 1;
+        const netW = Math.max(200, op.width - (isSliding ? 120 : 90));
+        const netH = Math.max(200, op.height - (isSliding ? 120 : 90));
+        const areaM2 = (netW * netH) / 1000000;
+        return {
+          id: op.id || `vit_${idx + 1}`,
+          label: `${op.roomName} (${op.width}×${op.height} mm)`,
+          widthMm: netW,
+          heightMm: netH,
+          glassType: formatGlassTypeFr(op.glassType),
+          quantity: op.quantity * sashesCount,
+          areaM2,
+          edgeFinish: 'Arêtes abattues (AA)',
+        };
+      });
+
+      await generateGlazierCuttingOrderPdf({
+        projectTitle: projectSite || 'Chantier Menuiserie',
+        clientName: clientName || 'Client Particulier',
+        clientPhone: clientPhone || '+213 550 00 00 00',
+        wilaya: selectedWilaya,
+        items,
+      });
+    } finally {
+      setIsGeneratingGlazierPdf(false);
+    }
   };
 
   const handleExportJson = () => {
@@ -815,32 +853,46 @@ export const MobileFieldMeasurementScreen: React.FC<MobileFieldMeasurementScreen
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
           <button
             onClick={handleShareProjectWhatsApp}
-            className="w-full py-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px] active:scale-98 transition-all"
-            title="Partager le devis estimatif au client"
+            className="py-3 px-2 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px] active:scale-98 transition-all"
+            title="Partager le devis estimatif au client par WhatsApp"
           >
-            <MessageCircle className="w-4 h-4" />
-            <span>Devis WhatsApp</span>
-          </button>
-
-          <button
-            onClick={handleGlazierOrderWhatsApp}
-            className="w-full py-3 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px] active:scale-98 transition-all"
-            title="Transmettre la commande de découpe à la miroiterie"
-          >
-            <Layers className="w-4 h-4" />
-            <span>Commande Miroiterie</span>
+            <MessageCircle className="w-4 h-4 shrink-0" />
+            <span className="truncate">Devis WhatsApp</span>
           </button>
 
           <button
             onClick={handleDownloadProjectPdf}
-            className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#C5A880] to-[#D4AF37] text-slate-950 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px] hover:brightness-110 active:scale-98 transition-all shadow-md"
-            title="Télécharger le devis officiel PDF"
+            className="py-3 px-2 rounded-2xl bg-gradient-to-r from-[#C5A880] to-[#D4AF37] text-slate-950 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px] hover:brightness-110 active:scale-98 transition-all shadow-md"
+            title="Télécharger le devis officiel PDF pour le client"
           >
-            <FileDown className="w-4 h-4" />
-            <span>Devis Chantier PDF</span>
+            <FileDown className="w-4 h-4 shrink-0" />
+            <span className="truncate">Devis PDF</span>
+          </button>
+
+          <button
+            onClick={handleGlazierOrderWhatsApp}
+            className="py-3 px-2 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px] active:scale-98 transition-all"
+            title="Transmettre la commande de découpe à la miroiterie via WhatsApp"
+          >
+            <Layers className="w-4 h-4 shrink-0" />
+            <span className="truncate">WhatsApp Vitrier</span>
+          </button>
+
+          <button
+            onClick={handleDownloadGlazierOrderPdf}
+            disabled={isGeneratingGlazierPdf || openings.length === 0}
+            className={`py-3 px-2 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px] active:scale-98 transition-all ${
+              isLight
+                ? 'bg-sky-50 border-sky-300 text-sky-900 hover:bg-sky-100 shadow-xs'
+                : 'bg-sky-500/15 border-sky-500/30 text-sky-300 hover:bg-sky-500/25'
+            }`}
+            title="Télécharger le bon de commande découpe vitrerie officiel A4 PDF"
+          >
+            <FileCheck className="w-4 h-4 text-sky-400 shrink-0" />
+            <span className="truncate">{isGeneratingGlazierPdf ? 'PDF...' : 'Bon Vitrage PDF'}</span>
           </button>
         </div>
 

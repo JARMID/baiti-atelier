@@ -14,11 +14,13 @@ import {
   ClipboardList,
   Check,
   X,
+  FileCheck,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
   generateWorkshopCutSheetPdf,
   generateDtrThermalCertificatePdf,
+  generateGlazierCuttingOrderPdf,
   formatGlassTypeFr,
 } from '../../utils/pdfGenerator';
 import { computeCadCells, computeDetailedBOM } from '../../utils/cadEngine';
@@ -66,6 +68,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [rawSelectedCellKey, setRawSelectedCellKey] = useState<string>('0-0');
   const [isGeneratingCutSheet, setIsGeneratingCutSheet] = useState(false);
   const [isGeneratingDtrPdf, setIsGeneratingDtrPdf] = useState(false);
+  const [isGeneratingGlazierPdf, setIsGeneratingGlazierPdf] = useState(false);
   const [activeBomTab, setActiveBomTab] = useState<'cuts' | 'glasses'>('cuts');
   const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
 
@@ -239,6 +242,35 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
       .join('\n');
     const msg = `*COMMANDE VITRAGE & MIROITERIE*\nChâssis : ${config.width} × ${config.height} mm\nType Vitrage : ${formatGlassTypeFr(config.glassType)}\nNombre de vitrages : ${bom.glasses.length}\nSurface totale : ${bom.totalGlassAreaM2.toFixed(2)} m²\n\n*Détail Découpe Verre :*\n${glassListText}\n\nConçu sur https://web-two-tan-31.vercel.app`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  // Download Official Glazier Procurement Order PDF
+  const handleDownloadGlazierPdf = async () => {
+    playTactileClick();
+    if (!bom.glasses || bom.glasses.length === 0) return;
+    setIsGeneratingGlazierPdf(true);
+    try {
+      const items = bom.glasses.map((g, idx) => ({
+        id: g.id || `vit_cad_${idx + 1}`,
+        label: g.label,
+        widthMm: g.widthMm,
+        heightMm: g.heightMm,
+        glassType: formatGlassTypeFr(config.glassType),
+        quantity: g.quantity,
+        areaM2: g.areaM2,
+        edgeFinish: 'Arêtes abattues (AA)',
+      }));
+
+      await generateGlazierCuttingOrderPdf({
+        projectTitle: `Châssis CAO ${cadStructure.width}×${cadStructure.height} mm`,
+        clientName: 'Client Atelier CAO',
+        clientPhone: '+213 550 00 00 00',
+        wilaya: selectedWilaya,
+        items,
+      });
+    } finally {
+      setIsGeneratingGlazierPdf(false);
+    }
   };
 
   // Set cell opening type
@@ -849,39 +881,59 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
           {activeBomTab === 'glasses' ? (
-            <button
-              type="button"
-              onClick={handleShareGlassWhatsApp}
-              className="py-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] active:scale-98 transition-all"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>Commande Miroitier (WhatsApp)</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleExportDtrPdf}
-              disabled={isGeneratingDtrPdf}
-              className={`py-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] active:scale-98 transition-all ${
-                isLight
-                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs'
-                  : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/30'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              <span>{isGeneratingDtrPdf ? 'Génération...' : 'Attestation DTR C3-2 (PDF)'}</span>
-            </button>
-          )}
+            <>
+              <button
+                type="button"
+                onClick={handleShareGlassWhatsApp}
+                className="py-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] active:scale-98 transition-all"
+                title="Partager les dimensions de vitrage au miroitier par WhatsApp"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>WhatsApp Miroitier</span>
+              </button>
 
-          <button
-            type="button"
-            onClick={handleExportCutSheet}
-            disabled={isGeneratingCutSheet}
-            className="w-full py-3 rounded-2xl bg-[#D4AF37] text-slate-950 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] hover:brightness-110 active:scale-98 transition-all shadow-md"
-          >
-            <FileText className="w-4 h-4" />
-            <span>{isGeneratingCutSheet ? 'Génération...' : 'Télécharger Fiche Scie PDF'}</span>
-          </button>
+              <button
+                type="button"
+                onClick={handleDownloadGlazierPdf}
+                disabled={isGeneratingGlazierPdf || !bom.glasses || bom.glasses.length === 0}
+                className={`py-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] active:scale-98 transition-all ${
+                  isLight
+                    ? 'bg-sky-50 border-sky-300 text-sky-900 hover:bg-sky-100 shadow-xs'
+                    : 'bg-sky-500/15 border-sky-500/30 text-sky-300 hover:bg-sky-500/25'
+                }`}
+                title="Télécharger le bon de commande découpe vitrerie officiel A4 PDF"
+              >
+                <FileCheck className="w-4 h-4 text-sky-400" />
+                <span>{isGeneratingGlazierPdf ? 'Génération...' : 'Bon Vitrage PDF'}</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleExportDtrPdf}
+                disabled={isGeneratingDtrPdf}
+                className={`py-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] active:scale-98 transition-all ${
+                  isLight
+                    ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs'
+                    : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/30'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                <span>{isGeneratingDtrPdf ? 'Génération...' : 'Attestation DTR C3-2 (PDF)'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExportCutSheet}
+                disabled={isGeneratingCutSheet}
+                className="w-full py-3 rounded-2xl bg-[#D4AF37] text-slate-950 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] hover:brightness-110 active:scale-98 transition-all shadow-md"
+              >
+                <FileText className="w-4 h-4" />
+                <span>{isGeneratingCutSheet ? 'Génération...' : 'Télécharger Fiche Scie PDF'}</span>
+              </button>
+            </>
+          )}
         </div>
 
         {/* Deep Linking Cross-Studio Actions */}

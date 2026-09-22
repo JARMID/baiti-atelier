@@ -1668,3 +1668,263 @@ export async function generateInstallationAcceptancePdf(params: InstallationAcce
   doc.save(`PV_Reception_Pose_${pvNumber}_${params.clientName.replace(/\s+/g, '_')}.pdf`);
 }
 
+export interface GlazierOrderItem {
+  id: string;
+  label: string;
+  widthMm: number;
+  heightMm: number;
+  glassType: string;
+  quantity: number;
+  areaM2: number;
+  edgeFinish?: string;
+}
+
+export interface GlazierCuttingOrderPdfParams {
+  orderNumber?: string;
+  projectTitle: string;
+  clientName: string;
+  clientPhone: string;
+  wilaya: string;
+  supplierName?: string;
+  supplierPhone?: string;
+  deliveryDate?: string;
+  items: GlazierOrderItem[];
+}
+
+/**
+ * Generates an official A4 Glazier Cutting & Procurement Order Sheet (Bon de Commande Débit Vitrerie)
+ * for glass factories, temperers, and double-glazing suppliers across Algerian Wilayas.
+ */
+export async function generateGlazierCuttingOrderPdf(params: GlazierCuttingOrderPdfParams) {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const orderNumber =
+    params.orderNumber ||
+    `VIT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const orderDate = new Date().toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const totalVolumes = params.items.reduce((sum, it) => sum + it.quantity, 0);
+  const totalAreaM2 = params.items.reduce((sum, it) => sum + it.areaM2 * it.quantity, 0);
+
+  // 1. Header Banner
+  doc.setFillColor(15, 23, 42); // Deep slate #0F172A
+  doc.rect(0, 0, 210, 38, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('BAITI ATELIER', 14, 16);
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(203, 213, 225);
+  doc.text('Menuiserie Aluminium & PVC • Gestion des Approvisionnements', 14, 23);
+  doc.text('Service Technique & Débit Vitrage • 58 Wilayas Algérie', 14, 28);
+  doc.text(`Contact Chantier : ${params.clientPhone || '+213 (0) 550 12 34 56'}`, 14, 33);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(212, 175, 55); // Accent Gold #D4AF37
+  doc.text('BON DE COMMANDE VITRERIE', 125, 16);
+
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(226, 232, 240);
+  doc.text(`Réf : ${orderNumber}`, 125, 23);
+  doc.text(`Date : ${orderDate}`, 125, 28);
+  doc.text(`Livraison : ${params.deliveryDate || 'Sous 48 à 72 heures'}`, 125, 33);
+
+  // 2. Client & Supplier Information Cards
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 43, 88, 26, 2, 2, 'FD');
+  doc.roundedRect(108, 43, 88, 26, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  doc.text('DESTINATAIRE (FOURNISSEUR VITRAGE) :', 18, 49);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Société : ${params.supplierName || 'Miroiterie / Usine de Vitrage'}`, 18, 55);
+  doc.text(`Wilaya : ${params.wilaya || 'Alger'}`, 18, 60);
+  doc.text(`Téléphone : ${params.supplierPhone || 'Service Commercial Miroiterie'}`, 18, 65);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  doc.text('RÉFÉRENCE CHANTIER & ÉMETTEUR :', 112, 49);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Projet : ${params.projectTitle || 'Chantier Menuiserie'}`, 112, 55);
+  doc.text(`Client Final : ${params.clientName || 'Particulier'}`, 112, 60);
+  doc.text(`Wilaya de Pose : ${params.wilaya || 'Alger'}`, 112, 65);
+
+  // 3. KPI Tiles (Total Volumes, Total M2, Tolerance, Sealing)
+  const kpiY = 73;
+  const tileW = 43.5;
+  const tileH = 14;
+
+  const kpis = [
+    { label: 'Volumes Commandés', value: `${totalVolumes} vitrages`, color: [15, 23, 42] },
+    { label: 'Surface Globale', value: `${totalAreaM2.toFixed(2)} m²`, color: [15, 23, 42] },
+    { label: 'Tolérance Coupe', value: '± 1.0 mm', color: [15, 23, 42] },
+    { label: 'Contrôle Arêtes', value: 'Arêtes Abattues (AA)', color: [212, 175, 55] },
+  ];
+
+  kpis.forEach((kpi, idx) => {
+    const x = 14 + idx * (tileW + 2.6);
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(x, kpiY, tileW, tileH, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(kpi.label, x + 3, kpiY + 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.text(kpi.value, x + 3, kpiY + 10.5);
+  });
+
+  // 4. Cutting Table
+  const tableRows = params.items.map((it, idx) => {
+    const unitArea = it.areaM2.toFixed(2);
+    const totalLineArea = (it.areaM2 * it.quantity).toFixed(2);
+    const finish = it.edgeFinish || 'Arêtes abattues';
+
+    return [
+      `R${idx + 1}`,
+      it.label,
+      it.glassType,
+      `${it.widthMm} mm`,
+      `${it.heightMm} mm`,
+      `${it.quantity}`,
+      `${unitArea} m²`,
+      `${totalLineArea} m²`,
+      finish,
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 91,
+    head: [
+      [
+        'Rep.',
+        'Emplacement / Pièce',
+        'Composition Vitrage',
+        'Larg.',
+        'Haut.',
+        'Qté',
+        'Surf. Un.',
+        'Surf. Tot.',
+        'Façonnage',
+      ],
+    ],
+    body: tableRows,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
+      fontSize: 7.5,
+      fontStyle: 'bold',
+      halign: 'center',
+    },
+    bodyStyles: {
+      fontSize: 7,
+      textColor: [15, 23, 42],
+      valign: 'middle',
+    },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
+      1: { cellWidth: 32 },
+      2: { cellWidth: 42 },
+      3: { cellWidth: 16, halign: 'right', fontStyle: 'bold' },
+      4: { cellWidth: 16, halign: 'right', fontStyle: 'bold' },
+      5: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
+      6: { cellWidth: 15, halign: 'right' },
+      7: { cellWidth: 15, halign: 'right', fontStyle: 'bold' },
+      8: { cellWidth: 26, fontSize: 6.5 },
+    },
+  });
+
+  // 5. Total Row Summary & Technical Instructions
+  const tableEndY = (doc as any).lastAutoTable.finalY + 4;
+  const isOverflow = tableEndY > 230;
+
+  if (isOverflow) {
+    doc.addPage();
+  }
+
+  const specBlockY = isOverflow ? 20 : tableEndY;
+
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, specBlockY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Prescriptions Techniques & Contrôle Qualité Miroiterie :', 20, specBlockY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text('1. Tolérance de découpe impérative : ± 1.0 mm sur les diagonales et les chants.', 20, specBlockY + 11);
+  doc.text('2. Double vitrage avec intercalaire aluminium ou warm-edge déshydraté et scellement double barrière.', 20, specBlockY + 15);
+  doc.text('3. Étiquetage individuel obligatoire portant la mention du repère (R1, R2...) pour identification sur chantier.', 20, specBlockY + 19);
+
+  // 6. Dual Signature Blocks
+  const signBlockY = specBlockY + 28;
+
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signBlockY, 88, 26, 2, 2, 'FD');
+  doc.roundedRect(108, signBlockY, 88, 26, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Le Fournisseur Miroiterie (Accusé de Réception) :', 20, signBlockY + 6);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Date de confirmation de commande :', 20, signBlockY + 12);
+  doc.text('Signature & Cachet de l\'usine :', 20, signBlockY + 18);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('L\'Émetteur (Baiti Atelier) :', 114, signBlockY + 6);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Responsable des Achats & Débit :', 114, signBlockY + 12);
+  doc.text('Bon pour fabrication selon cotes ci-dessus', 114, signBlockY + 18);
+
+  // Footer Note
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text('Document technique de débit vitrerie édité via Baiti Atelier • Conforme aux spécifications menuiserie', 105, 290, {
+    align: 'center',
+  });
+
+  const safeFilename = `Commande_Vitrage_${orderNumber}_${(params.projectTitle || 'Chantier').replace(/\s+/g, '_')}.pdf`;
+  doc.save(safeFilename);
+}
+
