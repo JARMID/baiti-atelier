@@ -5,6 +5,8 @@ import { computeDetailedBOM } from '../../utils/cadEngine';
 import { CadStudio2D } from '../cad/CadStudio2D';
 import { CuttingStudio } from '../optimizer/CuttingStudio';
 import { CuttingAssemblyTerminal } from '../optimizer/CuttingAssemblyTerminal';
+import { WorkshopJobTracker } from './WorkshopJobTracker';
+import { WorkshopFinancialSettings } from './WorkshopFinancialSettings';
 import {
   isSoundEnabled,
   toggleSound,
@@ -26,6 +28,8 @@ import {
   Eye,
   Cpu,
   MapPin,
+  Layers,
+  Sliders,
 } from 'lucide-react';
 import { ALGERIAN_WILAYAS_58, formatWilayaLabel } from '../../utils/algerianWilayas';
 
@@ -36,7 +40,7 @@ interface WorkshopProWorkspaceProps {
   onOpenMaterialMarket: () => void;
 }
 
-export type WorkshopTab = 'cad' | 'optimizer' | 'terminal' | 'quotes' | 'bourse';
+export type WorkshopTab = 'cad' | 'optimizer' | 'terminal' | 'tracking' | 'settings';
 
 export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
   onSwitchToVitrine,
@@ -159,7 +163,7 @@ export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
 
         {/* Center: Primary Tab Switcher */}
         <nav
-          className={`flex items-center gap-1 p-1 rounded-2xl border text-xs font-mono ${
+          className={`flex items-center gap-1 p-1 rounded-2xl border text-xs font-mono overflow-x-auto no-scrollbar max-w-full ${
             isLight
               ? 'bg-slate-100 border-slate-200 text-slate-700'
               : 'bg-white/5 border-white/10 text-zinc-400'
@@ -170,7 +174,7 @@ export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
               playTactileClick();
               setActiveTab('cad');
             }}
-            className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer font-bold ${
+            className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer font-bold shrink-0 ${
               activeTab === 'cad'
                 ? 'bg-[#D4AF37] text-slate-950 shadow-sm'
                 : isLight
@@ -179,7 +183,8 @@ export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
             }`}
           >
             <Grid className="w-3.5 h-3.5" />
-            <span>Studio CAO 2D</span>
+            <span className="hidden sm:inline">Studio CAO 2D</span>
+            <span className="sm:hidden">CAO</span>
           </button>
 
           <button
@@ -187,7 +192,7 @@ export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
               playTactileClick();
               setActiveTab('optimizer');
             }}
-            className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer font-bold ${
+            className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer font-bold shrink-0 ${
               activeTab === 'optimizer'
                 ? 'bg-[#D4AF37] text-slate-950 shadow-sm'
                 : isLight
@@ -196,7 +201,8 @@ export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
             }`}
           >
             <Scissors className="w-3.5 h-3.5" />
-            <span>Optimiseur Débit 1D/2D</span>
+            <span className="hidden sm:inline">Optimiseur Débit</span>
+            <span className="sm:hidden">Débit</span>
           </button>
 
           <button
@@ -204,7 +210,7 @@ export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
               playTactileClick();
               setActiveTab('terminal');
             }}
-            className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer font-bold ${
+            className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer font-bold shrink-0 ${
               activeTab === 'terminal'
                 ? 'bg-[#D4AF37] text-slate-950 shadow-sm'
                 : isLight
@@ -213,7 +219,44 @@ export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
             }`}
           >
             <HardDrive className="w-3.5 h-3.5" />
-            <span>Terminal Scie CNC</span>
+            <span className="hidden sm:inline">Terminal Scie</span>
+            <span className="sm:hidden">Scie</span>
+          </button>
+
+          <button
+            onClick={() => {
+              playTactileClick();
+              setActiveTab('tracking');
+            }}
+            className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer font-bold shrink-0 ${
+              activeTab === 'tracking'
+                ? 'bg-[#D4AF37] text-slate-950 shadow-sm'
+                : isLight
+                ? 'hover:text-slate-900 hover:bg-slate-200/60'
+                : 'hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Suivi Fabrication</span>
+            <span className="sm:hidden">Suivi</span>
+          </button>
+
+          <button
+            onClick={() => {
+              playTactileClick();
+              setActiveTab('settings');
+            }}
+            className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer font-bold shrink-0 ${
+              activeTab === 'settings'
+                ? 'bg-[#D4AF37] text-slate-950 shadow-sm'
+                : isLight
+                ? 'hover:text-slate-900 hover:bg-slate-200/60'
+                : 'hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Paramètres Marge</span>
+            <span className="sm:hidden">Marge</span>
           </button>
         </nav>
 
@@ -510,6 +553,18 @@ export const WorkshopProWorkspace: React.FC<WorkshopProWorkspaceProps> = ({
               config={config}
               jobName="Poste Scie Atelier Pro"
             />
+          </div>
+        )}
+
+        {activeTab === 'tracking' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <WorkshopJobTracker />
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <WorkshopFinancialSettings />
           </div>
         )}
       </main>
