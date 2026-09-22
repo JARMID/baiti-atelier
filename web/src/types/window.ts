@@ -13,11 +13,13 @@ export type ProfileSystem =
   | 'pvc_70_chamber';     // Profilé PVC 70mm 5 chambres
 
 export type FinishColor =
-  | 'ral_9016'   // Blanc Pur
-  | 'ral_7016'   // Gris Anthracite Sablé
-  | 'ral_9005'   // Noir Mat
-  | 'faux_bois'  // Chêne Doré / Faux Bois
-  | 'bronze_ano' // Bronze Anodisé
+  | 'ral_9016'          // Blanc Pur Brillant
+  | 'ral_7016'          // Gris Anthracite Sablé
+  | 'ral_9005'          // Noir Mat Sablé
+  | 'faux_bois'         // Chêne Doré / Faux Bois
+  | 'faux_bois_noyer'   // Noyer Foncé / Faux Bois
+  | 'bronze_ano'        // Bronze Anodisé Champagne
+  | 'argent_ano';       // Argent Naturel Satiné
 
 export type GlassType =
   | 'simple_clear'           // Simple vitrage 6mm clair

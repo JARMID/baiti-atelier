@@ -25,7 +25,9 @@ const finishColorMap: Record<FinishColor, string> = {
   ral_7016: '#475569',
   ral_9005: '#0F172A',
   faux_bois: '#C59B27',
+  faux_bois_noyer: '#451A03',
   bronze_ano: '#78350F',
+  argent_ano: '#94A3B8',
 };
 
 const colorOptions: { id: FinishColor; label: string; bgHex: string }[] = [
@@ -33,6 +35,8 @@ const colorOptions: { id: FinishColor; label: string; bgHex: string }[] = [
   { id: 'ral_7016', label: 'Gris 7016', bgHex: '#475569' },
   { id: 'faux_bois', label: 'Chêne Doré', bgHex: '#C59B27' },
   { id: 'ral_9005', label: 'Noir Sablé', bgHex: '#0F172A' },
+  { id: 'bronze_ano', label: 'Bronze Métal', bgHex: '#78350F' },
+  { id: 'argent_ano', label: 'Argent Naturel', bgHex: '#94A3B8' },
 ];
 
 const tradePresets: Record<TradeCategory, { label: string; w: number; h: number }[]> = {

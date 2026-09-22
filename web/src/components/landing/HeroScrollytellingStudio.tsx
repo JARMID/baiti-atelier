@@ -170,8 +170,10 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
     { id: 'ral_9016', label: 'Blanc RAL 9016', hex: '#FFFFFF' },
     { id: 'ral_7016', label: 'Gris Anthracite 7016', hex: '#374151' },
     { id: 'faux_bois', label: 'Chêne Doré', hex: '#8B5A2B' },
+    { id: 'faux_bois_noyer', label: 'Noyer Foncé', hex: '#451A03' },
     { id: 'ral_9005', label: 'Noir Sablé 9005', hex: '#111827' },
     { id: 'bronze_ano', label: 'Bronze Anodisé', hex: '#6A5641' },
+    { id: 'argent_ano', label: 'Argent Naturel', hex: '#94A3B8' },
   ];
 
   const tradePills: { id: TradeCategory; label: string; arabic: string }[] = [

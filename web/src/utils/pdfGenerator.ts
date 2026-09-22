@@ -44,11 +44,13 @@ export function formatProfileSystemFr(profileSystem: string): string {
 
 export function formatFinishColorFr(finishColor: string): string {
   const map: Record<string, string> = {
-    ral_9016: 'RAL 9016 Blanc Brillant',
+    ral_9016: 'RAL 9016 Blanc Pur Brillant',
     ral_7016: 'RAL 7016 Gris Anthracite Sablé',
-    ral_9005: 'RAL 9005 Noir Mat Sablé',
+    ral_9005: 'RAL 9005 Noir Mat Fine Texture',
     faux_bois: 'Faux Bois Chêne Doré',
-    bronze_ano: 'Bronze Anodisé Métallisé',
+    faux_bois_noyer: 'Faux Bois Noyer Foncé',
+    bronze_ano: 'Bronze Champagne Anodisé',
+    argent_ano: 'Argent Naturel Satiné',
   };
   return map[finishColor] || finishColor;
 }

@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { FinishColor } from '../../types/window';
 import type { TradeCategory } from '../../types/trades';
+import { FINISH_PALETTES } from '../../utils/finishSpecifications';
 
 export type WindowModelType = 'sliding' | 'tilt_and_turn' | 'french_casement';
 
@@ -15,14 +16,6 @@ interface Hero3DWorkpieceProps {
   windowModel?: WindowModelType;
   clippingPlane?: THREE.Plane | null;
 }
-
-const FINISH_PALETTES: Record<FinishColor, { color: string; roughness: number; metalness: number }> = {
-  ral_9016: { color: '#F1F3F5', roughness: 0.3, metalness: 0.2 },
-  ral_7016: { color: '#272B33', roughness: 0.38, metalness: 0.35 },
-  ral_9005: { color: '#131418', roughness: 0.45, metalness: 0.3 },
-  faux_bois: { color: '#8B5A2B', roughness: 0.6, metalness: 0.08 },
-  bronze_ano: { color: '#6A5641', roughness: 0.3, metalness: 0.75 },
-};
 
 export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
   trade,

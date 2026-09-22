@@ -2,21 +2,14 @@ import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
-import type { FinishColor, GlassType, WindowConfig } from '../../types/window';
+import type { GlassType, WindowConfig } from '../../types/window';
+import { FINISH_PALETTES } from '../../utils/finishSpecifications';
 
 interface Props {
   config: WindowConfig;
   clippingPlane?: THREE.Plane | null;
   showAnnotations?: boolean;
 }
-
-const FINISH_PALETTES: Record<FinishColor, { color: string; roughness: number; metalness: number }> = {
-  ral_9016: { color: '#F1F3F5', roughness: 0.35, metalness: 0.2 },
-  ral_7016: { color: '#272B33', roughness: 0.42, metalness: 0.35 },
-  ral_9005: { color: '#131418', roughness: 0.48, metalness: 0.3 },
-  faux_bois: { color: '#784622', roughness: 0.6, metalness: 0.08 },
-  bronze_ano: { color: '#6A5641', roughness: 0.32, metalness: 0.72 },
-};
 
 const GLASS_PALETTES: Record<GlassType, { color: string; roughness: number; transmission: number; opacity: number; ior: number }> = {
   simple_clear: { color: '#EAF5F4', roughness: 0.05, transmission: 0.92, opacity: 0.35, ior: 1.52 },

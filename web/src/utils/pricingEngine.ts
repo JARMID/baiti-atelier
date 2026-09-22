@@ -1,5 +1,6 @@
 import type { CostBreakdown, GlassType, ProfileSystem, WindowConfig } from '../types/window';
 import type { WorkshopMarginCalibration } from './materialMarketData';
+import { getFinishSpec } from './finishSpecifications';
 
 export function calculateWindowCost(
   config: WindowConfig,
@@ -84,10 +85,8 @@ export function calculateWindowCost(
   const spec = profileSpecs[config.profileSystem] || profileSpecs.gamme_40;
 
   // Finish surcharge
-  let finishMultiplier = 1.0;
-  if (config.finishColor === 'faux_bois') finishMultiplier = 1.25;
-  if (config.finishColor === 'bronze_ano') finishMultiplier = 1.15;
-  if (config.finishColor === 'ral_7016') finishMultiplier = 1.08;
+  const finishSpec = getFinishSpec(config.finishColor);
+  const finishMultiplier = finishSpec.priceMultiplier;
 
   const totalProfileWeightKg = totalProfileLength * spec.weightKgPerM;
   const profileCost = Math.round(totalProfileWeightKg * spec.basePricePerKg * finishMultiplier * aluMultiplier);

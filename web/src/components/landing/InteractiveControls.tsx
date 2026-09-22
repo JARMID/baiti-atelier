@@ -192,7 +192,9 @@ export const InteractiveControls: React.FC = () => {
     { id: 'ral_9016', label: t.ral_9016, bg: '#F1F3F5', border: '#CBD5E1' },
     { id: 'ral_9005', label: t.ral_9005, bg: '#131418', border: '#2D3139' },
     { id: 'faux_bois', label: t.faux_bois, bg: '#784622', border: '#965A2E' },
+    { id: 'faux_bois_noyer', label: t.faux_bois_noyer, bg: '#451A03', border: '#602206' },
     { id: 'bronze_ano', label: t.bronze_ano, bg: '#6A5641', border: '#8A7258' },
+    { id: 'argent_ano', label: t.argent_ano, bg: '#94A3B8', border: '#CBD5E1' },
   ];
 
   const GLASS_OPTIONS: { id: GlassType; label: string; note: string }[] = [

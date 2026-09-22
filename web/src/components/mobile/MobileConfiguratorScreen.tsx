@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useConfigStore } from '../../store/configStore';
 import { WindowCanvas } from '../3d/WindowCanvas';
-import type { OpeningType, ProfileSystem, FinishColor, GlassType, ShutterType } from '../../types/window';
+import type { OpeningType, ProfileSystem, GlassType, ShutterType } from '../../types/window';
 import {
   MessageCircle,
   FileDown,
@@ -19,6 +19,7 @@ import {
   Volume2,
   Sun,
   Shield,
+  Palette,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -46,6 +47,11 @@ import {
   formatThermalRating,
   type SpacerType,
 } from '../../utils/glassSpecifications';
+import {
+  FINISH_LIST,
+  getFinishSpec,
+  formatFinishTreatmentBadge,
+} from '../../utils/finishSpecifications';
 
 interface PresetItem {
   id: string;
@@ -141,6 +147,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const effectiveRw = useMemo(() => getEffectiveRw(config.glassType, activeSpacer), [config.glassType, activeSpacer]);
   const acousticRating = useMemo(() => formatAcousticRating(effectiveRw), [effectiveRw]);
   const thermalRating = useMemo(() => formatThermalRating(effectiveUg), [effectiveUg]);
+  const currentFinishSpec = useMemo(() => getFinishSpec(config.finishColor), [config.finishColor]);
 
   const currentWilaya = useMemo(() => {
     return (
@@ -428,15 +435,6 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
     { id: 'pvc_70_chamber', name: 'PVC 70 Multi-Chambres', tag: 'Haute Isolation' },
   ];
 
-  const COLOR_OPTIONS: { id: FinishColor; label: string; hex: string }[] = [
-    { id: 'ral_9016', label: 'Blanc 9016', hex: '#F8FAFC' },
-    { id: 'ral_7016', label: 'Anthracite 7016', hex: '#374151' },
-    { id: 'ral_9005', label: 'Noir Sablé 9005', hex: '#111827' },
-    { id: 'faux_bois', label: 'Chêne Doré', hex: '#92400E' },
-    { id: 'bronze_ano', label: 'Bronze Métal', hex: '#78350F' },
-  ];
-
-
   const SHUTTER_OPTIONS: { id: ShutterType; label: string }[] = [
     { id: 'none', label: 'Sans Volet' },
     { id: 'manual', label: 'Volet Manuel' },
@@ -703,38 +701,126 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         </div>
       </div>
 
-      {/* 6. FINISH COLOR PALETTE */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
-          <span>Teinte RAL & Finition</span>
-          <span className="text-zinc-500">{config.finishColor}</span>
+      {/* 6. ARCHITECTURAL FINISH & SURFACE TREATMENT PALETTE */}
+      <div
+        className={`p-3.5 rounded-2xl border space-y-3 ${
+          isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-[#0B0F19] border-white/10'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Palette className="w-4 h-4 text-[#D4AF37]" />
+            <span className={`text-xs font-mono font-bold ${isLight ? 'text-slate-800' : 'text-zinc-200'}`}>
+              Teinte RAL & Traitement de Surface
+            </span>
+          </div>
+          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20">
+            {currentFinishSpec.qualityLabelFr}
+          </span>
         </div>
+
+        {/* Finish Swatches Horizontal Scroll */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-          {COLOR_OPTIONS.map((col) => {
+          {FINISH_LIST.map((col) => {
             const isSelected = config.finishColor === col.id;
+            const priceTag =
+              col.priceMultiplier === 1.0
+                ? 'Standard'
+                : `+${Math.round((col.priceMultiplier - 1.0) * 100)}%`;
             return (
               <button
                 key={col.id}
+                type="button"
                 onClick={() => {
                   playTactileClick();
                   setFinishColor(col.id);
                 }}
-                className={`p-2 rounded-2xl border flex items-center gap-2 transition-all cursor-pointer shrink-0 min-h-[44px] ${
+                className={`p-2.5 rounded-2xl border flex flex-col items-center gap-1.5 transition-all cursor-pointer shrink-0 min-w-[92px] ${
                   isSelected
-                    ? 'border-[#D4AF37] bg-[#D4AF37]/15'
+                    ? 'border-[#D4AF37] bg-[#D4AF37]/15 shadow-sm ring-1 ring-[#D4AF37]'
                     : isLight
-                    ? 'bg-white border-slate-200 text-slate-700'
-                    : 'bg-[#0B0F19] border-white/10 text-zinc-300'
+                    ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    : 'bg-white/5 border-white/10 text-zinc-300 hover:bg-white/10'
                 }`}
               >
-                <span
-                  className="w-5 h-5 rounded-full border border-black/20 shadow-xs shrink-0"
-                  style={{ backgroundColor: col.hex }}
-                />
-                <span className="text-xs font-mono pr-1">{col.label}</span>
+                <div className="relative">
+                  <span
+                    className="w-6 h-6 rounded-full border border-black/20 shadow-xs block"
+                    style={{ backgroundColor: col.colorHex }}
+                  />
+                  {isSelected && (
+                    <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-[#D4AF37] text-slate-950 flex items-center justify-center text-[8px] font-bold">
+                      ✓
+                    </span>
+                  )}
+                </div>
+
+                <div className="text-center font-mono">
+                  <span className="text-[11px] font-bold block leading-tight truncate max-w-[85px]">
+                    {col.labelFr.split(' ')[0]} {col.ralCode ? col.ralCode.replace('RAL ', '') : ''}
+                  </span>
+                  <span
+                    className={`text-[9px] font-semibold block leading-tight ${
+                      col.priceMultiplier === 1.0
+                        ? 'text-zinc-400'
+                        : isSelected
+                        ? 'text-[#D4AF37]'
+                        : 'text-amber-500'
+                    }`}
+                  >
+                    {priceTag}
+                  </span>
+                </div>
               </button>
             );
           })}
+        </div>
+
+        {/* Selected Finish Technical Card */}
+        <div
+          className={`p-2.5 rounded-xl border text-xs font-mono space-y-1.5 ${
+            isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`font-bold text-xs ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              {currentFinishSpec.labelFr}
+            </span>
+            <span className="text-[10px] text-zinc-400">
+              {currentFinishSpec.ralCode || 'Sublimation'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span
+              className={`px-1.5 py-0.5 rounded text-[9px] font-semibold border ${
+                formatFinishTreatmentBadge(currentFinishSpec.treatmentType).badgeClass
+              }`}
+            >
+              {currentFinishSpec.treatmentLabelFr}
+            </span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] bg-black/10 dark:bg-white/5 text-zinc-400 border border-black/5 dark:border-white/10">
+              {currentFinishSpec.textureLabelFr}
+            </span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+              Garantie {currentFinishSpec.guaranteeYears} ans
+            </span>
+          </div>
+
+          <p className="text-[10px] text-zinc-500 leading-relaxed pt-0.5">
+            {currentFinishSpec.descriptionFr}
+          </p>
+
+          <div className="text-[10px] text-zinc-400 pt-0.5 border-t border-black/5 dark:border-white/5 flex items-center justify-between">
+            <span className="text-zinc-500 truncate max-w-[70%]">
+              Usage : {currentFinishSpec.recommendedUseFr}
+            </span>
+            <span className="text-amber-400 font-bold shrink-0">
+              {currentFinishSpec.priceMultiplier === 1.0
+                ? 'Base standard'
+                : `+${currentFinishSpec.surchargeDzdPerKg} DA/kg`}
+            </span>
+          </div>
         </div>
       </div>
 

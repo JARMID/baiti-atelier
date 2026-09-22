@@ -111,11 +111,13 @@ export const DICTIONARY = {
     pvc_70_chamber: 'PVC 70mm 5 Chambres Haute Isolation',
 
     // Finish colors
-    ral_9016: 'RAL 9016 Blanc Brillant',
+    ral_9016: 'RAL 9016 Blanc Pur Brillant',
     ral_7016: 'RAL 7016 Gris Anthracite Sablé',
-    ral_9005: 'RAL 9005 Noir Mat Finition Sablée',
+    ral_9005: 'RAL 9005 Noir Mat Fine Texture',
     faux_bois: 'Faux Bois Chêne Doré',
-    bronze_ano: 'Bronze Anodisé Métallisé',
+    faux_bois_noyer: 'Faux Bois Noyer Foncé',
+    bronze_ano: 'Bronze Champagne Anodisé',
+    argent_ano: 'Argent Naturel Satiné',
 
     // Glass types
     simple_clear: 'Simple Vitrage Clair 6mm',
@@ -308,11 +310,13 @@ export const DICTIONARY = {
     pvc_70_chamber: 'بي في سي 70 ملم خماسي الغرف عزل ممتاز',
 
     // Finish colors
-    ral_9016: 'أبيض لامع RAL 9016',
+    ral_9016: 'أبيض ناصع لامع RAL 9016',
     ral_7016: 'رمادي أنثراسيت محبب RAL 7016',
-    ral_9005: 'أسود مطفي راقٍ RAL 9005',
-    faux_bois: 'خشب شين دوري تقليدي (Faux Bois)',
-    bronze_ano: 'برونز مؤكسد معدني (Anodisé)',
+    ral_9005: 'أسود مطفي ملمس ناعم RAL 9005',
+    faux_bois: 'خشب سندياني مذهب (Sublimation)',
+    faux_bois_noyer: 'خشب جوز داكن فاخر (Sublimation)',
+    bronze_ano: 'برونز مؤكسد شامباني (Anodisé)',
+    argent_ano: 'فضي ألومنيوم طبيعي ساتيني (Anodisé)',
 
     // Glass types
     simple_clear: 'زجاج عادي مفرد شفاف 6 ملم',
@@ -508,8 +512,10 @@ export const DICTIONARY = {
     ral_9016: 'RAL 9016 Gloss Traffic White',
     ral_7016: 'RAL 7016 Textured Anthracite Grey',
     ral_9005: 'RAL 9005 Jet Black Matte',
-    faux_bois: 'Golden Oak Faux-Bois Woodgrain',
-    bronze_ano: 'Anodized Architectural Bronze',
+    faux_bois: 'Golden Oak Woodgrain Sublimation',
+    faux_bois_noyer: 'Dark Walnut Woodgrain Sublimation',
+    bronze_ano: 'Champagne Bronze Anodized',
+    argent_ano: 'Natural Satin Silver Anodized',
 
     // Glass types
     simple_clear: 'Single Clear Float Glass 6mm',
