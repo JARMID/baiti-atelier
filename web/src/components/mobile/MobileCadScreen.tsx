@@ -21,6 +21,7 @@ import {
   PackageCheck,
   Wrench,
   Sparkles,
+  Flame,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -35,6 +36,7 @@ import type { GlassType } from '../../types/window';
 import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
 import { GlazingPerformanceMatrix } from './GlazingPerformanceMatrix';
 import { GlazingBeadGuideModal } from './GlazingBeadGuideModal';
+import { GlazingThermalStressModal } from './GlazingThermalStressModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -207,6 +209,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [glassViewMode, setGlassViewMode] = useState<'matrix' | 'cuts'>('matrix');
   const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
   const [showParcloseModal, setShowParcloseModal] = useState(false);
+  const [showThermalStressModal, setShowThermalStressModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -837,6 +840,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
               type="button"
               onClick={() => {
                 playTactileClick();
+                setShowThermalStressModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/30 hover:bg-rose-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-rose-400 font-semibold"
+              title="Audit du risque de casse par choc thermique DTU 39"
+            >
+              <Flame className="w-3 h-3" />
+              <span>Choc Thermique</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
                 setShowCrossSectionModal(true);
               }}
               className="px-2 py-1 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-sky-400 font-semibold"
@@ -1301,6 +1317,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
                 isLight={isLight}
                 onExportDtrPdf={handleExportDtrPdf}
                 isGeneratingPdf={isGeneratingDtrPdf}
+                onOpenThermalStressModal={() => setShowThermalStressModal(true)}
               />
             ) : (
               <div className="space-y-2.5">
@@ -1802,6 +1819,20 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidthMm={cadStructure.width}
           initialHeightMm={cadStructure.height}
           initialGlassThicknessMm={currentGlassSpec?.thicknessTotalMm || 24}
+        />
+      )}
+
+      {/* GLAZING THERMAL STRESS & BREAKAGE RISK MODAL */}
+      {showThermalStressModal && (
+        <GlazingThermalStressModal
+          isOpen={showThermalStressModal}
+          onClose={() => setShowThermalStressModal(false)}
+          defaultGlassType={config.glassType}
+          widthMm={cadStructure.width}
+          heightMm={cadStructure.height}
+          windowReference={`Baie ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Chantier"
         />
       )}
     </div>

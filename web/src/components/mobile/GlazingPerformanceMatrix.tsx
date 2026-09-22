@@ -27,6 +27,7 @@ export interface GlazingPerformanceMatrixProps {
   isLight?: boolean;
   onExportDtrPdf?: () => void;
   isGeneratingPdf?: boolean;
+  onOpenThermalStressModal?: () => void;
 }
 
 interface BenchmarkCard {
@@ -53,6 +54,7 @@ export const GlazingPerformanceMatrix: React.FC<GlazingPerformanceMatrixProps> =
   isLight = false,
   onExportDtrPdf,
   isGeneratingPdf = false,
+  onOpenThermalStressModal,
 }) => {
   const safeAreaM2 = Math.max(0.1, Number(totalGlassAreaM2.toFixed(2)));
 
@@ -302,36 +304,70 @@ export const GlazingPerformanceMatrix: React.FC<GlazingPerformanceMatrixProps> =
         })}
       </div>
 
-      {/* 3. Bottom Regulatory DTR C3-2 Export Strip */}
-      {onExportDtrPdf && (
-        <div
-          className={`p-3 rounded-2xl border flex items-center justify-between gap-2 ${
-            isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'
-          }`}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-            <div className="min-w-0">
-              <span className={`font-bold block truncate ${isLight ? 'text-slate-800' : 'text-zinc-200'}`}>
-                Certificat de Conformité DTR C3-2
-              </span>
-              <span className="text-[10px] text-zinc-500 block truncate">
-                Fiche officielle de calcul thermique CNERIB (PDF)
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onExportDtrPdf}
-            disabled={isGeneratingPdf}
-            className="px-3 py-2 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 font-bold text-xs flex items-center gap-1 cursor-pointer hover:bg-sky-500/25 active:scale-95 transition-all shrink-0"
+      {/* 3. Bottom Regulatory DTR C3-2 & Thermal Stress Action Strips */}
+      <div className="space-y-2">
+        {onExportDtrPdf && (
+          <div
+            className={`p-3 rounded-2xl border flex items-center justify-between gap-2 ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'
+            }`}
           >
-            <FileCheck className="w-3.5 h-3.5" />
-            <span>{isGeneratingPdf ? 'Calcul...' : 'Certificat DTR (PDF)'}</span>
-          </button>
-        </div>
-      )}
+            <div className="flex items-center gap-2 min-w-0">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="min-w-0">
+                <span className={`font-bold block truncate ${isLight ? 'text-slate-800' : 'text-zinc-200'}`}>
+                  Certificat de Conformité DTR C3-2
+                </span>
+                <span className="text-[10px] text-zinc-500 block truncate">
+                  Fiche officielle de calcul thermique CNERIB (PDF)
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onExportDtrPdf}
+              disabled={isGeneratingPdf}
+              className="px-3 py-2 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 font-bold text-xs flex items-center gap-1 cursor-pointer hover:bg-sky-500/25 active:scale-95 transition-all shrink-0"
+            >
+              <FileCheck className="w-3.5 h-3.5" />
+              <span>{isGeneratingPdf ? 'Calcul...' : 'Certificat DTR (PDF)'}</span>
+            </button>
+          </div>
+        )}
+
+        {onOpenThermalStressModal && (
+          <div
+            className={`p-3 rounded-2xl border flex items-center justify-between gap-2 ${
+              isLight ? 'bg-amber-50/60 border-amber-200/80' : 'bg-amber-950/20 border-amber-500/20'
+            }`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Flame className="w-4 h-4 text-amber-400 shrink-0" />
+              <div className="min-w-0">
+                <span className={`font-bold block truncate ${isLight ? 'text-amber-900' : 'text-amber-200'}`}>
+                  Audit Choc Thermique DTU 39 P3
+                </span>
+                <span className="text-[10px] text-amber-600/80 dark:text-amber-400/70 block truncate">
+                  Vérification du gradient thermique et risque de casse solaire
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                onOpenThermalStressModal();
+              }}
+              className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1 cursor-pointer active:scale-95 transition-all shrink-0 shadow-xs"
+            >
+              <Flame className="w-3.5 h-3.5" />
+              <span>Simuler Choc Thermique</span>
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

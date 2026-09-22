@@ -4042,4 +4042,234 @@ export async function generateSiteDeliveryManifestPdf(params: SiteDeliveryManife
   doc.save(safeFilename);
 }
 
+export interface ThermalStressPdfParams {
+  documentId: string;
+  projectOrClientName: string;
+  locationWilaya: string;
+  windowReference: string;
+  glassLabelFr: string;
+  widthMm: number;
+  heightMm: number;
+  result: import('./glazingThermalStressManager').ThermalStressResult;
+  workshopName?: string;
+  workshopPhone?: string;
+  workshopAddress?: string;
+}
+
+/**
+ * Generates an official A4 technical compliance notice for glazing thermal stress.
+ * References: NF DTU 39 P3 / CSTB Cahier 3488 / DTR C3-2.
+ */
+export async function generateThermalStressNoticePdf(params: ThermalStressPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryBlue: [number, number, number] = [15, 23, 42]; // slate-900
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const roseRed: [number, number, number] = [239, 68, 68];
+  const isCompliant = params.result.isCompliant;
+  const statusColor = isCompliant ? emeraldGreen : roseRed;
+
+  // 1. Header Banner
+  doc.setFillColor(...primaryBlue);
+  doc.rect(0, 0, 210, 28, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text(params.workshopName || 'BAITI ATELIER ALGERIE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text('Calcul & Verification au Choc Thermique des Vitrages • NF DTU 39 P3 / CSTB 3488', 14, 17);
+  doc.text('Reglementation Thermique Algerienne CNERIB DTR C3-2 / C3-4', 14, 22);
+
+  // Document Badge
+  doc.setFillColor(30, 41, 59);
+  doc.roundedRect(145, 6, 51, 16, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`AUDIT : ${params.documentId}`, 148, 12);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 148, 18);
+
+  // 2. Project & Window Identification Box
+  const infoY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, infoY, 182, 22, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Client / Chantier :', 18, infoY + 6);
+  doc.text('Wilaya d implantation :', 18, infoY + 12);
+  doc.text('Zone Climatique DTR :', 18, infoY + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text(params.projectOrClientName || 'Client Particulier', 55, infoY + 6);
+  doc.text(params.locationWilaya, 55, infoY + 12);
+  doc.text(`${params.result.climaticZoneData.nameFr} (${params.result.climaticZoneData.code})`, 55, infoY + 18);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Repere Menuiserie :', 115, infoY + 6);
+  doc.text('Type de Vitrage :', 115, infoY + 12);
+  doc.text('Dimensions Baie :', 115, infoY + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text(params.windowReference, 150, infoY + 6);
+  doc.text(params.glassLabelFr, 150, infoY + 12);
+  doc.text(`${params.widthMm} x ${params.heightMm} mm`, 150, infoY + 18);
+
+  // 3. Environmental & Shading Conditions Table
+  const condTableY = infoY + 26;
+  autoTable(doc, {
+    startY: condTableY,
+    margin: { left: 14, right: 14 },
+    head: [['Parametre d Exposition', 'Valeur Retenue', 'Incidence sur la Contrainte Thermique']],
+    body: [
+      ['Orientation Facade', params.result.orientationData.labelFr, params.result.orientationData.subFr],
+      ['Ombrage Exterieur', params.result.shadingData.labelFr, params.result.shadingData.subFr],
+      ['Confinement Interieur', params.result.interiorObstructionData.labelFr, params.result.interiorObstructionData.subFr],
+      ['Profil Menuiserie', params.result.frameProfileData.labelFr, params.result.frameProfileData.subFr],
+      ['Faconnage des Aretes', params.result.edgeFinishingData.labelFr, params.result.edgeFinishingData.subFr],
+      ['Traitement du Verre', params.result.thermalTreatmentData.labelFr, params.result.thermalTreatmentData.tradeUsageFr],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, textColor: [30, 41, 59] },
+    headStyles: { fillColor: primaryBlue, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 42 },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 85 },
+    },
+  });
+
+  // 4. Thermal Calculation & Stress Gradient Table
+  const calcTableY = (doc as any).lastAutoTable.finalY + 4;
+  autoTable(doc, {
+    startY: calcTableY,
+    margin: { left: 14, right: 14 },
+    head: [['Grandeur Physique Calculee', 'Valeur Numerique', 'Reference Normative DTU 39 / CSTB 3488']],
+    body: [
+      ['Rayonnement Solaire Nominal', `${params.result.solarIrradianceNominal} W/m2`, 'Flux maximal d ete selon zone DTR'],
+      ['Rayonnement Solaire Effectif', `${params.result.solarIrradianceEffective} W/m2`, 'Apres ponderation d orientation facade'],
+      ['Absorption Energetique Vitrage', `${Math.round(params.result.glassProperties.solarAbsorption * 100)} %`, 'Coefficient alpha d absorption de la couche'],
+      ['Temperature Estimee Centre Vitrage', `${params.result.estimatedCenterTempC} deg C`, 'Zone ensoleillee au centre du panneau'],
+      ['Temperature Estimee Bord Feuillure', `${params.result.estimatedEdgeTempC} deg C`, 'Bord ombrage sous parclose et profil'],
+      ['Gradient Thermique Reel (Delta T)', `${params.result.deltaTActualK} K (deg C)`, 'Ecart de temperature maximal centre/bord'],
+      ['Seuil Critique Admissible (Delta T crit)', `${params.result.deltaTCritK} K (deg C)`, 'Limite elastique avant amorce de fissure'],
+      ['Ratio de Securite (R = Delta T / Delta T crit)', `${params.result.safetyRatio}`, 'Seuil reglementaire maximal autorise = 1.00'],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, textColor: [30, 41, 59] },
+    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 65 },
+      1: { cellWidth: 35, fontStyle: 'bold' },
+      2: { cellWidth: 82 },
+    },
+  });
+
+  // 5. Verdict and Recommendation Banner
+  const verdictY = (doc as any).lastAutoTable.finalY + 5;
+  doc.setDrawColor(...statusColor);
+  doc.setFillColor(isCompliant ? 240 : 254, isCompliant ? 253 : 242, isCompliant ? 244 : 242);
+  doc.roundedRect(14, verdictY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...statusColor);
+  const verdictTitle = isCompliant
+    ? 'CONFORME : RISQUE DE CASSE THERMIQUE MAITRISE'
+    : 'NON CONFORME : DANGER DE CASSE THERMIQUE CRITIQUE';
+  doc.text(verdictTitle, 20, verdictY + 7);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(30, 41, 59);
+  const recLine1 = params.result.temperingMandatory
+    ? 'Preconisation Imperative : TREMPE THERMIQUE SECURIT (ESG / EN 12150) OBLIGATOIRE.'
+    : 'Preconisation Technique : Verre recuit ordinaire admissible sous reserve d aretes abattues soignees.';
+  doc.text(recLine1, 20, verdictY + 13);
+
+  const recLine2 = `Finition des aretes requise : ${params.result.recommendedEdge === 'polished_jpp' ? 'Joint Plat Poli (JPP) pour eliminer les amorces de rupture' : 'Aretes abattues soignees a la meule'}.`;
+  doc.text(recLine2, 20, verdictY + 18);
+
+  // 6. Workshop Technical Advice & Crack Morphology Guide
+  const adviceY = verdictY + 27;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, adviceY, 182, 28, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Prescriptions de Pose et Preventions Atelier (DTU 39) :', 18, adviceY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(71, 85, 105);
+  let curAdvY = adviceY + 10;
+  for (const adv of params.result.workshopRecommendationsFr.slice(0, 3)) {
+    doc.text(`• ${adv}`, 18, curAdvY);
+    curAdvY += 4.5;
+  }
+  doc.text(`• Diagnostic casse : ${params.result.crackTypeDescriptionFr}`, 18, curAdvY, {
+    maxWidth: 174,
+  });
+
+  // 7. Signature Blocks & QR Code
+  const signY = adviceY + 31;
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 22, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 22, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Pour Baiti Atelier (Controle Qualite) :', 18, signY + 5.5);
+  doc.text('Visa Client / Bureau d Etudes :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Ingenieur menuiserie & vitrage', 18, signY + 11);
+  doc.text('Signature & Tampon :', 18, signY + 17);
+  doc.text('Bon pour accord specifications vitrage', 135, signY + 11);
+  doc.text('Signature & Date :', 135, signY + 17);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|THERMAL_STRESS|${params.documentId}|REF=${params.windowReference}|GLASS=${params.glassLabelFr}|ZONE=${params.result.climaticZoneData.code}|RATIO=${params.result.safetyRatio}|STATUS=${isCompliant ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Document technique officiel Baiti Atelier • ${params.documentId} • NF DTU 39 P3 • CSTB Cahier 3488 • CNERIB DTR C3-2`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Controle_Choc_Thermique_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
