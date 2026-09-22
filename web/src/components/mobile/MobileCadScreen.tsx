@@ -20,6 +20,7 @@ import {
   Volume2,
   PackageCheck,
   Wrench,
+  Sparkles,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -32,6 +33,7 @@ import { computeCadCells, computeDetailedBOM } from '../../utils/cadEngine';
 import type { CadStructure, CellType } from '../../types/cad';
 import type { GlassType } from '../../types/window';
 import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
+import { GlazingPerformanceMatrix } from './GlazingPerformanceMatrix';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -201,6 +203,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [isGeneratingGlazierPdf, setIsGeneratingGlazierPdf] = useState(false);
   const [isGeneratingHardwarePdf, setIsGeneratingHardwarePdf] = useState(false);
   const [activeBomTab, setActiveBomTab] = useState<'cuts' | 'glasses' | 'hardware'>('cuts');
+  const [glassViewMode, setGlassViewMode] = useState<'matrix' | 'cuts'>('matrix');
   const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
 
   // Field Survey Modal State
@@ -1202,13 +1205,66 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
 
         {/* TAB 2: GLASS CUT PIECES LIST & SPECIFIER */}
         {activeBomTab === 'glasses' && (
-          <div className="space-y-2.5">
-            {/* Quick Glass & Spacer Specifier */}
-            <div
-              className={`p-3 rounded-2xl border space-y-2.5 ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/40 border-white/10'
-              }`}
-            >
+          <div className="space-y-3">
+            {/* Sub-view selector: Matrix vs Cuts */}
+            <div className="grid grid-cols-2 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick();
+                  setGlassViewMode('matrix');
+                }}
+                className={`py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                  glassViewMode === 'matrix'
+                    ? 'bg-[#D4AF37] text-slate-950 shadow-xs'
+                    : isLight
+                    ? 'text-slate-600 hover:text-slate-950'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Matrice Performance (Ug/Rw)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick();
+                  setGlassViewMode('cuts');
+                }}
+                className={`py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                  glassViewMode === 'cuts'
+                    ? 'bg-[#D4AF37] text-slate-950 shadow-xs'
+                    : isLight
+                    ? 'text-slate-600 hover:text-slate-950'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Débit Miroiterie ({bom.glasses?.length || 0})</span>
+              </button>
+            </div>
+
+            {glassViewMode === 'matrix' ? (
+              <GlazingPerformanceMatrix
+                currentGlassType={config.glassType}
+                onSelectGlassType={(g) => setGlassType(g)}
+                widthMm={config.width}
+                heightMm={config.height}
+                totalGlassAreaM2={bom.totalGlassAreaM2}
+                wilayaName={selectedWilaya}
+                isLight={isLight}
+                onExportDtrPdf={handleExportDtrPdf}
+                isGeneratingPdf={isGeneratingDtrPdf}
+              />
+            ) : (
+              <div className="space-y-2.5">
+                {/* Quick Glass & Spacer Specifier */}
+                <div
+                  className={`p-3 rounded-2xl border space-y-2.5 ${
+                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/40 border-white/10'
+                  }`}
+                >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
@@ -1332,7 +1388,9 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
                   Aucun vitrage calculé pour cette configuration.
                 </div>
               )}
-            </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

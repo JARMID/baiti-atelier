@@ -293,3 +293,51 @@ export function formatThermalRating(ug: number): {
     energyGrade: 'Classe E',
   };
 }
+
+export function calculateGlazingEnergySavingsPercent(currentUg: number, baselineUg: number = 5.7): number {
+  if (baselineUg <= 0) return 0;
+  const ratio = 1 - currentUg / baselineUg;
+  return Math.max(0, Math.min(95, Math.round(ratio * 100)));
+}
+
+export interface GlazingComparisonPayload {
+  widthMm: number;
+  heightMm: number;
+  totalGlassAreaM2: number;
+  wilayaName: string;
+}
+
+export function formatGlazingComparisonWhatsAppMessage(payload: GlazingComparisonPayload): string {
+  const area = Number(payload.totalGlassAreaM2.toFixed(2));
+  let msg = `*SIMULATION COMPARATIVE DES VITRAGES • BAITI ATELIER*\n`;
+  msg += `Projet : Baie vitrée ${payload.widthMm} × ${payload.heightMm} mm\n`;
+  msg += `Surface totale de vitrage : ${area} m²\n`;
+  msg += `Wilaya d implantation : ${payload.wilayaName}\n\n`;
+
+  msg += `*1. DOUBLE VITRAGE 4/16/4 STANDARD (Air) :*\n`;
+  msg += `• Thermique : Ug = 2.7 W/m²K (Économie -53% vs simple vitrage)\n`;
+  msg += `• Acoustique : Rw = 32 dB (-50% bruit perçu)\n`;
+  msg += `• Prix estimé : ${(area * 5400).toLocaleString('fr-DZ')} DZD\n\n`;
+
+  msg += `*2. DOUBLE VITRAGE 4/16/4 ARGON + WARM-EDGE :*\n`;
+  msg += `• Thermique : Ug = 1.3 W/m²K (Économie -77% vs simple vitrage)\n`;
+  msg += `• Acoustique : Rw = 33 dB (-70% bruit perçu)\n`;
+  msg += `• Prix estimé : ${(area * 6800).toLocaleString('fr-DZ')} DZD (+${(area * 1400).toLocaleString('fr-DZ')} DZD)\n`;
+  msg += `• Recommandé : Réduction drastique des factures de chauffage et climatisation\n\n`;
+
+  msg += `*3. FEUILLETÉ PHONIQUE STADIP SILENCE 38 dB :*\n`;
+  msg += `• Acoustique : Rw = 38 dB (-85% bruit de rue perçu)\n`;
+  msg += `• Thermique : Ug = 1.4 W/m²K\n`;
+  msg += `• Prix estimé : ${(area * 9500).toLocaleString('fr-DZ')} DZD (+${(area * 4100).toLocaleString('fr-DZ')} DZD)\n`;
+  msg += `• Recommandé : Boulevards urbains, rocades et sommeil protégé\n\n`;
+
+  msg += `*4. STOP-SOL RÉFLÉCHISSANT SOLAIRE :*\n`;
+  msg += `• Protection Solaire : Sw = 0.28 (Bloque 72% des rayons solaires)\n`;
+  msg += `• Prix estimé : ${(area * 7800).toLocaleString('fr-DZ')} DZD (+${(area * 2400).toLocaleString('fr-DZ')} DZD)\n`;
+  msg += `• Recommandé : Façades orientées plein sud et zones sahariennes\n\n`;
+
+  msg += `Étude technique selon les règles DTR C3-2 du CNERIB Algérie.\n`;
+  msg += `Baiti Atelier Algérie • Menuiserie Aluminium Haute Performance`;
+
+  return msg;
+}
