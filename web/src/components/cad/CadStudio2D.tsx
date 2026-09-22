@@ -23,9 +23,6 @@ import {
   FileDown,
   Printer,
   Box,
-  ShieldCheck,
-  Thermometer,
-  Volume2,
   FileSpreadsheet,
   Edit2,
   Check,
@@ -35,6 +32,8 @@ import {
   Compass,
 } from 'lucide-react';
 import { CuttingAssemblyTerminal } from '../optimizer/CuttingAssemblyTerminal';
+import { ProfileCrossSectionViewer } from './ProfileCrossSectionViewer';
+import { ThermalComplianceCard } from './ThermalComplianceCard';
 import { getTranslation } from '../../utils/i18n';
 import { playTactileClick, playClampSound, playSwitchSound } from '../../utils/audioFeedback';
 
@@ -56,7 +55,7 @@ export const CadStudio2D: React.FC = () => {
 
   const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null);
   const [activeBomTab, setActiveBomTab] = useState<
-    'profiles' | 'glass' | 'shutter' | 'hardware' | 'thermal' | 'bending'
+    'profiles' | 'glass' | 'shutter' | 'hardware' | 'thermal' | 'bending' | 'cross_section'
   >('profiles');
 
   // Arched / Curved Window Geometry State (Algérie: Plein Cintre / Surbaissé)
@@ -133,65 +132,6 @@ export const CadStudio2D: React.FC = () => {
 
   const cells = useMemo(() => computeCadCells(effectiveStructure), [effectiveStructure]);
   const bom = useMemo(() => computeDetailedBOM(effectiveStructure, config), [effectiveStructure, config]);
-
-  // Thermal and Acoustic Engineering Analysis based on Algerian DTR / CNERIB
-  const thermalAnalysis = useMemo(() => {
-    let ug = 2.8;
-    let rw = 31;
-    let glassLabel = 'Double vitrage 4/16/4 clair';
-
-    if (config.glassType === 'double_clear') {
-      ug = 2.7;
-      rw = 32;
-      glassLabel = 'Double vitrage 4/16/4 isolation';
-    } else if (config.glassType === 'simple_clear') {
-      ug = 5.7;
-      rw = 29;
-      glassLabel = 'Simple vitrage 6mm clair';
-    } else if (config.glassType === 'stop_sol') {
-      ug = 5.3;
-      rw = 32;
-      glassLabel = 'Double vitrage Stop-Sol réfléchissant';
-    } else if (config.glassType === 'sable') {
-      ug = 3.0;
-      rw = 31;
-      glassLabel = 'Vitrage sablé / dépoli translucide';
-    }
-
-    let uf = 2.4;
-    let profileLabel = 'Alu Gamme 45 avec RPT';
-    if (config.profileSystem === 'pvc_70_chamber') {
-      uf = 1.5;
-      profileLabel = 'PVC 70mm 5 chambres';
-    } else if (config.profileSystem === 'gamme_40') {
-      uf = 5.8;
-      profileLabel = 'Alu Gamme 40 standard sans RPT';
-    } else if (config.profileSystem === 'gamme_67_slide') {
-      uf = 3.2;
-      profileLabel = 'Alu Coulissant Lourd 67mm';
-    }
-
-    const totalAreaM2 = Math.max(0.2, (structure.width * structure.height) / 1000000);
-    const glassAreaM2 = Math.min(totalAreaM2 * 0.75, bom.totalGlassAreaM2);
-    const frameAreaM2 = Math.max(0.05, totalAreaM2 - glassAreaM2);
-    const linearPerimeterM = (2 * (structure.width + structure.height)) / 1000;
-    const psiG = 0.06; // Linear thermal bridge coefficient for spacer
-
-    const uw = Number(
-      ((glassAreaM2 * ug + frameAreaM2 * uf + psiG * linearPerimeterM) / totalAreaM2).toFixed(2)
-    );
-    const conformsDtr = uw <= 2.8;
-
-    return {
-      ug,
-      uf,
-      uw,
-      rw,
-      glassLabel,
-      profileLabel,
-      conformsDtr,
-    };
-  }, [config.glassType, config.profileSystem, structure.width, structure.height, bom.totalGlassAreaM2]);
 
   // Dimension editing triggers
   const startEditDim = (dim: 'width' | 'height') => {
@@ -1401,6 +1341,16 @@ export const CadStudio2D: React.FC = () => {
                   {t.bomTabHardware} ({bom.hardwareSummary.length})
                 </button>
                 <button
+                  onClick={() => setActiveBomTab('cross_section')}
+                  className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                    activeBomTab === 'cross_section'
+                      ? 'bg-cyan-500/20 text-cyan-400 font-bold border border-cyan-500/30'
+                      : theme === 'light' ? 'text-slate-600 hover:text-slate-900' : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Coupe 2D RPT
+                </button>
+                <button
                   onClick={() => setActiveBomTab('thermal')}
                   className={`px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
                     activeBomTab === 'thermal'
@@ -1512,53 +1462,30 @@ export const CadStudio2D: React.FC = () => {
                 </div>
               )}
 
-              {/* Tab 4: Thermal & Acoustic Calculation */}
+              {/* Tab: Profile Technical Cross-Section */}
+              {activeBomTab === 'cross_section' && (
+                <div className="flex flex-col gap-2">
+                  <ProfileCrossSectionViewer
+                    initialSeries={
+                      config.profileSystem === 'pvc_70_chamber'
+                        ? 'pvc_60_multi'
+                        : config.profileSystem === 'gamme_45_thermal'
+                        ? 'alu_52_rpt'
+                        : 'alu_45_rpt'
+                    }
+                  />
+                </div>
+              )}
+
+              {/* Tab 4: Thermal & Acoustic Calculation (DTR C3-2) */}
               {activeBomTab === 'thermal' && (
-                <div className="flex flex-col gap-3 text-xs font-mono">
-                  <div className="p-3 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-zinc-400 flex items-center gap-1.5">
-                        <Thermometer className="w-3.5 h-3.5 text-orange-400" />
-                        Isolation Globale Uw
-                      </span>
-                      <span className="font-bold text-white text-sm">
-                        {thermalAnalysis.uw} W/(m²·K)
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-zinc-500">Ug Vitrage ({thermalAnalysis.glassLabel})</span>
-                      <span className="text-zinc-300 font-bold">{thermalAnalysis.ug} W/(m²·K)</span>
-                    </div>
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-zinc-500">Uf Profilé ({thermalAnalysis.profileLabel})</span>
-                      <span className="text-zinc-300 font-bold">{thermalAnalysis.uf} W/(m²·K)</span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
-                    <span className="text-zinc-400 flex items-center gap-1.5">
-                      <Volume2 className="w-3.5 h-3.5 text-blue-400" />
-                      Affaiblissement Acoustique Rw
-                    </span>
-                    <span className="font-bold text-blue-400 text-sm">
-                      {thermalAnalysis.rw} dB
-                    </span>
-                  </div>
-
-                  <div
-                    className={`p-2.5 rounded-xl border flex items-center gap-2 text-[11px] ${
-                      thermalAnalysis.conformsDtr
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                        : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-                    }`}
-                  >
-                    <ShieldCheck className="w-4 h-4 shrink-0" />
-                    <span>
-                      {thermalAnalysis.conformsDtr
-                        ? 'Conforme à la Règlementation Thermique Algérienne DTR C3-2'
-                        : 'Isolation modérée, prévoyez un double vitrage RPT pour grands chantiers'}
-                    </span>
-                  </div>
+                <div className="flex flex-col gap-2">
+                  <ThermalComplianceCard
+                    widthMm={structure.width}
+                    heightMm={structure.height}
+                    glassAreaM2={bom.totalGlassAreaM2}
+                    onExportReport={handleDownloadCutSheet}
+                  />
                 </div>
               )}
 

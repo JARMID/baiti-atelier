@@ -294,3 +294,32 @@ pub fn spool_saw_sheet(job_name: String, sheet_content: String) -> Result<String
 
     Ok(file_path.to_string_lossy().to_string())
 }
+
+#[tauri::command]
+pub fn save_workshop_offcuts(offcuts_json: String) -> Result<bool, String> {
+    let base = std::env::var("LOCALAPPDATA")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| std::env::temp_dir());
+    let dir = base.join("BaitiAtelier");
+    if !dir.exists() {
+        fs::create_dir_all(&dir).map_err(|e| format!("Failed to create directory: {}", e))?;
+    }
+    let file_path = dir.join("offcuts.json");
+    fs::write(&file_path, offcuts_json)
+        .map_err(|e| format!("Failed to write offcuts file: {}", e))?;
+    Ok(true)
+}
+
+#[tauri::command]
+pub fn load_workshop_offcuts() -> Result<String, String> {
+    let base = std::env::var("LOCALAPPDATA")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| std::env::temp_dir());
+    let file_path = base.join("BaitiAtelier").join("offcuts.json");
+    if !file_path.exists() {
+        return Ok("[]".to_string());
+    }
+    let content = fs::read_to_string(&file_path)
+        .map_err(|e| format!("Failed to read offcuts file: {}", e))?;
+    Ok(content)
+}

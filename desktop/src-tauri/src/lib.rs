@@ -2,8 +2,8 @@ pub mod commands;
 
 use commands::{
     delete_offline_quote, export_cnc_gcode, generate_saw_cut_label, get_workshop_system_info,
-    list_offline_quotes, load_offline_quote, print_thermal_labels_batch, save_offline_quote,
-    spool_saw_sheet,
+    list_offline_quotes, load_offline_quote, load_workshop_offcuts, print_thermal_labels_batch,
+    save_offline_quote, save_workshop_offcuts, spool_saw_sheet,
 };
 
 pub fn run() {
@@ -20,7 +20,9 @@ pub fn run() {
             load_offline_quote,
             delete_offline_quote,
             print_thermal_labels_batch,
-            spool_saw_sheet
+            spool_saw_sheet,
+            save_workshop_offcuts,
+            load_workshop_offcuts
         ])
         .run(tauri::generate_context!())
         .expect("error while running Baiti Atelier desktop application");

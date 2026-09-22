@@ -13,6 +13,7 @@ interface Hero3DWorkpieceProps {
   isExploded?: boolean;
   isOpen?: boolean;
   windowModel?: WindowModelType;
+  clippingPlane?: THREE.Plane | null;
 }
 
 const FINISH_PALETTES: Record<FinishColor, { color: string; roughness: number; metalness: number }> = {
@@ -30,6 +31,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
   isExploded = false,
   isOpen = false,
   windowModel = 'sliding',
+  clippingPlane = null,
 }) => {
   const rootRef = useRef<THREE.Group>(null);
   const leftSashRef = useRef<THREE.Group>(null);
@@ -39,69 +41,111 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
 
   const palette = FINISH_PALETTES[finishColor] || FINISH_PALETTES.ral_7016;
 
-  // Materials
+  // Materials with clipping support
   const frameMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: palette.color,
       roughness: palette.roughness,
       metalness: palette.metalness,
       envMapIntensity: 1.4,
+      side: THREE.DoubleSide,
     });
-  }, [palette]);
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [palette, clippingPlane]);
 
   // Pure white monobloc roller shutter caisson (standard in Algerian construction RAL 9016)
   const whiteShutterMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: '#FFFFFF',
       roughness: 0.25,
       metalness: 0.08,
       envMapIntensity: 1.2,
+      side: THREE.DoubleSide,
     });
-  }, []);
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [clippingPlane]);
 
   const shutterJointMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: '#CBD5E1',
       roughness: 0.6,
       metalness: 0.05,
+      side: THREE.DoubleSide,
     });
-  }, []);
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [clippingPlane]);
 
   const shutterSlatsMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: '#F8FAFC',
       roughness: 0.35,
       metalness: 0.1,
+      side: THREE.DoubleSide,
     });
-  }, []);
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [clippingPlane]);
 
   const hardwareSteelMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: '#94A3B8',
       roughness: 0.25,
       metalness: 0.85,
+      side: THREE.DoubleSide,
     });
-  }, []);
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [clippingPlane]);
 
   const goldAccentMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: '#D4AF37',
       roughness: 0.22,
       metalness: 0.88,
       envMapIntensity: 1.6,
+      side: THREE.DoubleSide,
     });
-  }, []);
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [clippingPlane]);
 
   const thermalBreakMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: '#0B0F19',
       roughness: 0.9,
       metalness: 0.05,
+      side: THREE.DoubleSide,
     });
-  }, []);
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [clippingPlane]);
 
   const glassMaterial = useMemo(() => {
-    return new THREE.MeshPhysicalMaterial({
+    const mat = new THREE.MeshPhysicalMaterial({
       color: '#DCEDEB',
       roughness: 0.05,
       transmission: 0.9,
@@ -110,24 +154,42 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
       opacity: 0.55,
       ior: 1.52,
       reflectivity: 0.82,
+      side: THREE.DoubleSide,
     });
-  }, []);
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [clippingPlane]);
 
   const woodMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: finishColor === 'faux_bois' ? '#784622' : finishColor === 'ral_9016' ? '#E2E8F0' : '#2D241E',
       roughness: 0.65,
       metalness: 0.05,
+      side: THREE.DoubleSide,
     });
-  }, [finishColor]);
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [finishColor, clippingPlane]);
 
   const fabricMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: finishColor === 'ral_9016' ? '#F8FAFC' : finishColor === 'ral_7016' ? '#475569' : '#8B5CF6',
       roughness: 0.85,
       metalness: 0.05,
+      side: THREE.DoubleSide,
     });
-  }, [finishColor]);
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [finishColor, clippingPlane]);
 
   // Interpolation calculations based on scrollProgress
   const openProgress = Math.min(1, Math.max(0, (scrollProgress - 0.35) / 0.3));

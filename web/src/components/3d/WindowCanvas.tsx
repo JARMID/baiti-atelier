@@ -1,10 +1,19 @@
-import React, { Suspense, useRef, useState } from 'react';
+import React, { Suspense, useRef, useState, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, ContactShadows, Grid, Float } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import * as THREE from 'three';
 import { ParametricWindow3D } from './ParametricWindow3D';
 import { useConfigStore } from '../../store/configStore';
-import { Rotate3d, Layers, Expand, Sparkles } from 'lucide-react';
+import {
+  Rotate3d,
+  Layers,
+  Expand,
+  Sparkles,
+  Scissors,
+  ArrowLeftRight,
+  Tag,
+} from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 
 export const WindowCanvas: React.FC = () => {
@@ -12,6 +21,13 @@ export const WindowCanvas: React.FC = () => {
   const isLight = theme === 'light';
   const [autoRotate, setAutoRotate] = useState(false);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
+
+  // 3D Clipping Section State
+  const [isClippingActive, setIsClippingActive] = useState(false);
+  const [clippingAxis, setClippingAxis] = useState<'x' | 'y' | 'z'>('x');
+  const [clippingPos, setClippingPos] = useState(0.5);
+  const [clippingInverted, setClippingInverted] = useState(false);
+  const [showSectionTags, setShowSectionTags] = useState(true);
 
   const resetCamera = () => {
     playTactileClick();
@@ -34,6 +50,25 @@ export const WindowCanvas: React.FC = () => {
     playClampSound();
     toggleOpen();
   };
+
+  // Dynamic 3D Clipping Plane Calculation
+  const clippingPlane = useMemo(() => {
+    if (!isClippingActive) return null;
+    const sign = clippingInverted ? 1 : -1;
+    const wM = config.width / 1000;
+    const hM = config.height / 1000;
+
+    if (clippingAxis === 'x') {
+      const cutX = (clippingPos - 0.5) * wM;
+      return new THREE.Plane(new THREE.Vector3(sign, 0, 0), sign * -cutX);
+    } else if (clippingAxis === 'y') {
+      const cutY = (clippingPos - 0.5) * hM;
+      return new THREE.Plane(new THREE.Vector3(0, sign, 0), sign * -cutY);
+    } else {
+      const cutZ = (clippingPos - 0.5) * 0.2;
+      return new THREE.Plane(new THREE.Vector3(0, 0, sign), sign * -cutZ);
+    }
+  }, [isClippingActive, clippingAxis, clippingPos, clippingInverted, config.width, config.height]);
 
   const openLabel =
     language === 'ar'
@@ -96,6 +131,23 @@ export const WindowCanvas: React.FC = () => {
           }`}
         >
           <button
+            onClick={() => {
+              playSwitchSound();
+              setIsClippingActive(!isClippingActive);
+            }}
+            title="Coupe Technique 3D (Écorché intérieur)"
+            className={`p-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+              isClippingActive
+                ? 'bg-cyan-500 text-black font-bold shadow-md shadow-cyan-500/30'
+                : isLight
+                ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                : 'text-zinc-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Scissors className="w-4 h-4" />
+          </button>
+
+          <button
             onClick={handleToggleAutoRotate}
             title="Auto-rotation"
             className={`p-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
@@ -156,7 +208,10 @@ export const WindowCanvas: React.FC = () => {
       <Canvas
         camera={{ position: [0, 0, 2.7], fov: 42 }}
         shadows
-        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance', localClippingEnabled: true }}
+        onCreated={({ gl }) => {
+          gl.localClippingEnabled = true;
+        }}
       >
         {/* Studio Lighting Rig */}
         <ambientLight intensity={isLight ? 0.95 : 0.7} />
@@ -179,7 +234,11 @@ export const WindowCanvas: React.FC = () => {
 
         <Suspense fallback={null}>
           <Float speed={autoRotate ? 0 : 0.8} rotationIntensity={0.04} floatIntensity={0.08}>
-            <ParametricWindow3D config={config} />
+            <ParametricWindow3D
+              config={config}
+              clippingPlane={clippingPlane}
+              showAnnotations={showSectionTags}
+            />
           </Float>
 
           {/* Contact Shadow & Floor Grid */}
@@ -219,6 +278,93 @@ export const WindowCanvas: React.FC = () => {
           dampingFactor={0.05}
         />
       </Canvas>
+
+      {/* 3D CLIPPING SECTION TRAY (DISPLAYED WHEN ACTIVE) */}
+      {isClippingActive && (
+        <div
+          className={`absolute bottom-12 left-4 right-4 z-20 p-3 rounded-2xl border backdrop-blur-xl flex flex-wrap items-center justify-between gap-3 text-xs font-mono shadow-2xl transition-all ${
+            isLight
+              ? 'bg-white/95 border-slate-200 text-slate-900 shadow-slate-300/50'
+              : 'bg-[#090D18]/90 border-cyan-500/30 text-white shadow-cyan-950/50'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-cyan-400 font-bold flex items-center gap-1.5">
+              <Scissors className="w-3.5 h-3.5" />
+              <span>Coupe 3D :</span>
+            </span>
+            <div className="flex items-center gap-1 bg-black/20 p-1 rounded-xl border border-white/10">
+              {(['x', 'y', 'z'] as const).map((axis) => (
+                <button
+                  key={axis}
+                  onClick={() => {
+                    playSwitchSound();
+                    setClippingAxis(axis);
+                  }}
+                  className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase transition-all cursor-pointer ${
+                    clippingAxis === axis
+                      ? 'bg-cyan-500 text-slate-950 shadow-xs'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Axe {axis}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Slider */}
+          <div className="flex-1 min-w-[180px] flex items-center gap-2">
+            <span className="text-[10px] text-zinc-400">Position:</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={clippingPos}
+              onChange={(e) => setClippingPos(parseFloat(e.target.value))}
+              className="flex-1 accent-cyan-400 cursor-pointer h-1.5 rounded-lg bg-zinc-700"
+            />
+            <span className="text-[11px] font-bold text-cyan-400 w-10 text-right">
+              {Math.round(clippingPos * 100)}%
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                playTactileClick();
+                setClippingInverted(!clippingInverted);
+              }}
+              title="Inverser le sens de coupe"
+              className={`p-1.5 rounded-xl border flex items-center gap-1 text-[11px] cursor-pointer transition-colors ${
+                clippingInverted
+                  ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300'
+                  : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
+              }`}
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Inverser</span>
+            </button>
+
+            <button
+              onClick={() => {
+                playTactileClick();
+                setShowSectionTags(!showSectionTags);
+              }}
+              title="Afficher/masquer les étiquettes de profilé"
+              className={`p-1.5 rounded-xl border flex items-center gap-1 text-[11px] cursor-pointer transition-colors ${
+                showSectionTags
+                  ? 'bg-[#D4AF37]/20 border-[#D4AF37] text-[#D4AF37]'
+                  : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Tag className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Étiquettes RPT</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Floating Instruction Hint */}
       <div

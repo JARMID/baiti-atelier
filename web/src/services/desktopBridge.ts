@@ -225,3 +225,33 @@ export async function spoolSawSheet(jobName: string, sheetContent: string): Prom
 
   return 'saved-in-memory';
 }
+
+/**
+ * Saves workshop rack offcuts to native disk storage when running in desktop app
+ */
+export async function saveNativeOffcuts(offcutsJson: string): Promise<boolean> {
+  if (isTauriDesktop()) {
+    try {
+      const res = await invokeTauri<boolean>('save_workshop_offcuts', { offcutsJson });
+      if (res !== null) return res;
+    } catch (err) {
+      console.warn('Tauri offcut save error:', err);
+    }
+  }
+  return false;
+}
+
+/**
+ * Loads workshop rack offcuts from native disk storage when running in desktop app
+ */
+export async function loadNativeOffcuts(): Promise<string | null> {
+  if (isTauriDesktop()) {
+    try {
+      const res = await invokeTauri<string>('load_workshop_offcuts');
+      if (res) return res;
+    } catch (err) {
+      console.warn('Tauri offcut load error:', err);
+    }
+  }
+  return null;
+}

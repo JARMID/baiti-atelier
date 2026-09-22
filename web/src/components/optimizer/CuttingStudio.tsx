@@ -19,9 +19,19 @@ import {
   ArrowRight,
   Sliders,
   FileSpreadsheet,
+  Cpu,
+  BookmarkPlus,
+  PackageCheck,
 } from 'lucide-react';
 import { ThermalLabelsModal } from './ThermalLabelsModal';
 import { CuttingAssemblyTerminal } from './CuttingAssemblyTerminal';
+import { CncSawExportModal } from './CncSawExportModal';
+import {
+  getOffcutInventory,
+  addOffcut,
+  removeOffcut,
+  type OffcutRecord,
+} from '../../utils/offcutManager';
 import { computeDetailedBOM, computeRollerShutterBOM } from '../../utils/cadEngine';
 import { downloadLinearCutPlanCsv } from '../../utils/csvExporter';
 import { getTranslation } from '../../utils/i18n';
@@ -37,6 +47,14 @@ export const CuttingStudio: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'1d' | '2d' | 'remnants' | 'shutter'>('1d');
   const [isLabelsModalOpen, setIsLabelsModalOpen] = useState(false);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  const [isCncExportOpen, setIsCncExportOpen] = useState(false);
+  const [prioritizeStockOffcuts, setPrioritizeStockOffcuts] = useState(true);
+  const [offcutInventory, setOffcutInventory] = useState<OffcutRecord[]>(() => getOffcutInventory());
+  const [showAddOffcutModal, setShowAddOffcutModal] = useState(false);
+  const [newOffcutLength, setNewOffcutLength] = useState(1400);
+  const [newOffcutRack, setNewOffcutRack] = useState('CASIER-A-03');
+  const [newOffcutProfile, setNewOffcutProfile] = useState('TPR-40');
+  const [newOffcutColor, setNewOffcutColor] = useState('Blanc RAL 9016');
 
   // --- ROLLER SHUTTER CALCULATOR STATE ---
   const [shutterWidth, setShutterWidth] = useState(config.width);
@@ -151,14 +169,25 @@ export const CuttingStudio: React.FC = () => {
     ]);
   };
 
+  const stockRemnants = useMemo(() => {
+    if (!prioritizeStockOffcuts) return [];
+    return offcutInventory.map((item) => ({
+      id: item.id,
+      length: item.lengthMm,
+      isRemnant: true,
+      profileCode: item.profileCode,
+      costPerBar: 0,
+    }));
+  }, [prioritizeStockOffcuts, offcutInventory]);
+
   const linearResult = useMemo(() => {
-    return optimize1DLinearStock(demands1D, [], {
+    return optimize1DLinearStock(demands1D, stockRemnants, {
       kerf: kerf1D,
       clampTrim: clampTrim1D,
       standardBarLength: barLength1D,
       minRemnantLength: 800,
     });
-  }, [demands1D, kerf1D, clampTrim1D, barLength1D]);
+  }, [demands1D, stockRemnants, kerf1D, clampTrim1D, barLength1D]);
 
   // --- 2D SHEET CUTTING STATE ---
   const [boardWidth, setBoardWidth] = useState(2440);
@@ -359,6 +388,30 @@ export const CuttingStudio: React.FC = () => {
                 <span>{t.importCurrentWindow}</span>
               </button>
             </div>
+
+            {/* Prioritize stock offcuts checkbox */}
+            <div className="col-span-full pt-1 flex flex-wrap items-center justify-between gap-2">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-mono select-none">
+                <input
+                  type="checkbox"
+                  checked={prioritizeStockOffcuts}
+                  onChange={(e) => {
+                    playSwitchSound();
+                    setPrioritizeStockOffcuts(e.target.checked);
+                  }}
+                  className="rounded text-[#D4AF37] focus:ring-[#D4AF37]"
+                />
+                <span className={isLight ? 'text-slate-700' : 'text-zinc-300'}>
+                  Prioriser les chutes du casier atelier en stock ({offcutInventory.length} chutes actives)
+                </span>
+              </label>
+
+              {linearResult.totalRemnantsUsed > 0 && (
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold">
+                  {linearResult.totalRemnantsUsed} chute(s) réutilisée(s) !
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Metrics Overview Cards */}
@@ -373,7 +426,7 @@ export const CuttingStudio: React.FC = () => {
               theme === 'light' ? 'bg-white border-slate-200 shadow-sm' : 'glass-panel border-white/10'
             }`}>
               <span className={`text-xs font-mono ${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'}`}>{t.materialYield}</span>
-              <p className="text-2xl font-extrabold text-emerald-500 mt-1">
+              <p className="text-2xl font-extrabold text-emerald-400 mt-1">
                 {(linearResult.overallUtilizationRate * 100).toFixed(1)}%
               </p>
             </div>
@@ -407,6 +460,23 @@ export const CuttingStudio: React.FC = () => {
                 <span className={`text-xs font-mono ${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'}`}>
                   {linearResult.bars.length} barres calculées
                 </span>
+
+                <button
+                  onClick={() => {
+                    playTactileClick();
+                    setIsCncExportOpen(true);
+                  }}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono transition-all cursor-pointer shadow-sm hover-lift ${
+                    isLight
+                      ? 'bg-sky-50 hover:bg-sky-100 border-sky-300 text-sky-800'
+                      : 'bg-sky-500/10 hover:bg-sky-500/20 border-sky-500/30 text-sky-400'
+                  }`}
+                  title="Exporter le programme CNC (ISO G-Code, Elumatec, Emmegi, Yilmaz)"
+                >
+                  <Cpu className="w-3.5 h-3.5" />
+                  <span>Scie CNC (G-Code)</span>
+                </button>
+
                 <button
                   onClick={() => {
                     playClampSound();
@@ -887,55 +957,282 @@ export const CuttingStudio: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 3: REMNANT ASSET INVENTORY */}
+      {/* TAB 3: REMNANT ASSET INVENTORY & RACK STORAGE */}
       {activeTab === 'remnants' && (
-        <div className={`p-6 rounded-3xl border flex flex-col gap-4 transition-all ${
-          isLight ? 'bg-white border-slate-200 text-slate-800 shadow-sm' : 'glass-panel border-white/10 text-zinc-200'
-        }`}>
-          <div className="flex items-center justify-between">
-            <h3 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-              Inventaire des Chutes et Retailles d’Atelier
-            </h3>
-            <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-              Valorisation des pertes : ~4 200 DZD récupérés
-            </span>
-          </div>
-          <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-zinc-400'}`}>
-            Toutes les chutes d'une longueur supérieure ou égale à 800 mm sont cataloguées avec un code identifiant unique et conservées pour les futurs chantiers.
-          </p>
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Top Banner & Quick Actions */}
+          <div className={`p-6 rounded-3xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all ${
+            isLight ? 'bg-white border-slate-200 text-slate-800 shadow-sm' : 'glass-panel border-white/10 text-zinc-200'
+          }`}>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  Gestionnaire de Chutes & Casier de Rangement Atelier
+                </h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#D4AF37] font-bold">
+                  VALORISATION MATIÈRE
+                </span>
+              </div>
+              <p className={`text-xs mt-1 max-w-2xl ${isLight ? 'text-slate-600' : 'text-zinc-400'}`}>
+                Réduisez le gaspillage en réutilisant automatiquement les profilés stockés dans vos casiers avant de découper des barres neuves de 6 mètres.
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
-            {linearResult.bars
-              .filter((b) => b.isReusableRemnant)
-              .map((b) => (
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => {
+                  playTactileClick();
+                  setShowAddOffcutModal(!showAddOffcutModal);
+                }}
+                className="px-4 py-2 rounded-xl bg-[#D4AF37] hover:brightness-110 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-[#D4AF37]/20 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Ajouter une Chute au Casier</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Manual Add Offcut Form Modal/Inline */}
+          {showAddOffcutModal && (
+            <div className={`p-5 rounded-3xl border animate-in fade-in slide-in-from-top-2 duration-200 ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-[#0E1322] border-white/15'
+            }`}>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-bold font-mono">Nouvelle Chute à Entrer en Stock</h4>
+                <button
+                  onClick={() => setShowAddOffcutModal(false)}
+                  className={`p-1.5 rounded-lg border text-xs cursor-pointer ${
+                    isLight ? 'border-slate-300' : 'border-white/10 text-zinc-400'
+                  }`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-[11px] font-mono text-zinc-400 mb-1">Longueur (mm)</label>
+                  <input
+                    type="number"
+                    value={newOffcutLength}
+                    onChange={(e) => setNewOffcutLength(Number(e.target.value) || 0)}
+                    className={`w-full px-3 py-1.5 rounded-xl border text-xs font-mono font-bold ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-white/5 border-white/10 text-white'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-mono text-zinc-400 mb-1">Code Profilé</label>
+                  <select
+                    value={newOffcutProfile}
+                    onChange={(e) => setNewOffcutProfile(e.target.value)}
+                    className={`w-full px-3 py-1.5 rounded-xl border text-xs font-mono ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0E1322] border-white/10 text-white'
+                    }`}
+                  >
+                    <option value="TPR-40">TPR-40 (Dormant 40 RPT)</option>
+                    <option value="TPR-OUV">TPR-OUV (Ouvrant 40 RPT)</option>
+                    <option value="PAR-16">PAR-16 (Parclose 16mm)</option>
+                    <option value="PVC-DORM">PVC-DORM (Dormant PVC 60)</option>
+                    <option value="VR-L39">VR-L39 (Lame Volet Alu 39)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-mono text-zinc-400 mb-1">Teinte / Finition</label>
+                  <select
+                    value={newOffcutColor}
+                    onChange={(e) => setNewOffcutColor(e.target.value)}
+                    className={`w-full px-3 py-1.5 rounded-xl border text-xs font-mono ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-[#0E1322] border-white/10 text-white'
+                    }`}
+                  >
+                    <option value="Blanc RAL 9016">Blanc RAL 9016</option>
+                    <option value="Gris Anthracite 7016">Gris Anthracite 7016</option>
+                    <option value="Noir Sablé 9005">Noir Sablé 9005</option>
+                    <option value="Chêne Doré">Chêne Doré</option>
+                    <option value="Bronze Anodisé">Bronze Anodisé</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-mono text-zinc-400 mb-1">Casier de Rangement</label>
+                  <input
+                    type="text"
+                    value={newOffcutRack}
+                    onChange={(e) => setNewOffcutRack(e.target.value)}
+                    placeholder="ex: CASIER-A-03"
+                    className={`w-full px-3 py-1.5 rounded-xl border text-xs font-mono ${
+                      isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-white/5 border-white/10 text-white'
+                    }`}
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    onClick={() => {
+                      if (newOffcutLength < 300) return;
+                      playClampSound();
+                      addOffcut({
+                        profileCode: newOffcutProfile,
+                        label: `${newOffcutProfile} Chute Atelier`,
+                        material: newOffcutProfile.startsWith('PVC') ? 'pvc' : 'aluminium',
+                        finishColor: newOffcutColor,
+                        lengthMm: newOffcutLength,
+                        rackLocation: newOffcutRack || 'CASIER-GENERAL',
+                        jobOrigin: 'Chute Stock Manuel',
+                      });
+                      setOffcutInventory(getOffcutInventory());
+                      setShowAddOffcutModal(false);
+                    }}
+                    className="w-full px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                  >
+                    <BookmarkPlus className="w-4 h-4" />
+                    <span>Enregistrer dans le Casier</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ACTIVE WORKSHOP OFFCUT RACK INVENTORY */}
+          <div className={`p-6 rounded-3xl border flex flex-col gap-4 transition-all ${
+            isLight ? 'bg-white border-slate-200 text-slate-800 shadow-sm' : 'glass-panel border-white/10 text-zinc-200'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className={`text-base font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  Casiers de Rangement en Atelier ({offcutInventory.length} chutes disponibles)
+                </h4>
+                <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>
+                  Ces profilés sont automatiquement pris en compte lors de l'optimisation pour économiser des barres neuves.
+                </p>
+              </div>
+              <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                Valeur stockée estimée : ~{(offcutInventory.reduce((acc, c) => acc + (c.lengthMm / 1000) * 850, 0)).toFixed(0)} DZD
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+              {offcutInventory.map((item) => (
                 <div
-                  key={b.barIndex}
-                  className={`p-4 rounded-2xl border flex flex-col gap-2 ${
-                    isLight ? 'bg-slate-50 border-emerald-500/30 shadow-xs' : 'bg-zinc-900/80 border-emerald-500/20'
+                  key={item.id}
+                  className={`p-4 rounded-2xl border flex flex-col gap-2 transition-all ${
+                    isLight ? 'bg-slate-50 border-slate-200 shadow-xs' : 'bg-zinc-900/80 border-white/10'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold border border-emerald-500/20">
-                      {b.remnantId}
+                    <span className="px-2.5 py-0.5 rounded-md bg-[#D4AF37]/15 text-[#D4AF37] font-mono text-xs font-bold border border-[#D4AF37]/30">
+                      {item.rackLocation}
                     </span>
-                    <span className={`text-xs font-mono ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>
-                      Barre source #{b.barIndex}
+                    <span className={`text-[10px] font-mono ${isLight ? 'text-slate-400' : 'text-zinc-500'}`}>
+                      {item.barcode}
                     </span>
                   </div>
+
                   <div className="flex items-baseline justify-between pt-1">
                     <span className={`text-xs ${isLight ? 'text-slate-600' : 'text-zinc-400'}`}>Longueur :</span>
-                    <span className={`text-lg font-extrabold font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                      {b.wasteLength} mm
+                    <span className={`text-xl font-extrabold font-mono text-emerald-500`}>
+                      {item.lengthMm} mm
                     </span>
                   </div>
-                  <div className={`flex items-center justify-between text-[11px] pt-1 border-t ${
-                    isLight ? 'border-slate-200 text-slate-500' : 'border-white/5 text-zinc-500'
+
+                  <div className={`flex items-center justify-between text-[11px] pt-2 border-t ${
+                    isLight ? 'border-slate-200 text-slate-500' : 'border-white/5 text-zinc-400'
                   }`}>
-                    <span>Profil : TPR Alugraf 40mm</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">En stock</span>
+                    <span className="font-mono font-medium">{item.profileCode} • {item.finishColor}</span>
+                    <button
+                      onClick={() => {
+                        playTactileClick();
+                        removeOffcut(item.id);
+                        setOffcutInventory(getOffcutInventory());
+                      }}
+                      className="text-red-400 hover:text-red-500 text-[11px] cursor-pointer"
+                      title="Sortir cette chute du stock"
+                    >
+                      Sortir
+                    </button>
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* NEW REMNANTS FROM CURRENT OPTIMIZATION RUN */}
+          <div className={`p-6 rounded-3xl border flex flex-col gap-4 transition-all ${
+            isLight ? 'bg-white border-slate-200 text-slate-800 shadow-sm' : 'glass-panel border-white/10 text-zinc-200'
+          }`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h4 className={`text-base font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  Chutes Récupérées du Plan Courant ({linearResult.newRemnantsGenerated} pièces ≥ 800 mm)
+                </h4>
+                <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>
+                  Issues de la dernière découpe calculée. Vous pouvez les intégrer directement au casier d'atelier.
+                </p>
+              </div>
+
+              {linearResult.bars.some((b) => b.isReusableRemnant) && (
+                <button
+                  onClick={() => {
+                    playClampSound();
+                    linearResult.bars
+                      .filter((b) => b.isReusableRemnant)
+                      .forEach((b, idx) => {
+                        addOffcut({
+                          profileCode: 'TPR-40',
+                          label: `Chute Barre #${b.barIndex}`,
+                          material: 'aluminium',
+                          finishColor: 'Blanc RAL 9016',
+                          lengthMm: Math.round(b.wasteLength),
+                          rackLocation: `CASIER-A-${String(idx + 1).padStart(2, '0')}`,
+                          jobOrigin: `Chantier ${config.width}x${config.height}`,
+                        });
+                      });
+                    setOffcutInventory(getOffcutInventory());
+                  }}
+                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer shrink-0"
+                >
+                  <PackageCheck className="w-4 h-4" />
+                  <span>Tout Enregistrer dans le Casier</span>
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+              {linearResult.bars
+                .filter((b) => b.isReusableRemnant)
+                .map((b) => (
+                  <div
+                    key={b.barIndex}
+                    className={`p-4 rounded-2xl border flex flex-col gap-2 ${
+                      isLight ? 'bg-slate-50 border-emerald-500/30 shadow-xs' : 'bg-zinc-900/80 border-emerald-500/20'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold border border-emerald-500/20">
+                        {b.remnantId || `CHT-${b.barIndex}`}
+                      </span>
+                      <span className={`text-xs font-mono ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>
+                        Barre source #{b.barIndex}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-between pt-1">
+                      <span className={`text-xs ${isLight ? 'text-slate-600' : 'text-zinc-400'}`}>Longueur :</span>
+                      <span className={`text-lg font-extrabold font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                        {Math.round(b.wasteLength)} mm
+                      </span>
+                    </div>
+                    <div className={`flex items-center justify-between text-[11px] pt-1 border-t ${
+                      isLight ? 'border-slate-200 text-slate-500' : 'border-white/5 text-zinc-500'
+                    }`}>
+                      <span>Profil : TPR Alugraf 40mm</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Réutilisable</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
           </div>
         </div>
       )}
@@ -1351,6 +1648,15 @@ export const CuttingStudio: React.FC = () => {
         bom={currentBom}
         config={config}
         jobName="Poste Scie & Débitage Atelier"
+      />
+
+      {/* CNC Saw G-Code & Machine Exporter Modal */}
+      <CncSawExportModal
+        isOpen={isCncExportOpen}
+        onClose={() => setIsCncExportOpen(false)}
+        bars={linearResult.bars}
+        jobName="Chantier Menuiserie Baiti"
+        profileCode="TPR-40"
       />
     </section>
   );

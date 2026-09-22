@@ -1,10 +1,13 @@
 import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import type { FinishColor, GlassType, WindowConfig } from '../../types/window';
 
 interface Props {
   config: WindowConfig;
+  clippingPlane?: THREE.Plane | null;
+  showAnnotations?: boolean;
 }
 
 const FINISH_PALETTES: Record<FinishColor, { color: string; roughness: number; metalness: number }> = {
@@ -22,7 +25,11 @@ const GLASS_PALETTES: Record<GlassType, { color: string; roughness: number; tran
   sable: { color: '#E2E8F0', roughness: 0.78, transmission: 0.62, opacity: 0.88, ior: 1.45 },
 };
 
-export const ParametricWindow3D: React.FC<Props> = ({ config }) => {
+export const ParametricWindow3D: React.FC<Props> = ({
+  config,
+  clippingPlane = null,
+  showAnnotations = true,
+}) => {
   const rootGroupRef = useRef<THREE.Group>(null);
   const slidingSashRef = useRef<THREE.Group>(null);
   const leftCasementRef = useRef<THREE.Group>(null);
@@ -45,25 +52,38 @@ export const ParametricWindow3D: React.FC<Props> = ({ config }) => {
   const frameMatProps = FINISH_PALETTES[config.finishColor] || FINISH_PALETTES.ral_7016;
   const glassMatProps = GLASS_PALETTES[config.glassType] || GLASS_PALETTES.double_clear;
 
+  // Materials with local clipping support
   const frameMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: frameMatProps.color,
       roughness: frameMatProps.roughness,
       metalness: frameMatProps.metalness,
       envMapIntensity: 1.2,
+      side: THREE.DoubleSide,
     });
-  }, [frameMatProps]);
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [frameMatProps, clippingPlane]);
 
   const handleMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshStandardMaterial({
       color: '#D1D5DB',
       roughness: 0.2,
       metalness: 0.85,
+      side: THREE.DoubleSide,
     });
-  }, []);
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [clippingPlane]);
 
   const glassMaterial = useMemo(() => {
-    return new THREE.MeshPhysicalMaterial({
+    const mat = new THREE.MeshPhysicalMaterial({
       color: glassMatProps.color,
       roughness: glassMatProps.roughness,
       transmission: glassMatProps.transmission,
@@ -72,8 +92,59 @@ export const ParametricWindow3D: React.FC<Props> = ({ config }) => {
       opacity: glassMatProps.opacity,
       ior: glassMatProps.ior,
       reflectivity: 0.8,
+      side: THREE.DoubleSide,
     });
-  }, [glassMatProps, glassThick]);
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [glassMatProps, glassThick, clippingPlane]);
+
+  // Polyamide RPT thermal break strip material (Matte Charcoal PA66 GF25)
+  const thermalBreakMaterial = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({
+      color: '#111317',
+      roughness: 0.95,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+    });
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [clippingPlane]);
+
+  // EPDM Gasket Material (Synthetic rubber black)
+  const epdmGasketMaterial = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({
+      color: '#0A0B0E',
+      roughness: 0.8,
+      metalness: 0.05,
+      side: THREE.DoubleSide,
+    });
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [clippingPlane]);
+
+  // Glazing Spacer Bar (Anodized silver warm-edge)
+  const spacerMaterial = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({
+      color: '#A0AEC0',
+      roughness: 0.3,
+      metalness: 0.8,
+      side: THREE.DoubleSide,
+    });
+    if (clippingPlane) {
+      mat.clippingPlanes = [clippingPlane];
+      mat.clipShadows = true;
+    }
+    return mat;
+  }, [clippingPlane]);
 
   useFrame((_, delta) => {
     const targetPercent = config.isOpen ? config.openPercent / 100 : 0;
@@ -131,19 +202,51 @@ export const ParametricWindow3D: React.FC<Props> = ({ config }) => {
 
   return (
     <group ref={rootGroupRef} position={[0, 0, 0]}>
-      {/* 1. OUTER FRAME */}
+      {/* 1. OUTER FRAME (DORMANT AVEC RPT & JOINTS) */}
       <group position={[0, 0, 0]}>
+        {/* Top Dormant */}
         <mesh position={[0, -h / 2 + frameFace / 2 - explodeFrameDilation, 0]} material={frameMaterial} castShadow receiveShadow>
           <boxGeometry args={[w + explodeFrameDilation * 2, frameFace, frameDepth]} />
         </mesh>
+        {/* Bottom Dormant */}
         <mesh position={[0, h / 2 - frameFace / 2 + explodeFrameDilation, 0]} material={frameMaterial} castShadow receiveShadow>
           <boxGeometry args={[w + explodeFrameDilation * 2, frameFace, frameDepth]} />
         </mesh>
+        {/* Left Jamb */}
         <mesh position={[-w / 2 + frameFace / 2 - explodeFrameDilation, 0, 0]} material={frameMaterial} castShadow receiveShadow>
           <boxGeometry args={[frameFace, innerH, frameDepth]} />
         </mesh>
+        {/* Right Jamb */}
         <mesh position={[w / 2 - frameFace / 2 + explodeFrameDilation, 0, 0]} material={frameMaterial} castShadow receiveShadow>
           <boxGeometry args={[frameFace, innerH, frameDepth]} />
+        </mesh>
+
+        {/* Polyamide Thermal Break Bars (Embedded inside outer frame extrusions) */}
+        <mesh position={[0, -h / 2 + frameFace / 2 - explodeFrameDilation, 0]} material={thermalBreakMaterial}>
+          <boxGeometry args={[w - 0.02, 0.016, 0.024]} />
+        </mesh>
+        <mesh position={[0, h / 2 - frameFace / 2 + explodeFrameDilation, 0]} material={thermalBreakMaterial}>
+          <boxGeometry args={[w - 0.02, 0.016, 0.024]} />
+        </mesh>
+        <mesh position={[-w / 2 + frameFace / 2 - explodeFrameDilation, 0, 0]} material={thermalBreakMaterial}>
+          <boxGeometry args={[0.016, innerH, 0.024]} />
+        </mesh>
+        <mesh position={[w / 2 - frameFace / 2 + explodeFrameDilation, 0, 0]} material={thermalBreakMaterial}>
+          <boxGeometry args={[0.016, innerH, 0.024]} />
+        </mesh>
+
+        {/* Central EPDM Weatherstripping Gasket Ring */}
+        <mesh position={[0, -h / 2 + frameFace - 0.002, 0.008]} material={epdmGasketMaterial}>
+          <boxGeometry args={[innerW, 0.004, 0.008]} />
+        </mesh>
+        <mesh position={[0, h / 2 - frameFace + 0.002, 0.008]} material={epdmGasketMaterial}>
+          <boxGeometry args={[innerW, 0.004, 0.008]} />
+        </mesh>
+        <mesh position={[-w / 2 + frameFace - 0.002, 0, 0.008]} material={epdmGasketMaterial}>
+          <boxGeometry args={[0.004, innerH, 0.008]} />
+        </mesh>
+        <mesh position={[w / 2 - frameFace + 0.002, 0, 0.008]} material={epdmGasketMaterial}>
+          <boxGeometry args={[0.004, innerH, 0.008]} />
         </mesh>
       </group>
 
@@ -156,7 +259,7 @@ export const ParametricWindow3D: React.FC<Props> = ({ config }) => {
           </mesh>
           <mesh position={[0, -0.05, (frameDepth + 0.08) / 2 + 0.002]}>
             <planeGeometry args={[w + 0.02, 0.004]} />
-            <meshBasicMaterial color="#111827" />
+            <meshBasicMaterial color="#111827" side={THREE.DoubleSide} />
           </mesh>
 
           {/* Vertical Guides Running Down the Jambs */}
@@ -183,13 +286,13 @@ export const ParametricWindow3D: React.FC<Props> = ({ config }) => {
             </mesh>
             <mesh position={[0, -innerH - 0.005, 0.002]}>
               <boxGeometry args={[innerW + 0.025, 0.01, 0.012]} />
-              <meshBasicMaterial color="#0A0A0A" />
+              <meshBasicMaterial color="#0A0A0A" side={THREE.DoubleSide} />
             </mesh>
           </group>
         </group>
       )}
 
-      {/* 3. SASHES & GLASS */}
+      {/* 3. SASHES & GLASS (OUVRANTS AVEC VITRAGE ET INTERCALAIRE) */}
       {config.openingType === 'sliding_2' && (() => {
         const sashW = (innerW / 2) + 0.025;
         const sashH = innerH - 0.01;
@@ -199,15 +302,38 @@ export const ParametricWindow3D: React.FC<Props> = ({ config }) => {
         return (
           <>
             <group position={[-innerW / 4, 0, -sashDepth / 2 + explodeZ]}>
-              <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} />
+              <SashProfileRect
+                width={sashW}
+                height={sashH}
+                depth={sashDepth}
+                face={sashFace}
+                material={frameMaterial}
+                thermalBreakMaterial={thermalBreakMaterial}
+                epdmMaterial={epdmGasketMaterial}
+              />
               <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial} castShadow>
                 <boxGeometry args={[glassW, glassH, glassThick]} />
               </mesh>
+              {/* Spacer bar visible in cross-section */}
+              <mesh position={[0, 0, explodeGlassZ]} material={spacerMaterial}>
+                <boxGeometry args={[glassW - 0.01, glassH - 0.01, 0.012]} />
+              </mesh>
             </group>
             <group ref={slidingSashRef} position={[innerW / 4, 0, sashDepth / 2 + explodeZ]}>
-              <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} />
+              <SashProfileRect
+                width={sashW}
+                height={sashH}
+                depth={sashDepth}
+                face={sashFace}
+                material={frameMaterial}
+                thermalBreakMaterial={thermalBreakMaterial}
+                epdmMaterial={epdmGasketMaterial}
+              />
               <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial} castShadow>
                 <boxGeometry args={[glassW, glassH, glassThick]} />
+              </mesh>
+              <mesh position={[0, 0, explodeGlassZ]} material={spacerMaterial}>
+                <boxGeometry args={[glassW - 0.01, glassH - 0.01, 0.012]} />
               </mesh>
               <WindowHandle position={[-sashW / 2 + 0.025, 0, sashDepth / 2 + 0.015]} material={handleMaterial} />
             </group>
@@ -224,19 +350,19 @@ export const ParametricWindow3D: React.FC<Props> = ({ config }) => {
         return (
           <>
             <group position={[-innerW / 3, 0, -sashDepth + explodeZ]}>
-              <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} />
+              <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} thermalBreakMaterial={thermalBreakMaterial} epdmMaterial={epdmGasketMaterial} />
               <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial}>
                 <boxGeometry args={[glassW, glassH, glassThick]} />
               </mesh>
             </group>
             <group position={[0, 0, explodeZ]}>
-              <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} />
+              <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} thermalBreakMaterial={thermalBreakMaterial} epdmMaterial={epdmGasketMaterial} />
               <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial}>
                 <boxGeometry args={[glassW, glassH, glassThick]} />
               </mesh>
             </group>
             <group ref={slidingSashRef} position={[innerW / 3, 0, sashDepth + explodeZ]}>
-              <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} />
+              <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} thermalBreakMaterial={thermalBreakMaterial} epdmMaterial={epdmGasketMaterial} />
               <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial}>
                 <boxGeometry args={[glassW, glassH, glassThick]} />
               </mesh>
@@ -255,7 +381,7 @@ export const ParametricWindow3D: React.FC<Props> = ({ config }) => {
         return (
           <group ref={leftCasementRef} position={[-innerW / 2, 0, explodeZ]}>
             <group position={[sashW / 2, 0, 0]}>
-              <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} />
+              <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} thermalBreakMaterial={thermalBreakMaterial} epdmMaterial={epdmGasketMaterial} />
               <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial} castShadow>
                 <boxGeometry args={[glassW, glassH, glassThick]} />
               </mesh>
@@ -275,7 +401,7 @@ export const ParametricWindow3D: React.FC<Props> = ({ config }) => {
           <>
             <group ref={leftCasementRef} position={[-innerW / 2, 0, explodeZ]}>
               <group position={[sashW / 2, 0, 0]}>
-                <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} />
+                <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} thermalBreakMaterial={thermalBreakMaterial} epdmMaterial={epdmGasketMaterial} />
                 <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial}>
                   <boxGeometry args={[glassW, glassH, glassThick]} />
                 </mesh>
@@ -283,7 +409,7 @@ export const ParametricWindow3D: React.FC<Props> = ({ config }) => {
             </group>
             <group ref={rightCasementRef} position={[innerW / 2, 0, explodeZ]}>
               <group position={[-sashW / 2, 0, 0]}>
-                <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} />
+                <SashProfileRect width={sashW} height={sashH} depth={sashDepth} face={sashFace} material={frameMaterial} thermalBreakMaterial={thermalBreakMaterial} epdmMaterial={epdmGasketMaterial} />
                 <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial}>
                   <boxGeometry args={[glassW, glassH, glassThick]} />
                 </mesh>
@@ -321,7 +447,7 @@ export const ParametricWindow3D: React.FC<Props> = ({ config }) => {
         );
       })()}
 
-      {/* 4. RULERS */}
+      {/* 4. RULERS & DIMENSION LINES */}
       <group position={[0, -h / 2 - 0.09, 0]}>
         <mesh>
           <boxGeometry args={[w, 0.003, 0.003]} />
@@ -351,6 +477,27 @@ export const ParametricWindow3D: React.FC<Props> = ({ config }) => {
           <meshBasicMaterial color="#D4AF37" />
         </mesh>
       </group>
+
+      {/* 5. 3D HOLOGRAPHIC ANNOTATIONS WHEN CLIPPING ACTIVE */}
+      {clippingPlane && showAnnotations && (
+        <group position={[0, 0, 0.08]}>
+          <Html position={[0, h * 0.28, 0]} center distanceFactor={4}>
+            <div className="px-2 py-0.5 rounded bg-black/80 border border-cyan-400/60 text-cyan-300 text-[10px] font-mono whitespace-nowrap shadow-md pointer-events-none">
+              Barrette Polyamide PA66 GF25
+            </div>
+          </Html>
+          <Html position={[0, 0, 0.04]} center distanceFactor={4}>
+            <div className="px-2 py-0.5 rounded bg-black/80 border border-[#D4AF37]/60 text-[#D4AF37] text-[10px] font-mono whitespace-nowrap shadow-md pointer-events-none">
+              Double Vitrage 4/16/4
+            </div>
+          </Html>
+          <Html position={[0, -h * 0.28, 0]} center distanceFactor={4}>
+            <div className="px-2 py-0.5 rounded bg-black/80 border border-emerald-400/60 text-emerald-300 text-[10px] font-mono whitespace-nowrap shadow-md pointer-events-none">
+              Joint Central EPDM
+            </div>
+          </Html>
+        </group>
+      )}
     </group>
   );
 };
@@ -361,9 +508,19 @@ interface SashRectProps {
   depth: number;
   face: number;
   material: THREE.Material;
+  thermalBreakMaterial?: THREE.Material;
+  epdmMaterial?: THREE.Material;
 }
 
-const SashProfileRect: React.FC<SashRectProps> = ({ width, height, depth, face, material }) => {
+const SashProfileRect: React.FC<SashRectProps> = ({
+  width,
+  height,
+  depth,
+  face,
+  material,
+  thermalBreakMaterial,
+  epdmMaterial,
+}) => {
   return (
     <group>
       <mesh position={[0, height / 2 - face / 2, 0]} material={material} castShadow receiveShadow>
@@ -378,6 +535,31 @@ const SashProfileRect: React.FC<SashRectProps> = ({ width, height, depth, face, 
       <mesh position={[width / 2 - face / 2, 0, 0]} material={material} castShadow receiveShadow>
         <boxGeometry args={[face, height - 2 * face, depth]} />
       </mesh>
+
+      {/* Embedded Polyamide Thermal Break in Sash */}
+      {thermalBreakMaterial && (
+        <>
+          <mesh position={[0, height / 2 - face / 2, 0]} material={thermalBreakMaterial}>
+            <boxGeometry args={[width - 0.02, 0.012, 0.016]} />
+          </mesh>
+          <mesh position={[0, -height / 2 + face / 2, 0]} material={thermalBreakMaterial}>
+            <boxGeometry args={[width - 0.02, 0.012, 0.016]} />
+          </mesh>
+          <mesh position={[-width / 2 + face / 2, 0, 0]} material={thermalBreakMaterial}>
+            <boxGeometry args={[0.012, height - 2 * face, 0.016]} />
+          </mesh>
+          <mesh position={[width / 2 - face / 2, 0, 0]} material={thermalBreakMaterial}>
+            <boxGeometry args={[0.012, height - 2 * face, 0.016]} />
+          </mesh>
+        </>
+      )}
+
+      {/* Internal Glazing Bead & Gasket Lip */}
+      {epdmMaterial && (
+        <mesh position={[0, 0, depth / 2 - 0.004]} material={epdmMaterial}>
+          <boxGeometry args={[width - 2 * face + 0.01, height - 2 * face + 0.01, 0.003]} />
+        </mesh>
+      )}
     </group>
   );
 };

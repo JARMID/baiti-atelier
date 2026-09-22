@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, ContactShadows } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
@@ -14,6 +14,8 @@ import {
   Layers,
   Compass,
   Download,
+  Scissors,
+  ArrowLeftRight,
 } from 'lucide-react';
 import {
   playTactileClick,
@@ -90,6 +92,23 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
   const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
   const [is360Active, setIs360Active] = useState(false);
   const [isExploded, setIsExploded] = useState(false);
+  const [isClippingActive, setIsClippingActive] = useState(false);
+  const [clippingAxis, setClippingAxis] = useState<'x' | 'y'>('x');
+  const [clippingPos, setClippingPos] = useState(0.5);
+  const [clippingInverted, setClippingInverted] = useState(false);
+
+  // Dynamic 3D section clipping plane
+  const clippingPlane = useMemo(() => {
+    if (!isClippingActive) return null;
+    const sign = clippingInverted ? 1 : -1;
+    if (clippingAxis === 'x') {
+      const cutX = (clippingPos - 0.5) * 1.5;
+      return new THREE.Plane(new THREE.Vector3(sign, 0, 0), sign * -cutX);
+    } else {
+      const cutY = (clippingPos - 0.5) * 1.5;
+      return new THREE.Plane(new THREE.Vector3(0, sign, 0), sign * -cutY);
+    }
+  }, [isClippingActive, clippingAxis, clippingPos, clippingInverted]);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -247,7 +266,10 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
         <div className="absolute inset-0 z-10">
           <Canvas
             camera={{ position: [0, 0.05, 3.6], fov: 42 }}
-            gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+            gl={{ antialias: true, alpha: true, powerPreference: 'high-performance', localClippingEnabled: true }}
+            onCreated={({ gl }) => {
+              gl.localClippingEnabled = true;
+            }}
           >
             {isLight ? (
               <>
@@ -273,6 +295,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                 isExploded={isExploded}
                 isOpen={scrollVal >= 0.35}
                 windowModel={windowModel}
+                clippingPlane={clippingPlane}
               />
               <ContactShadows
                 position={[0, -1.05, 0]}
@@ -585,6 +608,56 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
               >
                 <Layers className="w-3.5 h-3.5" />
               </button>
+
+              <button
+                onClick={() => {
+                  playSwitchSound();
+                  setIsClippingActive(!isClippingActive);
+                }}
+                title="Coupe Technique 3D"
+                className={`p-1.5 rounded-full border transition-all cursor-pointer ${
+                  isClippingActive
+                    ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold shadow-md shadow-cyan-500/20'
+                    : isLight
+                    ? 'text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-100'
+                    : 'text-zinc-400 hover:text-white border-white/15 hover:bg-white/10'
+                }`}
+              >
+                <Scissors className="w-3.5 h-3.5" />
+              </button>
+
+              {isClippingActive && (
+                <div className="flex items-center gap-1.5 pl-1.5 pr-2 py-0.5 rounded-full bg-black/40 border border-cyan-500/30 text-[10px] font-mono">
+                  <button
+                    onClick={() => {
+                      playSwitchSound();
+                      setClippingAxis(clippingAxis === 'x' ? 'y' : 'x');
+                    }}
+                    className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold uppercase cursor-pointer"
+                  >
+                    {clippingAxis}
+                  </button>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.02"
+                    value={clippingPos}
+                    onChange={(e) => setClippingPos(parseFloat(e.target.value))}
+                    className="w-14 accent-cyan-400 h-1 cursor-pointer"
+                  />
+                  <button
+                    onClick={() => {
+                      playTactileClick();
+                      setClippingInverted(!clippingInverted);
+                    }}
+                    title="Inverser le sens"
+                    className="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"
+                  >
+                    <ArrowLeftRight className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
 
               <button
                 onClick={handleToggle360}
