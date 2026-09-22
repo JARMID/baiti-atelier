@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useConfigStore } from '../../store/configStore';
 import {
-  Scissors,
   Plus,
   Minus,
   Grid,
   Layers,
   FileText,
+  Download,
+  FlipHorizontal,
+  MessageCircle,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import { generateWorkshopCutSheetPdf } from '../../utils/pdfGenerator';
@@ -48,6 +50,7 @@ export const MobileCadScreen: React.FC = () => {
 
   const [rawSelectedCellKey, setRawSelectedCellKey] = useState<string>('0-0');
   const [isGeneratingCutSheet, setIsGeneratingCutSheet] = useState(false);
+  const [activeBomTab, setActiveBomTab] = useState<'cuts' | 'glasses'>('cuts');
 
   // Derived CAD Structure with current config dimensions
   const cadStructure: CadStructure = useMemo(() => ({
@@ -155,6 +158,68 @@ export const MobileCadScreen: React.FC = () => {
     }
   };
 
+  // Symmetrical Inversion / Mirror Blueprint
+  const handleMirrorBlueprint = () => {
+    playClampSound();
+    setGridState((prev) => {
+      const numCols = prev.verticalDividers.length + 1;
+      const numRows = prev.horizontalDividers.length + 1;
+      const newCellTypes: Record<string, CellType> = {};
+
+      for (let r = 0; r < numRows; r++) {
+        for (let c = 0; c < numCols; c++) {
+          const oldKey = `${r}-${c}`;
+          const mirroredCol = numCols - 1 - c;
+          const newKey = `${r}-${mirroredCol}`;
+          let cellType = prev.cellTypes[oldKey] || 'glass_fixed';
+          if (cellType === 'sash_left') cellType = 'sash_right';
+          else if (cellType === 'sash_right') cellType = 'sash_left';
+          newCellTypes[newKey] = cellType;
+        }
+      }
+
+      const newVertDividers = prev.verticalDividers
+        .map((x) => config.width - x)
+        .sort((a, b) => a - b);
+
+      return {
+        ...prev,
+        verticalDividers: newVertDividers,
+        cellTypes: newCellTypes,
+      };
+    });
+  };
+
+  // Download SVG Blueprint
+  const handleDownloadSvgPlan = () => {
+    playTactileClick();
+    const svgEl = document.getElementById('mobile-cad-blueprint-svg');
+    if (!svgEl) return;
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(svgEl);
+    const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `plan_cao_${config.width}x${config.height}mm_${new Date().toISOString().slice(0, 10)}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Share Glass Cut Sheet to Glazier via WhatsApp
+  const handleShareGlassWhatsApp = () => {
+    playTactileClick();
+    if (!bom.glasses || bom.glasses.length === 0) return;
+    const glassListText = bom.glasses
+      .map(
+        (g, idx) =>
+          `${idx + 1}. ${g.label} : ${g.widthMm} × ${g.heightMm} mm (${g.areaM2} m²)`
+      )
+      .join('\n');
+    const msg = `*COMMANDE VITRAGE & MIROITERIE*\nChâssis : ${config.width} × ${config.height} mm\nType Vitrage : ${config.glassType}\nNombre de vitrages : ${bom.glasses.length}\nSurface totale : ${bom.totalGlassAreaM2.toFixed(2)} m²\n\n*Détail Découpe Verre :*\n${glassListText}\n\nConçu sur https://web-two-tan-31.vercel.app`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
   // Set cell opening type
   const handleSelectCellType = (type: CellType) => {
     if (!activeCell) return;
@@ -258,8 +323,32 @@ export const MobileCadScreen: React.FC = () => {
         }`}
       >
         <div className="flex items-center justify-between font-mono text-xs">
-          <span className="font-bold text-[#D4AF37]">Plan CAO 2D Paramétrique</span>
-          <span className="text-zinc-500">{cadStructure.width} × {cadStructure.height} mm</span>
+          <div>
+            <span className="font-bold text-[#D4AF37] block">Plan CAO 2D</span>
+            <span className="text-[10px] text-zinc-500">{cadStructure.width} × {cadStructure.height} mm</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handleMirrorBlueprint}
+              className="px-2 py-1 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95"
+              title="Inverser les vantaux et divisions par symétrie axiale"
+            >
+              <FlipHorizontal className="w-3 h-3 text-cyan-400" />
+              <span>Symétrie</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadSvgPlan}
+              className="px-2 py-1 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95"
+              title="Télécharger le plan vectoriel SVG"
+            >
+              <Download className="w-3 h-3 text-[#D4AF37]" />
+              <span>Plan SVG</span>
+            </button>
+          </div>
         </div>
 
         <div className="relative w-full aspect-4/3 rounded-2xl bg-[#070A10] border border-cyan-500/20 flex items-center justify-center p-3 overflow-hidden select-none">
@@ -273,6 +362,7 @@ export const MobileCadScreen: React.FC = () => {
           />
 
           <svg
+            id="mobile-cad-blueprint-svg"
             viewBox={`0 0 ${svgW} ${svgH}`}
             className="w-full h-full max-h-[290px] select-none"
           >
@@ -509,13 +599,40 @@ export const MobileCadScreen: React.FC = () => {
           isLight ? 'bg-white border-slate-200' : 'bg-[#0B0F19] border-white/10'
         }`}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Scissors className="w-4 h-4 text-[#D4AF37]" />
-            <span className="text-xs font-mono font-bold">Fiche de Débit Paramétrique</span>
+        <div className="flex items-center justify-between pb-1 border-b border-black/5 dark:border-white/10">
+          <div className="flex items-center gap-1.5 p-0.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[11px] font-mono">
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setActiveBomTab('cuts');
+              }}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer font-bold ${
+                activeBomTab === 'cuts'
+                  ? 'bg-[#D4AF37] text-slate-950 shadow-xs'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              Profilés Scie ({bom.cuts.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setActiveBomTab('glasses');
+              }}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer font-bold ${
+                activeBomTab === 'glasses'
+                  ? 'bg-cyan-400 text-slate-950 shadow-xs'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              Vitrages ({bom.glasses?.length || 0})
+            </button>
           </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/10 dark:bg-white/10 text-zinc-400">
-            {bom.cuts.length} Pièces à Scier
+
+          <span className="text-[10px] font-mono text-zinc-500">
+            {activeBomTab === 'cuts' ? `${bom.totalProfileMeters.toFixed(1)} m linéaires` : `${bom.totalGlassAreaM2.toFixed(2)} m² verre`}
           </span>
         </div>
 
@@ -535,44 +652,99 @@ export const MobileCadScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Cut pieces list */}
-        <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-          {bom.cuts.map((p) => (
-            <div
-              key={p.id}
-              className={`p-2.5 rounded-2xl border text-xs font-mono flex items-center justify-between ${
-                isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'
-              }`}
+        {/* TAB 1: CUT PIECES LIST */}
+        {activeBomTab === 'cuts' && (
+          <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+            {bom.cuts.map((p) => (
+              <div
+                key={p.id}
+                className={`p-2.5 rounded-2xl border text-xs font-mono flex items-center justify-between ${
+                  isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'
+                }`}
+              >
+                <div>
+                  <div className="font-bold flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+                    <span>{p.label}</span>
+                  </div>
+                  <div className="text-[10px] text-zinc-500 pl-3">
+                    Coupes: {p.cutLeftAngle}° / {p.cutRightAngle}° • Rôle: {p.role}
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-sm font-black text-cyan-400 font-mono">
+                    {p.lengthMm} <span className="text-[10px]">mm</span>
+                  </span>
+                  <span className="text-[10px] text-zinc-400 block">Qté : {p.quantity}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* TAB 2: GLASS CUT PIECES LIST */}
+        {activeBomTab === 'glasses' && (
+          <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+            {bom.glasses && bom.glasses.length > 0 ? (
+              bom.glasses.map((g, idx) => (
+                <div
+                  key={g.id || idx}
+                  className={`p-2.5 rounded-2xl border text-xs font-mono flex items-center justify-between ${
+                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'
+                  }`}
+                >
+                  <div>
+                    <div className="font-bold flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                      <span>{g.label}</span>
+                    </div>
+                    <div className="text-[10px] text-zinc-500 pl-3">
+                      Vitrage {config.glassType.replace('_', ' ')} • Surface: {g.areaM2} m²
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-sm font-black text-[#D4AF37] font-mono">
+                      {g.widthMm} × {g.heightMm} <span className="text-[10px]">mm</span>
+                    </span>
+                    <span className="text-[10px] text-zinc-400 block">Qté : {g.quantity}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-4 text-center text-xs font-mono text-zinc-500">
+                Aucun vitrage calculé pour cette configuration.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+          {activeBomTab === 'glasses' && (
+            <button
+              type="button"
+              onClick={handleShareGlassWhatsApp}
+              className="py-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] active:scale-98 transition-all"
             >
-              <div>
-                <div className="font-bold flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-                  <span>{p.label}</span>
-                </div>
-                <div className="text-[10px] text-zinc-500 pl-3">
-                  Coupes: {p.cutLeftAngle}° / {p.cutRightAngle}° • Rôle: {p.role}
-                </div>
-              </div>
+              <MessageCircle className="w-4 h-4" />
+              <span>Commande Miroitier (WhatsApp)</span>
+            </button>
+          )}
 
-              <div className="text-right">
-                <span className="text-sm font-black text-cyan-400 font-mono">
-                  {p.lengthMm} <span className="text-[10px]">mm</span>
-                </span>
-                <span className="text-[10px] text-zinc-400 block">Qté : {p.quantity}</span>
-              </div>
-            </div>
-          ))}
+          <button
+            type="button"
+            onClick={handleExportCutSheet}
+            disabled={isGeneratingCutSheet}
+            className={`w-full py-3 rounded-2xl bg-[#D4AF37] text-slate-950 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] hover:brightness-110 active:scale-98 transition-all shadow-md ${
+              activeBomTab === 'glasses' ? '' : 'sm:col-span-2'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            <span>{isGeneratingCutSheet ? 'Génération...' : 'Télécharger Fiche Scie PDF'}</span>
+          </button>
         </div>
-
-        {/* Download Action */}
-        <button
-          onClick={handleExportCutSheet}
-          disabled={isGeneratingCutSheet}
-          className="w-full py-3 rounded-2xl bg-[#D4AF37] text-slate-950 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] hover:brightness-110 active:scale-98 transition-all shadow-md mt-2"
-        >
-          <FileText className="w-4 h-4" />
-          <span>{isGeneratingCutSheet ? 'Génération...' : 'Télécharger Fiche Scie PDF'}</span>
-        </button>
       </div>
     </div>
   );
