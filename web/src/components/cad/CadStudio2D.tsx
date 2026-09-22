@@ -13,6 +13,7 @@ import {
   generateClientDevisPdf,
   generateWorkshopCutSheetPdf,
   generateBpuDqeTenderPdf,
+  generateDtrThermalCertificatePdf,
 } from '../../utils/pdfGenerator';
 import { downloadCadDxf } from '../../utils/dxfExporter';
 import { downloadBomCsv } from '../../utils/csvExporter';
@@ -31,6 +32,7 @@ import {
   FileText,
   Compass,
   LayoutTemplate,
+  ShieldCheck,
 } from 'lucide-react';
 import { CuttingAssemblyTerminal } from '../optimizer/CuttingAssemblyTerminal';
 import { ProfileCrossSectionViewer } from './ProfileCrossSectionViewer';
@@ -316,6 +318,21 @@ export const CadStudio2D: React.FC = () => {
     );
   };
 
+  const handleDownloadDtrPdf = () => {
+    playClampSound();
+    generateDtrThermalCertificatePdf({
+      projectTitle: `Chantier ${selectedWilaya} - ${Math.round(structure.width)}x${Math.round(totalVisualHeight)}mm`,
+      clientName: 'Client Particulier',
+      wilayaName: selectedWilaya,
+      widthMm: Math.round(structure.width),
+      heightMm: Math.round(totalVisualHeight),
+      openingType: config.openingType,
+      profileSystem: config.profileSystem,
+      glassType: config.glassType,
+      glassAreaM2: bom.totalGlassAreaM2,
+    });
+  };
+
   const handleDownloadSvg = () => {
     playClampSound();
     const svgEl = document.getElementById('cad-svg-canvas');
@@ -557,6 +574,19 @@ export const CadStudio2D: React.FC = () => {
             >
               <FileText className="w-4 h-4 text-amber-500" />
               <span>{t.bpuTender}</span>
+            </button>
+
+            <button
+              onClick={handleDownloadDtrPdf}
+              className={`px-3.5 py-2 rounded-xl border font-medium text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover-lift btn-press ${
+                theme === 'light'
+                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
+                  : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+              }`}
+              title="Générer l'Attestation Officielle de Conformité Thermique et Acoustique DTR C3-2"
+            >
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              <span>DTR C3-2 (PDF)</span>
             </button>
           </div>
         </div>
@@ -1607,7 +1637,7 @@ export const CadStudio2D: React.FC = () => {
                     widthMm={structure.width}
                     heightMm={structure.height}
                     glassAreaM2={bom.totalGlassAreaM2}
-                    onExportReport={handleDownloadCutSheet}
+                    onExportReport={handleDownloadDtrPdf}
                   />
                 </div>
               )}

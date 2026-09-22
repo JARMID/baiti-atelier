@@ -17,6 +17,7 @@ import {
   DTR_ZONE_THRESHOLDS,
   getDtrZoneForWilaya,
 } from '../../utils/dtrThermal';
+import { generateDtrThermalCertificatePdf } from '../../utils/pdfGenerator';
 
 interface ThermalComplianceCardProps {
   widthMm: number;
@@ -461,20 +462,33 @@ export const ThermalComplianceCard: React.FC<ThermalComplianceCardProps> = ({
         )}
 
         {/* ACTION BUTTON */}
-        {onExportReport && (
-          <div className="flex justify-end pt-1">
-            <button
-              onClick={() => {
-                playTactileClick();
+        <div className="flex justify-end pt-1">
+          <button
+            onClick={async () => {
+              playTactileClick();
+              if (onExportReport) {
                 onExportReport();
-              }}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono font-medium flex items-center gap-1.5 transition-all shadow-md shadow-emerald-900/30 cursor-pointer hover-lift"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Générer Fiche Homologation DTR C3-2</span>
-            </button>
-          </div>
-        )}
+                return;
+              }
+              await generateDtrThermalCertificatePdf({
+                projectTitle: `Étude Thermique ${currentWilaya.nameFr}`,
+                clientName: 'Client Particulier',
+                wilayaName: currentWilaya.nameFr,
+                widthMm,
+                heightMm,
+                openingType: config.openingType,
+                profileSystem: config.profileSystem,
+                glassType: config.glassType,
+                spacerType,
+                glassAreaM2: thermalData.glassAreaM2,
+              });
+            }}
+            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono font-medium flex items-center gap-1.5 transition-all shadow-md shadow-emerald-900/30 cursor-pointer hover-lift"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Générer Fiche Homologation DTR C3-2 (PDF)</span>
+          </button>
+        </div>
       </div>
     </div>
   );

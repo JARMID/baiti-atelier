@@ -3,6 +3,8 @@ import autoTable from 'jspdf-autotable';
 import QRCode from 'qrcode';
 import type { WindowConfig, CostBreakdown, OpeningType, ProfileSystem, GlassType, ShutterType } from '../types/window';
 import type { CadStructure, WorkshopBOM } from '../types/cad';
+import { ALGERIAN_WILAYAS_58 } from './algerianWilayas';
+import { DTR_ZONE_THRESHOLDS, getDtrZoneForWilaya } from './dtrThermal';
 
 export interface DevisOpeningItem {
   id: string;
@@ -771,4 +773,432 @@ export async function generateBpuDqeTenderPdf(
   doc.text('Signature & Date :', 143, sigY + 15);
 
   doc.save(`BPU_DQE_${tenderCode}.pdf`);
+}
+
+export interface DtrCertificateParams {
+  projectTitle?: string;
+  clientName?: string;
+  clientPhone?: string;
+  wilayaName: string;
+  widthMm: number;
+  heightMm: number;
+  openingType: OpeningType | string;
+  profileSystem: ProfileSystem | string;
+  glassType: GlassType | string;
+  spacerType?: 'standard_alu' | 'warm_edge';
+  glassAreaM2?: number;
+  dateStr?: string;
+}
+
+export async function generateDtrThermalCertificatePdf(params: DtrCertificateParams) {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const year = new Date().getFullYear();
+  const certNumber = `DTR-TH-${year}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const certDate = params.dateStr || new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Locate Wilaya
+  const normalizedWilaya = (params.wilayaName || 'Alger').toLowerCase();
+  const currentWilaya =
+    ALGERIAN_WILAYAS_58.find(
+      (w) => normalizedWilaya.includes(w.nameFr.toLowerCase()) || normalizedWilaya.startsWith(w.code)
+    ) || ALGERIAN_WILAYAS_58[15];
+
+  const zoneKey = getDtrZoneForWilaya(currentWilaya);
+  const zoneThreshold = DTR_ZONE_THRESHOLDS[zoneKey];
+
+  // Glass thermal properties
+  let ug = 2.7;
+  let rw = 32;
+  let sw = 0.52;
+  let glassLabel = 'Double vitrage isolant 4/16/4 clair standard';
+  if (params.glassType === 'double_clear') {
+    ug = 2.7;
+    rw = 32;
+    sw = 0.52;
+    glassLabel = 'Double vitrage 4/16/4 isolation renforcée';
+  } else if (params.glassType === 'simple_clear') {
+    ug = 5.7;
+    rw = 29;
+    sw = 0.82;
+    glassLabel = 'Simple vitrage clair 6 mm';
+  } else if (params.glassType === 'stop_sol') {
+    ug = 2.4;
+    rw = 32;
+    sw = 0.28;
+    glassLabel = 'Double vitrage teinté Stop-Sol anti-surchauffe';
+  } else if (params.glassType === 'sable') {
+    ug = 3.0;
+    rw = 31;
+    sw = 0.44;
+    glassLabel = 'Vitrage sablé dépoli translucide';
+  }
+
+  // Frame thermal properties
+  let uf = 2.4;
+  let frameLabel = 'Alu Gamme 45 Rupture Pont Thermique (RPT barrette 14.8 mm)';
+  if (params.profileSystem === 'pvc_70_chamber') {
+    uf = 1.4;
+    frameLabel = 'PVC 70 mm 5 Chambres Haute Performance';
+  } else if (params.profileSystem === 'gamme_40') {
+    uf = 5.8;
+    frameLabel = 'Alu Gamme 40 Standard (Sans rupture thermique)';
+  } else if (params.profileSystem === 'gamme_67_slide') {
+    uf = 3.2;
+    frameLabel = 'Alu Coulissant Renforcé Gamme 67';
+  }
+
+  // Spacer
+  const spacerType = params.spacerType || 'standard_alu';
+  const psiG = spacerType === 'warm_edge' ? 0.04 : 0.08;
+  const spacerLabel =
+    spacerType === 'warm_edge'
+      ? 'Warm-Edge composite isolant (Psi = 0.04 W/m·K)'
+      : 'Aluminium standard (Psi = 0.08 W/m·K)';
+
+  // Geometric surfaces
+  const totalAreaM2 = Math.max(0.2, (params.widthMm * params.heightMm) / 1000000);
+  const calculatedGlassAreaM2 = params.glassAreaM2
+    ? Math.min(totalAreaM2 * 0.85, params.glassAreaM2)
+    : totalAreaM2 * 0.72;
+  const frameAreaM2 = Math.max(0.04, totalAreaM2 - calculatedGlassAreaM2);
+  const glassPerimeterM = Math.max(0.8, (2 * (params.widthMm + params.heightMm) * 0.85) / 1000);
+
+  // Uw = (Ag*Ug + Af*Uf + lg*psiG) / Aw
+  const uw = Number(
+    ((calculatedGlassAreaM2 * ug + frameAreaM2 * uf + glassPerimeterM * psiG) / totalAreaM2).toFixed(2)
+  );
+
+  const isUwCompliant = uw <= zoneThreshold.maxUw;
+  const isSwCompliant = sw <= zoneThreshold.maxSw;
+  const isRwCompliant = rw >= zoneThreshold.minRw;
+  const isFullyCompliant = isUwCompliant && isSwCompliant;
+
+  let energyClass: string = 'C';
+  if (uw <= 1.4) energyClass = 'A+';
+  else if (uw <= 1.8) energyClass = 'A';
+  else if (uw <= 2.3) energyClass = 'B';
+  else if (uw <= 2.8) energyClass = 'C';
+  else if (uw <= 3.5) energyClass = 'D';
+  else if (uw <= 4.5) energyClass = 'E';
+  else energyClass = 'F';
+
+  // 1. Header Banner (Algerian Building Regulations DTR C3-2)
+  doc.setFillColor(15, 23, 42); // Deep Slate #0F172A
+  doc.rect(0, 0, 210, 36, 'F');
+
+  // Emerald Regulatory Accent Line
+  doc.setFillColor(5, 150, 105);
+  doc.rect(0, 36, 210, 2, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.text('RÉPUBLIQUE ALGÉRIENNE DÉMOCRATIQUE ET POPULAIRE', 105, 10, { align: 'center' });
+
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(203, 213, 225);
+  doc.text("DOCUMENT TECHNIQUE RÉGLEMENTAIRE (DTR C3-2) • RÈGLES D'ISOLATION THERMIQUE", 105, 16, {
+    align: 'center',
+  });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('ATTESTATION DE CONFORMITÉ THERMO-ACOUSTIQUE', 105, 24, { align: 'center' });
+
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(212, 175, 55); // Gold
+  doc.text('MÉTHODE DE CALCUL NORMATIVE ISO 10077-1 • HOMOLOGATION ATELIER BAITI', 105, 30, {
+    align: 'center',
+  });
+
+  // 2. Metadata Certificate Banner
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, 42, 182, 14, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  doc.text(`ATTESTATION N° : ${certNumber}`, 18, 48);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Date d'émission : ${certDate}`, 18, 53);
+
+  // Status Badge Pill
+  if (isFullyCompliant) {
+    doc.setFillColor(209, 250, 229);
+    doc.setDrawColor(5, 150, 105);
+    doc.roundedRect(138, 45, 54, 8, 1, 1, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(4, 120, 87);
+    doc.text('CONFORME DTR C3-2', 165, 50.5, { align: 'center' });
+  } else {
+    doc.setFillColor(254, 243, 199);
+    doc.setDrawColor(217, 119, 6);
+    doc.roundedRect(130, 45, 62, 8, 1, 1, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(180, 83, 9);
+    doc.text('OPTIMISATION REQUISE', 161, 50.5, { align: 'center' });
+  }
+
+  // 3. Identification & Zone Bioclimatique (Side by side)
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, 60, 88, 27, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('IDENTIFICATION DU PROJET & CHANTIER', 18, 66);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Projet : ${params.projectTitle || 'Menuiserie Bâtiment Privé'}`, 18, 72);
+  doc.text(`Maître d'Ouvrage : ${params.clientName || 'Client Particulier'}`, 18, 77);
+  doc.text(`Wilaya de Pose : ${currentWilaya.code} - ${currentWilaya.nameFr}`, 18, 82);
+
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(108, 60, 88, 27, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('CADRAGE BIOCLIMATIQUE (DTR C3-2)', 112, 66);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Classification : ${zoneThreshold.label}`, 112, 72);
+  doc.text(`Transmittance maximale admise (Uw,adm) : ≤ ${zoneThreshold.maxUw} W/(m²·K)`, 112, 77);
+  doc.text(`Facteur solaire été admis (Sw,adm) : ≤ ${zoneThreshold.maxSw}`, 112, 82);
+
+  // 4. Caractéristiques Techniques de l'Ouvrage
+  const openingLabel = formatOpeningTypeFr(params.openingType);
+
+  autoTable(doc, {
+    startY: 91,
+    head: [['Paramètre Ouvrage', 'Spécification Technique Retenue', 'Unité / Valeur']],
+    body: [
+      ['Désignation de la baie', openingLabel, `${params.widthMm} × ${params.heightMm} mm`],
+      ['Surface totale de baie (Aw)', 'Surface tableau maçonnerie', `${totalAreaM2.toFixed(2)} m²`],
+      ['Système de profilés (Cadre)', frameLabel, `Uf = ${uf} W/(m²·K)`],
+      ['Complexe de vitrage', glassLabel, `Ug = ${ug} W/(m²·K)`],
+      ['Intercalaire de vitrage', spacerLabel, `Ψg = ${psiG} W/(m·K)`],
+    ],
+    theme: 'grid',
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
+      fontSize: 7.5,
+      fontStyle: 'bold',
+      cellPadding: 1.8,
+    },
+    bodyStyles: {
+      fontSize: 7,
+      textColor: [15, 23, 42],
+      cellPadding: 1.5,
+    },
+    columnStyles: {
+      0: { cellWidth: 50, fontStyle: 'bold' },
+      1: { cellWidth: 92 },
+      2: { cellWidth: 40, halign: 'right', fontStyle: 'bold', textColor: [30, 41, 59] },
+    },
+  });
+
+  const table1Y = (doc as any).lastAutoTable.finalY + 3.5;
+
+  // 5. Décomposition Détaillée des Déperditions Thermiques
+  autoTable(doc, {
+    startY: table1Y,
+    head: [['Composant', 'Surface / Longueur', 'Transmittance Unitaire', 'Quote-Part (Flux Thermique)']],
+    body: [
+      [
+        'Vitrage (Ag · Ug)',
+        `${calculatedGlassAreaM2.toFixed(2)} m²`,
+        `${ug} W/(m²·K)`,
+        `${(calculatedGlassAreaM2 * ug).toFixed(2)} W/K`,
+      ],
+      [
+        'Profilés Cadre (Af · Uf)',
+        `${frameAreaM2.toFixed(2)} m²`,
+        `${uf} W/(m²·K)`,
+        `${(frameAreaM2 * uf).toFixed(2)} W/K`,
+      ],
+      [
+        'Intercalaire linéaire (lg · Ψg)',
+        `${glassPerimeterM.toFixed(2)} ml`,
+        `${psiG} W/(m·K)`,
+        `${(glassPerimeterM * psiG).toFixed(2)} W/K`,
+      ],
+      [
+        'TRANSMITTANCE GLOBALE RÉSULTANTE (Uw)',
+        `Aw = ${totalAreaM2.toFixed(2)} m²`,
+        'Formule DTR C3-2 / ISO 10077',
+        `${uw} W/(m²·K)`,
+      ],
+    ],
+    theme: 'grid',
+    headStyles: {
+      fillColor: [30, 41, 59],
+      textColor: [255, 255, 255],
+      fontSize: 7.5,
+      fontStyle: 'bold',
+      cellPadding: 1.8,
+    },
+    bodyStyles: {
+      fontSize: 7,
+      textColor: [15, 23, 42],
+      cellPadding: 1.5,
+    },
+    columnStyles: {
+      0: { cellWidth: 64, fontStyle: 'bold' },
+      1: { cellWidth: 38, halign: 'center' },
+      2: { cellWidth: 44, halign: 'center' },
+      3: { cellWidth: 36, halign: 'right', fontStyle: 'bold' },
+    },
+    didParseCell: (data) => {
+      if (data.row.index === 3) {
+        data.cell.styles.fillColor = isUwCompliant ? [240, 253, 244] : [254, 242, 242];
+        data.cell.styles.textColor = isUwCompliant ? [4, 120, 87] : [185, 28, 28];
+        data.cell.styles.fontStyle = 'bold';
+      }
+    },
+  });
+
+  const table2Y = (doc as any).lastAutoTable.finalY + 3.5;
+
+  // 6. Tableau Récapitulatif de Conformité & Performance Énergétique
+  autoTable(doc, {
+    startY: table2Y,
+    head: [['Critère Réglementaire', 'Valeur Calculée', 'Seuil DTR C3-2', 'Évaluation']],
+    body: [
+      [
+        'Transmittance thermique globale (Uw)',
+        `${uw} W/(m²·K)`,
+        `≤ ${zoneThreshold.maxUw} W/(m²·K)`,
+        isUwCompliant ? 'CONFORME (HOMOLOGUÉ)' : 'NON CONFORME (SURCONSOMMATION)',
+      ],
+      [
+        'Facteur solaire estival (Sw / g)',
+        `${sw}`,
+        `≤ ${zoneThreshold.maxSw}`,
+        isSwCompliant ? 'CONFORME (CONFORT ÉTÉ)' : 'ATTENTION (RISQUE SURCHAUFFE)',
+      ],
+      [
+        'Affaiblissement acoustique façade (Rw)',
+        `${rw} dB`,
+        `≥ ${zoneThreshold.minRw} dB`,
+        isRwCompliant ? 'CONFORME (ISOLATION OPTIMALE)' : 'STANDARD',
+      ],
+      [
+        'Classe d’Efficacité Énergétique',
+        `Classe ${energyClass}`,
+        'Classification Bâtiment Durable',
+        `NIVEAU ${energyClass}`,
+      ],
+    ],
+    theme: 'grid',
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
+      fontSize: 7.5,
+      fontStyle: 'bold',
+      cellPadding: 1.8,
+    },
+    bodyStyles: {
+      fontSize: 7,
+      textColor: [15, 23, 42],
+      cellPadding: 1.5,
+    },
+    columnStyles: {
+      0: { cellWidth: 64, fontStyle: 'bold' },
+      1: { cellWidth: 36, halign: 'center', fontStyle: 'bold' },
+      2: { cellWidth: 42, halign: 'center' },
+      3: { cellWidth: 40, halign: 'center', fontStyle: 'bold' },
+    },
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index === 3) {
+        if (data.row.index === 0) {
+          data.cell.styles.textColor = isUwCompliant ? [4, 120, 87] : [185, 28, 28];
+        } else if (data.row.index === 1) {
+          data.cell.styles.textColor = isSwCompliant ? [4, 120, 87] : [217, 119, 6];
+        } else if (data.row.index === 2) {
+          data.cell.styles.textColor = [4, 120, 87];
+        } else if (data.row.index === 3) {
+          data.cell.styles.textColor = [30, 41, 59];
+        }
+      }
+    },
+  });
+
+  const table3Y = (doc as any).lastAutoTable.finalY + 4;
+
+  // 7. QR Code & Validation Signature Block
+  const qrDataUrl = await QRCode.toDataURL(
+    `https://baiti.dz/dtr/${certNumber}?uw=${uw}&zone=${zoneKey}&wilaya=${currentWilaya.code}`,
+    { width: 100, margin: 1 }
+  );
+
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, table3Y, 182, 34, 1.5, 1.5, 'FD');
+
+  // QR Code Image
+  doc.addImage(qrDataUrl, 'PNG', 16, table3Y + 3, 28, 28);
+
+  // Legal text
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('ATTESTATION TECHNIQUE D’HOMOLOGATION', 48, table3Y + 7);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    'La présente attestation certifie que la menuiserie vitrée décrite a fait l’objet d’une modélisation thermique',
+    48,
+    table3Y + 12
+  );
+  doc.text(
+    'conforme aux règles du Document Technique Réglementaire DTR C3-2 et aux méthodes ISO 10077-1.',
+    48,
+    table3Y + 16
+  );
+  doc.text(
+    'Ce document est valable pour le dépôt du dossier de permis de construire et le visa technique de conformité.',
+    48,
+    table3Y + 20
+  );
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Scannez le code QR pour vérifier l'authenticité sur la plateforme Baiti Atelier.`, 48, table3Y + 25);
+
+  // Right Signatures
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Cachet de l’Atelier & Date :', 138, table3Y + 7);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6);
+  doc.setTextColor(100, 116, 139);
+  doc.text('BAITI ATELIER ALGERIE', 138, table3Y + 12);
+  doc.text('Responsable Technique & Métreur', 138, table3Y + 16);
+  doc.text(certDate, 138, table3Y + 28);
+
+  doc.save(`Attestation_DTR_C32_${currentWilaya.code}_${certNumber}.pdf`);
 }

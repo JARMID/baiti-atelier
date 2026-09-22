@@ -9,9 +9,14 @@ import {
   Download,
   FlipHorizontal,
   MessageCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
-import { generateWorkshopCutSheetPdf, formatGlassTypeFr } from '../../utils/pdfGenerator';
+import {
+  generateWorkshopCutSheetPdf,
+  generateDtrThermalCertificatePdf,
+  formatGlassTypeFr,
+} from '../../utils/pdfGenerator';
 import { computeCadCells, computeDetailedBOM } from '../../utils/cadEngine';
 import type { CadStructure, CellType } from '../../types/cad';
 import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
@@ -31,7 +36,7 @@ const CELL_TYPE_CONFIG: {
 ];
 
 export const MobileCadScreen: React.FC = () => {
-  const { config, language, theme } = useConfigStore();
+  const { config, language, theme, selectedWilaya } = useConfigStore();
   const isLight = theme === 'light';
   const isRtl = language === 'ar';
 
@@ -51,6 +56,7 @@ export const MobileCadScreen: React.FC = () => {
 
   const [rawSelectedCellKey, setRawSelectedCellKey] = useState<string>('0-0');
   const [isGeneratingCutSheet, setIsGeneratingCutSheet] = useState(false);
+  const [isGeneratingDtrPdf, setIsGeneratingDtrPdf] = useState(false);
   const [activeBomTab, setActiveBomTab] = useState<'cuts' | 'glasses'>('cuts');
   const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
 
@@ -253,6 +259,27 @@ export const MobileCadScreen: React.FC = () => {
       // Handled
     } finally {
       setIsGeneratingCutSheet(false);
+    }
+  };
+
+  // PDF DTR C3-2 Certificate Export
+  const handleExportDtrPdf = async () => {
+    playClampSound();
+    setIsGeneratingDtrPdf(true);
+    try {
+      await generateDtrThermalCertificatePdf({
+        projectTitle: `Chantier CAO ${selectedWilaya} - ${config.width}x${config.height}mm`,
+        clientName: 'Client Particulier',
+        wilayaName: selectedWilaya,
+        widthMm: config.width,
+        heightMm: config.height,
+        openingType: config.openingType,
+        profileSystem: config.profileSystem,
+        glassType: config.glassType,
+        glassAreaM2: bom.totalGlassAreaM2,
+      });
+    } finally {
+      setIsGeneratingDtrPdf(false);
     }
   };
 
@@ -734,7 +761,7 @@ export const MobileCadScreen: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-          {activeBomTab === 'glasses' && (
+          {activeBomTab === 'glasses' ? (
             <button
               type="button"
               onClick={handleShareGlassWhatsApp}
@@ -743,15 +770,27 @@ export const MobileCadScreen: React.FC = () => {
               <MessageCircle className="w-4 h-4" />
               <span>Commande Miroitier (WhatsApp)</span>
             </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleExportDtrPdf}
+              disabled={isGeneratingDtrPdf}
+              className={`py-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] active:scale-98 transition-all ${
+                isLight
+                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs'
+                  : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/30'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              <span>{isGeneratingDtrPdf ? 'Génération...' : 'Attestation DTR C3-2 (PDF)'}</span>
+            </button>
           )}
 
           <button
             type="button"
             onClick={handleExportCutSheet}
             disabled={isGeneratingCutSheet}
-            className={`w-full py-3 rounded-2xl bg-[#D4AF37] text-slate-950 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] hover:brightness-110 active:scale-98 transition-all shadow-md ${
-              activeBomTab === 'glasses' ? '' : 'sm:col-span-2'
-            }`}
+            className="w-full py-3 rounded-2xl bg-[#D4AF37] text-slate-950 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] hover:brightness-110 active:scale-98 transition-all shadow-md"
           >
             <FileText className="w-4 h-4" />
             <span>{isGeneratingCutSheet ? 'Génération...' : 'Télécharger Fiche Scie PDF'}</span>

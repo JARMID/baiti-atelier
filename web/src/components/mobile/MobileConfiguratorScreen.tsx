@@ -13,6 +13,7 @@ import {
   Layers,
   BookmarkPlus,
   X,
+  FileCheck,
 } from 'lucide-react';
 import {
   playTactileClick,
@@ -21,6 +22,7 @@ import {
 } from '../../utils/audioFeedback';
 import {
   generateClientDevisPdf,
+  generateDtrThermalCertificatePdf,
   formatOpeningTypeFr,
   formatProfileSystemFr,
   formatGlassTypeFr,
@@ -102,6 +104,7 @@ export const MobileConfiguratorScreen: React.FC = () => {
   const isRtl = language === 'ar';
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
+  const [isGeneratingDtrPdf, setIsGeneratingDtrPdf] = useState(false);
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -646,6 +649,38 @@ export const MobileConfiguratorScreen: React.FC = () => {
             {thermalQuick.isCompliant ? 'Conforme' : 'À optimiser'}
           </div>
         </div>
+
+        {/* 1-Tap DTR C3-2 Certificate Download */}
+        <button
+          onClick={async () => {
+            playTactileClick();
+            setIsGeneratingDtrPdf(true);
+            try {
+              await generateDtrThermalCertificatePdf({
+                projectTitle: `Chantier Mobile ${selectedWilaya}`,
+                clientName: 'Client Particulier',
+                wilayaName: selectedWilaya,
+                widthMm: config.width,
+                heightMm: config.height,
+                openingType: config.openingType,
+                profileSystem: config.profileSystem,
+                glassType: config.glassType,
+                glassAreaM2: (config.width * config.height * 0.72) / 1000000,
+              });
+            } finally {
+              setIsGeneratingDtrPdf(false);
+            }
+          }}
+          disabled={isGeneratingDtrPdf}
+          className={`w-full py-2.5 px-3 rounded-xl border text-xs font-mono font-medium flex items-center justify-center gap-2 transition-all min-h-[44px] cursor-pointer ${
+            isLight
+              ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs'
+              : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+          }`}
+        >
+          <FileCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+          <span>{isGeneratingDtrPdf ? 'Génération du PDF...' : 'Télécharger Attestation DTR C3-2 (PDF)'}</span>
+        </button>
       </div>
 
       {/* 8. ACCESSORIES & HARDWARE PACK */}
