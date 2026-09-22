@@ -26,6 +26,7 @@ interface ConfigState {
   setProfileSystem: (system: ProfileSystem) => void;
   setFinishColor: (color: FinishColor) => void;
   setGlassType: (glass: GlassType) => void;
+  setSpacerType: (spacer: 'standard_alu' | 'warm_edge') => void;
   setShutterType: (shutter: ShutterType) => void;
   setShutterPosition: (pos: number) => void;
   toggleOpen: () => void;
@@ -49,6 +50,7 @@ const initialConfig: WindowConfig = {
   profileSystem: 'gamme_45_thermal',
   finishColor: 'ral_7016',
   glassType: 'double_clear',
+  spacerType: 'standard_alu',
   shutterType: 'none',
   isOpen: false,
   openPercent: 0,
@@ -106,6 +108,12 @@ export const useConfigStore = create<ConfigState>((set) => ({
   setGlassType: (glassType) =>
     set((state) => {
       const nextConfig = { ...state.config, glassType };
+      return { config: nextConfig, cost: calculateWindowCost(nextConfig, state.calibration) };
+    }),
+
+  setSpacerType: (spacerType) =>
+    set((state) => {
+      const nextConfig = { ...state.config, spacerType };
       return { config: nextConfig, cost: calculateWindowCost(nextConfig, state.calibration) };
     }),
 

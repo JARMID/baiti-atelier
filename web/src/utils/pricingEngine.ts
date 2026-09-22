@@ -98,9 +98,13 @@ export function calculateWindowCost(
     double_clear: 5400,
     stop_sol: 7800,
     sable: 4900,
+    double_argon_warmedge: 6800,
+    phonique_stadip: 9500,
+    securit_tempered: 6200,
   };
 
-  const glassPricePerM2 = (glassPrices[config.glassType] || 2600) * glassMultiplier;
+  const spacerCostPerM2 = config.spacerType === 'warm_edge' ? 650 : 0;
+  const glassPricePerM2 = ((glassPrices[config.glassType] || 5400) + spacerCostPerM2) * glassMultiplier;
   const glassCost = Math.round(Math.max(0.2, glassAreaTotal) * glassPricePerM2);
 
   // Hardware cost in DZD

@@ -77,6 +77,21 @@ export const ThermalComplianceCard: React.FC<ThermalComplianceCardProps> = ({
       rw = 31;
       sw = 0.44;
       glassName = 'Vitrage sablé dépoli translucide';
+    } else if (config.glassType === 'double_argon_warmedge') {
+      ug = 1.3;
+      rw = 33;
+      sw = 0.50;
+      glassName = 'Double vitrage 4/16/4 Argon 90% + Warm-Edge';
+    } else if (config.glassType === 'phonique_stadip') {
+      ug = 1.4;
+      rw = 38;
+      sw = 0.48;
+      glassName = 'Feuilleté phonique Stadip Silence 6/16/4';
+    } else if (config.glassType === 'securit_tempered') {
+      ug = 5.5;
+      rw = 32;
+      sw = 0.79;
+      glassName = 'Verre trempé Sécurit 8mm';
     }
 
     // Frame thermal factor

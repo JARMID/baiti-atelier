@@ -17,18 +17,28 @@ import {
   FileCheck,
   LayoutTemplate,
   Sliders,
+  Volume2,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
   generateWorkshopCutSheetPdf,
   generateDtrThermalCertificatePdf,
   generateGlazierCuttingOrderPdf,
-  formatGlassTypeFr,
 } from '../../utils/pdfGenerator';
 import { computeCadCells, computeDetailedBOM } from '../../utils/cadEngine';
 import type { CadStructure, CellType } from '../../types/cad';
+import type { GlassType } from '../../types/window';
 import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
 import type { MobileNavTab } from './MobileBottomNavigation';
+import {
+  GLASS_LIST,
+  getGlassSpec,
+  getEffectiveUg,
+  getEffectiveRw,
+  formatAcousticRating,
+  formatThermalRating,
+  type SpacerType,
+} from '../../utils/glassSpecifications';
 
 const CELL_TYPE_CONFIG: {
   type: CellType;
@@ -144,9 +154,16 @@ interface MobileCadScreenProps {
 }
 
 export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab }) => {
-  const { config, language, theme, selectedWilaya } = useConfigStore();
+  const { config, language, theme, selectedWilaya, setGlassType, setSpacerType } = useConfigStore();
   const isLight = theme === 'light';
   const isRtl = language === 'ar';
+
+  const activeSpacer: SpacerType = config.spacerType || 'standard_alu';
+  const currentGlassSpec = useMemo(() => getGlassSpec(config.glassType), [config.glassType]);
+  const effectiveUg = useMemo(() => getEffectiveUg(config.glassType, activeSpacer), [config.glassType, activeSpacer]);
+  const effectiveRw = useMemo(() => getEffectiveRw(config.glassType, activeSpacer), [config.glassType, activeSpacer]);
+  const acousticRating = useMemo(() => formatAcousticRating(effectiveRw), [effectiveRw]);
+  const thermalRating = useMemo(() => formatThermalRating(effectiveUg), [effectiveUg]);
 
   // Parametric CAD Dividers & Types
   const [gridState, setGridState] = useState<{
@@ -371,9 +388,22 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
     playTactileClick();
     if (!bom.glasses || bom.glasses.length === 0) return;
     const glassListText = bom.glasses
-      .map((g, idx) => `  ${idx + 1}. ${g.label} : ${g.widthMm} × ${g.heightMm} mm (×${g.quantity}) • ${g.areaM2} m²`)
+      .map(
+        (g, idx) =>
+          `  ${idx + 1}. ${g.label} : ${g.widthMm} × ${g.heightMm} mm (×${g.quantity}) • ${g.areaM2} m² [AA]`
+      )
       .join('\n');
-    const msg = `*COMMANDE VITRAGE & MIROITERIE*\nChâssis : ${config.width} × ${config.height} mm\nType Vitrage : ${formatGlassTypeFr(config.glassType)}\nNombre de vitrages : ${bom.glasses.length}\nSurface totale : ${bom.totalGlassAreaM2.toFixed(2)} m²\n\n*Détail Découpe Verre :*\n${glassListText}\n\nConçu sur https://web-two-tan-31.vercel.app`;
+    const msg =
+      `*COMMANDE VITRAGE & MIROITERIE*\n` +
+      `Châssis CAO : ${cadStructure.width} × ${cadStructure.height} mm (${config.profileSystem})\n` +
+      `Composition : ${currentGlassSpec.labelFr} (${currentGlassSpec.tradeFormula})\n` +
+      `Intercalaire : ${activeSpacer === 'warm_edge' ? 'Warm-Edge Composite Hybride' : 'Aluminium Standard 16mm'}\n` +
+      `Performance : Ug = ${effectiveUg} W/m²K • Rw = ${effectiveRw} dB (${acousticRating.noiseDropRatio})\n` +
+      `Wilaya : ${selectedWilaya}\n` +
+      `Nombre de vitrages : ${bom.glasses.length} volumes (${bom.totalGlassAreaM2.toFixed(2)} m²)\n\n` +
+      `*Détail Découpe Verre (Tolérance ±1.0 mm, Arêtes Abattues) :*\n` +
+      `${glassListText}\n\n` +
+      `Conçu sur https://web-two-tan-31.vercel.app`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
@@ -388,7 +418,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
         label: g.label,
         widthMm: g.widthMm,
         heightMm: g.heightMm,
-        glassType: formatGlassTypeFr(config.glassType),
+        glassType: `${currentGlassSpec.tradeFormula} (${activeSpacer === 'warm_edge' ? 'Warm-Edge' : 'Alu 16mm'})`,
         quantity: g.quantity,
         areaM2: g.areaM2,
         edgeFinish: 'Arêtes abattues (AA)',
@@ -1090,40 +1120,139 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           </div>
         )}
 
-        {/* TAB 2: GLASS CUT PIECES LIST */}
+        {/* TAB 2: GLASS CUT PIECES LIST & SPECIFIER */}
         {activeBomTab === 'glasses' && (
-          <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-            {bom.glasses && bom.glasses.length > 0 ? (
-              bom.glasses.map((g, idx) => (
-                <div
-                  key={g.id || idx}
-                  className={`p-2.5 rounded-2xl border text-xs font-mono flex items-center justify-between ${
-                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'
-                  }`}
-                >
-                  <div>
-                    <div className="font-bold flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                      <span className={isLight ? 'text-slate-900 font-bold' : 'text-white font-bold'}>{g.label}</span>
-                    </div>
-                    <div className="text-[10px] text-zinc-500 pl-3">
-                      {formatGlassTypeFr(config.glassType)} • Surface: {g.areaM2} m²
-                    </div>
-                  </div>
+          <div className="space-y-2.5">
+            {/* Quick Glass & Spacer Specifier */}
+            <div
+              className={`p-3 rounded-2xl border space-y-2.5 ${
+                isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/40 border-white/10'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className={`text-xs font-mono font-bold ${isLight ? 'text-slate-800' : 'text-zinc-200'}`}>
+                    Spécification Verre & Intercalaire
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">
+                    Rw {effectiveRw} dB
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+                    Ug {effectiveUg}
+                  </span>
+                </div>
+              </div>
 
-                  <div className="text-right">
-                    <span className="text-sm font-black text-[#D4AF37] font-mono">
-                      {g.widthMm} × {g.heightMm} <span className="text-[10px]">mm</span>
-                    </span>
-                    <span className="text-[10px] text-zinc-400 block">Qté : {g.quantity}</span>
+              {/* Glass type dropdown */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono text-zinc-400 block">Type de vitrage</span>
+                  <select
+                    value={config.glassType}
+                    onChange={(e) => {
+                      playSwitchSound();
+                      setGlassType(e.target.value as GlassType);
+                    }}
+                    className={`w-full p-2 rounded-xl border text-xs font-mono min-h-[40px] cursor-pointer ${
+                      isLight ? 'bg-white border-slate-200 text-slate-800' : 'bg-[#0B0F19] border-white/10 text-white'
+                    }`}
+                  >
+                    {GLASS_LIST.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.labelFr} ({g.tradeFormula})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Spacer toggle */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono text-zinc-400 block">Intercalaire (Spacer)</span>
+                  <div className="grid grid-cols-2 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playSwitchSound();
+                        setSpacerType('standard_alu');
+                      }}
+                      className={`p-2 rounded-xl border text-[11px] font-mono font-bold transition-all text-center cursor-pointer min-h-[40px] ${
+                        activeSpacer === 'standard_alu'
+                          ? isLight
+                            ? 'bg-slate-900 text-white border-slate-900'
+                            : 'bg-white text-slate-950 border-white'
+                          : isLight
+                          ? 'bg-white border-slate-200 text-slate-700'
+                          : 'bg-white/5 border-white/10 text-zinc-400'
+                      }`}
+                    >
+                      Alu 16mm
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playSwitchSound();
+                        setSpacerType('warm_edge');
+                      }}
+                      className={`p-2 rounded-xl border text-[11px] font-mono font-bold transition-all text-center cursor-pointer min-h-[40px] ${
+                        activeSpacer === 'warm_edge'
+                          ? isLight
+                            ? 'bg-cyan-600 text-white border-cyan-600'
+                            : 'bg-cyan-500 text-slate-950 border-cyan-400'
+                          : isLight
+                          ? 'bg-white border-slate-200 text-slate-700'
+                          : 'bg-white/5 border-white/10 text-zinc-400'
+                      }`}
+                    >
+                      Warm-Edge
+                    </button>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="p-4 text-center text-xs font-mono text-zinc-500">
-                Aucun vitrage calculé pour cette configuration.
               </div>
-            )}
+
+              {/* Acoustic & Thermal helper badge */}
+              <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400 pt-0.5">
+                <span className="text-cyan-400 truncate max-w-[65%]">{acousticRating.label}</span>
+                <span className="text-emerald-400 truncate">{thermalRating.energyGrade}</span>
+              </div>
+            </div>
+
+            {/* List of glass cut pieces */}
+            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+              {bom.glasses && bom.glasses.length > 0 ? (
+                bom.glasses.map((g, idx) => (
+                  <div
+                    key={g.id || idx}
+                    className={`p-2.5 rounded-2xl border text-xs font-mono flex items-center justify-between ${
+                      isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'
+                    }`}
+                  >
+                    <div>
+                      <div className="font-bold flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                        <span className={isLight ? 'text-slate-900 font-bold' : 'text-white font-bold'}>{g.label}</span>
+                      </div>
+                      <div className="text-[10px] text-zinc-500 pl-3">
+                        {currentGlassSpec.tradeFormula} • {activeSpacer === 'warm_edge' ? 'Warm-Edge' : 'Alu'} • {g.areaM2} m² • AA ±1mm
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-sm font-black text-[#D4AF37] font-mono">
+                        {g.widthMm} × {g.heightMm} <span className="text-[10px]">mm</span>
+                      </span>
+                      <span className="text-[10px] text-zinc-400 block">Qté : {g.quantity}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-xs font-mono text-zinc-500">
+                  Aucun vitrage calculé pour cette configuration.
+                </div>
+              )}
+            </div>
           </div>
         )}
 

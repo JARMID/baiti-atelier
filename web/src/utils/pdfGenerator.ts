@@ -59,6 +59,9 @@ export function formatGlassTypeFr(glassType: string): string {
     double_clear: 'Double Vitrage 4/16/4 Isolation',
     stop_sol: 'Stop-Sol Réfléchissant Anti-Chaleur',
     sable: 'Vitrage Sablé Dépoli Intimité',
+    double_argon_warmedge: 'Double Vitrage 4/16/4 Argon + Warm-Edge',
+    phonique_stadip: 'Feuilleté Phonique Stadip Silence 6/16/4 (Rw 38dB)',
+    securit_tempered: 'Verre Trempé Sécurit 8mm Anti-Choc',
   };
   return map[glassType] || glassType;
 }
@@ -820,7 +823,7 @@ export async function generateDtrThermalCertificatePdf(params: DtrCertificatePar
     ug = 2.7;
     rw = 32;
     sw = 0.52;
-    glassLabel = 'Double vitrage 4/16/4 isolation renforcée';
+    glassLabel = 'Double vitrage 4/16/4 isolation standard';
   } else if (params.glassType === 'simple_clear') {
     ug = 5.7;
     rw = 29;
@@ -836,6 +839,21 @@ export async function generateDtrThermalCertificatePdf(params: DtrCertificatePar
     rw = 31;
     sw = 0.44;
     glassLabel = 'Vitrage sablé dépoli translucide';
+  } else if (params.glassType === 'double_argon_warmedge') {
+    ug = 1.3;
+    rw = 33;
+    sw = 0.50;
+    glassLabel = 'Double vitrage 4/16/4 Argon 90% + Warm-Edge';
+  } else if (params.glassType === 'phonique_stadip') {
+    ug = 1.4;
+    rw = 38;
+    sw = 0.48;
+    glassLabel = 'Feuilleté phonique Stadip Silence 6/16/4 (Rw 38dB)';
+  } else if (params.glassType === 'securit_tempered') {
+    ug = 5.5;
+    rw = 32;
+    sw = 0.79;
+    glassLabel = 'Verre trempé Sécurit 8 mm anti-choc';
   }
 
   // Frame thermal properties

@@ -20,10 +20,13 @@ export type FinishColor =
   | 'bronze_ano' // Bronze Anodisé
 
 export type GlassType =
-  | 'simple_clear'   // Simple vitrage 6mm clair
-  | 'double_clear'   // Double vitrage 4/16/4 isolation
-  | 'stop_sol'       // Double vitrage teinté réfléchissant Stop-Sol
-  | 'sable';         // Vitrage sablé / dépoli
+  | 'simple_clear'           // Simple vitrage 6mm clair
+  | 'double_clear'           // Double vitrage 4/16/4 isolation
+  | 'stop_sol'               // Double vitrage teinté réfléchissant Stop-Sol
+  | 'sable'                  // Vitrage sablé / dépoli
+  | 'double_argon_warmedge'  // Double vitrage 4/16/4 Argon + Warm-Edge
+  | 'phonique_stadip'        // Feuilleté phonique Stadip Silence 6/16/4 (Rw 38dB)
+  | 'securit_tempered';      // Verre trempé Sécurit 8mm anti-choc
 
 export type ShutterType =
   | 'none'       // Sans volet
@@ -37,6 +40,7 @@ export interface WindowConfig {
   profileSystem: ProfileSystem;
   finishColor: FinishColor;
   glassType: GlassType;
+  spacerType?: 'standard_alu' | 'warm_edge'; // Intercalaire standard alu ou warm-edge à rupture
   shutterType: ShutterType;
   isOpen: boolean;     // Animation state (open/close)
   openPercent: number; // 0 to 100%

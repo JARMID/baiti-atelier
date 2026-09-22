@@ -122,6 +122,9 @@ export const DICTIONARY = {
     double_clear: 'Double Vitrage 4/16/4 Isolation',
     stop_sol: 'Stop-Sol Réfléchissant Anti-Chaleur',
     sable: 'Vitrage Sablé Dépoli Intimité',
+    double_argon_warmedge: 'Double Vitrage 4/16/4 Argon + Warm-Edge',
+    phonique_stadip: 'Feuilleté Phonique Stadip Silence 6/16/4 (Rw 38dB)',
+    securit_tempered: 'Verre Trempé Sécurit 8mm Anti-Choc',
 
     // Shutters
     none: 'Sans volet roulant',
@@ -316,6 +319,9 @@ export const DICTIONARY = {
     double_clear: 'زجاج مزدوج عازل 4/16/4',
     stop_sol: 'ستوب-سول عاكس حامي من حرارة الصيف',
     sable: 'زجاج رملي معتم لحفظ الخصوصية',
+    double_argon_warmedge: 'زجاج مزدوج 4/16/4 غاز آرغون عالي العزل',
+    phonique_stadip: 'زجاج صامت عازل للصوت ستاديب 38 ديسيبل',
+    securit_tempered: 'زجاج مقوى سيكوريت 8 ملم مضاد للصدمات',
 
     // Shutters
     none: 'بدون ستار دوار',
@@ -510,6 +516,9 @@ export const DICTIONARY = {
     double_clear: 'Insulated Double Glazing 4/16/4',
     stop_sol: 'Stop-Sol Solar Heat Reflective',
     sable: 'Frosted Privacy Sandblasted Glass',
+    double_argon_warmedge: 'Double Glazed 4/16/4 Argon + Warm-Edge',
+    phonique_stadip: 'Acoustic Laminated Stadip Silence 38dB',
+    securit_tempered: 'Toughened Tempered Safety Glass 8mm',
 
     // Shutters
     none: 'No roller shutter',

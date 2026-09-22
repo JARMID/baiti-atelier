@@ -16,6 +16,9 @@ import {
   FileCheck,
   Scissors,
   Compass,
+  Volume2,
+  Sun,
+  Shield,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -34,6 +37,15 @@ import {
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
 import { DTR_ZONE_THRESHOLDS, getDtrZoneForWilaya } from '../../utils/dtrThermal';
 import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
+import {
+  GLASS_LIST,
+  getGlassSpec,
+  getEffectiveUg,
+  getEffectiveRw,
+  formatAcousticRating,
+  formatThermalRating,
+  type SpacerType,
+} from '../../utils/glassSpecifications';
 
 interface PresetItem {
   id: string;
@@ -106,6 +118,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
     setProfileSystem,
     setFinishColor,
     setGlassType,
+    setSpacerType,
     setShutterType,
   } = useConfigStore();
 
@@ -122,6 +135,13 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [surveyQty, setSurveyQty] = useState<number>(1);
   const [surveyToastMessage, setSurveyToastMessage] = useState<string | null>(null);
 
+  const activeSpacer: SpacerType = config.spacerType || 'standard_alu';
+  const currentGlassSpec = useMemo(() => getGlassSpec(config.glassType), [config.glassType]);
+  const effectiveUg = useMemo(() => getEffectiveUg(config.glassType, activeSpacer), [config.glassType, activeSpacer]);
+  const effectiveRw = useMemo(() => getEffectiveRw(config.glassType, activeSpacer), [config.glassType, activeSpacer]);
+  const acousticRating = useMemo(() => formatAcousticRating(effectiveRw), [effectiveRw]);
+  const thermalRating = useMemo(() => formatThermalRating(effectiveUg), [effectiveUg]);
+
   const currentWilaya = useMemo(() => {
     return (
       ALGERIAN_WILAYAS_58.find(
@@ -136,11 +156,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const zoneThreshold = DTR_ZONE_THRESHOLDS[zoneKey];
 
   const thermalQuick = useMemo(() => {
-    let ug = 2.7;
-    if (config.glassType === 'double_clear') ug = 2.7;
-    else if (config.glassType === 'simple_clear') ug = 5.7;
-    else if (config.glassType === 'stop_sol') ug = 2.4;
-    else if (config.glassType === 'sable') ug = 3.0;
+    const ug = effectiveUg;
 
     let uf = 2.4;
     if (config.profileSystem === 'pvc_70_chamber') uf = 1.4;
@@ -151,7 +167,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
     const calculatedGlassAreaM2 = totalAreaM2 * 0.72;
     const frameAreaM2 = Math.max(0.04, totalAreaM2 - calculatedGlassAreaM2);
     const glassPerimeterM = Math.max(0.8, (2 * (config.width + config.height) * 0.85) / 1000);
-    const psiG = 0.08;
+    const psiG = activeSpacer === 'warm_edge' ? 0.04 : 0.08;
 
     const uw = Number(
       ((calculatedGlassAreaM2 * ug + frameAreaM2 * uf + glassPerimeterM * psiG) / totalAreaM2).toFixed(2)
@@ -159,7 +175,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
 
     const isCompliant = uw <= zoneThreshold.maxUw;
     return { uw, isCompliant, maxUw: zoneThreshold.maxUw };
-  }, [config.width, config.height, config.glassType, config.profileSystem, zoneThreshold]);
+  }, [config.width, config.height, effectiveUg, activeSpacer, config.profileSystem, zoneThreshold]);
 
   const toggleAccessory = (id: string) => {
     playTactileClick();
@@ -420,12 +436,6 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
     { id: 'bronze_ano', label: 'Bronze Métal', hex: '#78350F' },
   ];
 
-  const GLASS_OPTIONS: { id: GlassType; label: string; desc: string }[] = [
-    { id: 'simple_clear', label: 'Simple 6mm Clair', desc: 'Économique' },
-    { id: 'double_clear', label: 'Double 4/16/4', desc: 'Isolation Thermique' },
-    { id: 'stop_sol', label: 'Stop-Sol Teinté', desc: 'Protection Solaire' },
-    { id: 'sable', label: 'Sablé Dépoli', desc: 'Intimité Salle de Bains' },
-  ];
 
   const SHUTTER_OPTIONS: { id: ShutterType; label: string }[] = [
     { id: 'none', label: 'Sans Volet' },
@@ -728,11 +738,30 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         </div>
       </div>
 
-      {/* 7. GLASS & SHUTTER TABS */}
-      <div className="grid grid-cols-2 gap-2">
-        {/* Glass Select */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-mono font-bold text-zinc-400 block">Vitrage</label>
+      {/* 7. GLASS & ACOUSTIC SPACER CONFIGURATOR */}
+      <div
+        className={`p-3.5 rounded-2xl border space-y-3 ${
+          isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-[#0B0F19] border-white/10'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Volume2 className="w-4 h-4 text-cyan-400" />
+            <span className={`text-xs font-mono font-bold ${isLight ? 'text-slate-800' : 'text-zinc-200'}`}>
+              Vitrage & Performance Acoustique
+            </span>
+          </div>
+          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            Rw {effectiveRw} dB • Ug {effectiveUg}
+          </span>
+        </div>
+
+        {/* Glass Select Dropdown */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
+            <span>Composition Verre & Barrière</span>
+            <span className="text-[#D4AF37] font-bold">{currentGlassSpec.basePriceDzdPerM2.toLocaleString('fr-DZ')} DZD/m²</span>
+          </div>
           <select
             value={config.glassType}
             onChange={(e) => {
@@ -740,20 +769,115 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
               setGlassType(e.target.value as GlassType);
             }}
             className={`w-full p-2.5 rounded-2xl border text-xs font-mono min-h-[44px] cursor-pointer ${
-              isLight ? 'bg-white border-slate-200 text-slate-800' : 'bg-[#0B0F19] border-white/10 text-white'
+              isLight ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-black/30 border-white/10 text-white'
             }`}
           >
-            {GLASS_OPTIONS.map((g) => (
+            {GLASS_LIST.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.label}
+                {g.labelFr} ({g.tradeFormula}) • Ug {g.ug}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Shutter Select */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-mono font-bold text-zinc-400 block">Volet Roulant</label>
+        {/* Live Glass Telemetry Badge Row */}
+        <div className="grid grid-cols-3 gap-1.5 font-mono text-center">
+          <div className={`p-2 rounded-xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}>
+            <div className="flex items-center justify-center gap-1 text-[10px] text-zinc-500">
+              <Volume2 className="w-3 h-3 text-cyan-400" />
+              <span>Acoustique</span>
+            </div>
+            <span className="text-xs font-bold text-cyan-400 block mt-0.5">{effectiveRw} dB</span>
+            <span className="text-[9px] text-zinc-400 block truncate">{acousticRating.noiseDropRatio}</span>
+          </div>
+
+          <div className={`p-2 rounded-xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}>
+            <div className="flex items-center justify-center gap-1 text-[10px] text-zinc-500">
+              <Thermometer className="w-3 h-3 text-emerald-400" />
+              <span>Thermique Ug</span>
+            </div>
+            <span className="text-xs font-bold text-emerald-400 block mt-0.5">{effectiveUg} <span className="text-[9px]">W/m²K</span></span>
+            <span className="text-[9px] text-zinc-400 block truncate">{thermalRating.energyGrade}</span>
+          </div>
+
+          <div className={`p-2 rounded-xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}>
+            <div className="flex items-center justify-center gap-1 text-[10px] text-zinc-500">
+              <Sun className="w-3 h-3 text-[#D4AF37]" />
+              <span>Solaire g</span>
+            </div>
+            <span className="text-xs font-bold text-[#D4AF37] block mt-0.5">g = {currentGlassSpec.sw}</span>
+            <span className="text-[9px] text-zinc-400 block truncate">TL {Math.round(currentGlassSpec.tl * 100)}%</span>
+          </div>
+        </div>
+
+        {/* Trade Application Note */}
+        <div className={`p-2 rounded-xl border text-[10px] font-mono flex items-start gap-1.5 ${
+          isLight ? 'bg-cyan-50/50 border-cyan-200 text-cyan-900' : 'bg-cyan-500/5 border-cyan-500/20 text-cyan-300'
+        }`}>
+          <Shield className="w-3.5 h-3.5 shrink-0 mt-0.5 text-cyan-400" />
+          <span>{currentGlassSpec.applicationTradeFr}</span>
+        </div>
+
+        {/* Intercalaire / Spacer Selection */}
+        {currentGlassSpec.thicknessTotalMm > 8 && (
+          <div className="space-y-1.5 pt-1 border-t border-white/5">
+            <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
+              <span>Intercalaire Vitrage (Spacer)</span>
+              <span className="text-[10px] text-zinc-500">Rupture de pont de rive</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  playSwitchSound();
+                  setSpacerType('standard_alu');
+                }}
+                className={`py-2 px-2.5 rounded-xl border text-xs font-mono font-bold transition-all text-left cursor-pointer min-h-[44px] ${
+                  activeSpacer === 'standard_alu'
+                    ? isLight
+                      ? 'bg-slate-900 text-white border-slate-900'
+                      : 'bg-white text-slate-950 border-white'
+                    : isLight
+                    ? 'bg-slate-50 border-slate-200 text-slate-700'
+                    : 'bg-white/5 border-white/10 text-zinc-400'
+                }`}
+              >
+                <span className="block font-bold">Aluminium Standard</span>
+                <span className="text-[10px] opacity-75 font-normal">Intercalaire alu 16mm</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playSwitchSound();
+                  setSpacerType('warm_edge');
+                }}
+                className={`py-2 px-2.5 rounded-xl border text-xs font-mono font-bold transition-all text-left cursor-pointer min-h-[44px] ${
+                  activeSpacer === 'warm_edge'
+                    ? isLight
+                      ? 'bg-cyan-600 text-white border-cyan-600'
+                      : 'bg-cyan-500 text-slate-950 border-cyan-400'
+                    : isLight
+                    ? 'bg-slate-50 border-slate-200 text-slate-700'
+                    : 'bg-white/5 border-white/10 text-zinc-400'
+                }`}
+              >
+                <span className="block font-bold flex items-center justify-between">
+                  <span>Warm-Edge</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-400/20 text-cyan-200">+650 DZD</span>
+                </span>
+                <span className="text-[10px] opacity-75 font-normal">Composite sans condensation</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Shutter Select Integrated */}
+        <div className="space-y-1.5 pt-1 border-t border-white/5">
+          <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
+            <span>Volet Roulant Intégré</span>
+            <span className="text-[10px] text-zinc-500">Occultation & Sécurité</span>
+          </div>
           <select
             value={config.shutterType}
             onChange={(e) => {
@@ -761,7 +885,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
               setShutterType(e.target.value as ShutterType);
             }}
             className={`w-full p-2.5 rounded-2xl border text-xs font-mono min-h-[44px] cursor-pointer ${
-              isLight ? 'bg-white border-slate-200 text-slate-800' : 'bg-[#0B0F19] border-white/10 text-white'
+              isLight ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-black/30 border-white/10 text-white'
             }`}
           >
             {SHUTTER_OPTIONS.map((sh) => (

@@ -125,6 +125,12 @@ export const InteractiveControls: React.FC = () => {
           return 'حماية من الشمس وحفظ الخصوصية';
         case 'sable':
           return 'معتم للحمامات والمطابخ';
+        case 'double_argon_warmedge':
+          return 'غاز آرغون عالي العزل الحراري';
+        case 'phonique_stadip':
+          return 'عزل صوتي فائق 38 ديسيبل';
+        case 'securit_tempered':
+          return 'زجاج سيكوريت مقاوم للصدمات';
         case 'simple_clear':
           return 'للاستعمال الداخلي فقط';
       }
@@ -137,6 +143,12 @@ export const InteractiveControls: React.FC = () => {
           return 'Solar heat control and daytime privacy';
         case 'sable':
           return 'Frosted obscurity for bathrooms';
+        case 'double_argon_warmedge':
+          return 'Argon 90% high thermal performance';
+        case 'phonique_stadip':
+          return 'Superior acoustic barrier 38dB';
+        case 'securit_tempered':
+          return 'Toughened tempered impact safety';
         case 'simple_clear':
           return 'Interior divider use only';
       }
@@ -148,6 +160,12 @@ export const InteractiveControls: React.FC = () => {
         return 'Protection solaire et intimité';
       case 'sable':
         return 'Intimité sdb et buanderie';
+      case 'double_argon_warmedge':
+        return 'Argon 90% haute performance thermique';
+      case 'phonique_stadip':
+        return 'Affaiblissement acoustique 38 dB';
+      case 'securit_tempered':
+        return 'Verre trempé sécurité anti-choc';
       case 'simple_clear':
         return 'Usage intérieur ou atelier';
     }
@@ -179,8 +197,11 @@ export const InteractiveControls: React.FC = () => {
 
   const GLASS_OPTIONS: { id: GlassType; label: string; note: string }[] = [
     { id: 'double_clear', label: t.double_clear, note: getGlassNote('double_clear') },
+    { id: 'double_argon_warmedge', label: t.double_argon_warmedge, note: getGlassNote('double_argon_warmedge') },
+    { id: 'phonique_stadip', label: t.phonique_stadip, note: getGlassNote('phonique_stadip') },
     { id: 'stop_sol', label: t.stop_sol, note: getGlassNote('stop_sol') },
     { id: 'sable', label: t.sable, note: getGlassNote('sable') },
+    { id: 'securit_tempered', label: t.securit_tempered, note: getGlassNote('securit_tempered') },
     { id: 'simple_clear', label: t.simple_clear, note: getGlassNote('simple_clear') },
   ];
 

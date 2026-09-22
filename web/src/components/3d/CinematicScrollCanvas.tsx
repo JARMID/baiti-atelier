@@ -33,6 +33,9 @@ const GLASS_PALETTES: Record<GlassType, { color: string; roughness: number; tran
   double_clear: { color: '#DCEDEB', roughness: 0.06, transmission: 0.88, opacity: 0.45, ior: 1.52 },
   stop_sol: { color: '#253B47', roughness: 0.12, transmission: 0.52, opacity: 0.72, ior: 1.65 },
   sable: { color: '#E2E8F0', roughness: 0.78, transmission: 0.62, opacity: 0.88, ior: 1.45 },
+  double_argon_warmedge: { color: '#D5EDEA', roughness: 0.05, transmission: 0.89, opacity: 0.42, ior: 1.52 },
+  phonique_stadip: { color: '#CFE6EC', roughness: 0.08, transmission: 0.85, opacity: 0.50, ior: 1.53 },
+  securit_tempered: { color: '#E8F2F4', roughness: 0.04, transmission: 0.94, opacity: 0.32, ior: 1.51 },
 };
 
 // Deterministic static positions for atmospheric floating particles around the frame
