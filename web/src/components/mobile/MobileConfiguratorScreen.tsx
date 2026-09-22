@@ -21,6 +21,7 @@ import {
   Shield,
   Palette,
   SlidersHorizontal,
+  Zap,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -40,6 +41,7 @@ import {
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
 import { DTR_ZONE_THRESHOLDS, getDtrZoneForWilaya } from '../../utils/dtrThermal';
 import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
+import { RollerShutterMotorModal } from './RollerShutterMotorModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -149,6 +151,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isGeneratingDtrPdf, setIsGeneratingDtrPdf] = useState(false);
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
+  const [isMotorModalOpen, setIsMotorModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -1218,6 +1221,25 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
                 </span>
               </div>
             </div>
+
+            {/* Roller Shutter Motor Wiring & Limit Switch Guide Button */}
+            {config.shutterType === 'motorized' && (
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick();
+                  setIsMotorModalOpen(true);
+                }}
+                className="w-full py-2.5 px-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold text-xs flex items-center justify-between cursor-pointer hover:bg-amber-500/25 active:scale-98 transition-all min-h-[44px]"
+                title="Guide de raccordement électrique 230V, couple Nm et réglage des fins de course"
+              >
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Guide Câblage 230V & Réglage Moteur</span>
+                </div>
+                <span className="text-[10px] text-amber-400/80 font-mono">Schéma & Fins de course →</span>
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -1685,6 +1707,16 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
             />
           </div>
         </div>
+      )}
+
+      {/* ROLLER SHUTTER MOTOR WIRING & LIMIT SWITCH MODAL */}
+      {isMotorModalOpen && (
+        <RollerShutterMotorModal
+          isOpen={isMotorModalOpen}
+          onClose={() => setIsMotorModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+        />
       )}
     </div>
   );
