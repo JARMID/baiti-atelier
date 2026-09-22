@@ -2349,4 +2349,231 @@ export async function generatePieceLabelsPdf(params: PieceLabelsPdfParams): Prom
   doc.save(safeFilename);
 }
 
+export interface SupplierOrderItem {
+  code: string;
+  name: string;
+  category?: string;
+  quantity: number;
+  unit: string;
+  estimatedUnitCostDzd?: number;
+}
+
+export interface SupplierPurchaseOrderPdfParams {
+  supplierName: string;
+  supplierPhone?: string;
+  orderReference: string;
+  workshopName?: string;
+  wilaya?: string;
+  items: SupplierOrderItem[];
+  notes?: string;
+}
+
+export async function generateSupplierPurchaseOrderPdf(params: SupplierPurchaseOrderPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryBlue: [number, number, number] = [0, 51, 102];
+  const slateDark: [number, number, number] = [15, 23, 42];
+  const goldAccent: [number, number, number] = [212, 175, 55];
+  const textMuted: [number, number, number] = [100, 116, 139];
+
+  // Header band
+  doc.setFillColor(...primaryBlue);
+  doc.rect(0, 0, 210, 24, 'F');
+
+  doc.setFillColor(...goldAccent);
+  doc.rect(0, 24, 210, 1.5, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BON DE COMMANDE FOURNISSEUR', 14, 12);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(226, 232, 240);
+  doc.text('Approvisionnement Matières Premières & Quincaillerie Atelier', 14, 18);
+
+  const todayStr = new Date().toLocaleDateString('fr-DZ');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.text(`Réf : ${params.orderReference}`, 196, 12, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(`Date : ${todayStr}`, 196, 18, { align: 'right' });
+
+  // Supplier & Workshop Info Cards
+  // Workshop Card
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 32, 88, 30, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...primaryBlue);
+  doc.text('ÉMETTEUR (ATELIER)', 18, 38);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...slateDark);
+  doc.text(params.workshopName || 'Baiti Atelier Aluminium & PVC', 18, 44);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...textMuted);
+  doc.text(`Wilaya : ${params.wilaya || 'Alger'}`, 18, 50);
+  doc.text('Service Approvisionnement & Gestion de Stock', 18, 56);
+
+  // Supplier Card
+  doc.roundedRect(108, 32, 88, 30, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...primaryBlue);
+  doc.text('FOURNISSEUR DESTINATAIRE', 112, 38);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...slateDark);
+  doc.text(params.supplierName, 112, 44);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...textMuted);
+  if (params.supplierPhone) {
+    doc.text(`Téléphone : ${params.supplierPhone}`, 112, 50);
+  } else {
+    doc.text('Distributeur / Grossiste Agréé', 112, 50);
+  }
+  doc.text('Commande prioritaire pour mise en production', 112, 56);
+
+  // Table of Items
+  const tableRows = params.items.map((it, idx) => {
+    const unitPrice = it.estimatedUnitCostDzd || 0;
+    const totalLine = unitPrice * it.quantity;
+    return [
+      String(idx + 1),
+      it.code,
+      it.name,
+      `${it.quantity} ${it.unit}`,
+      unitPrice > 0 ? `${unitPrice.toLocaleString('fr-DZ')} DZD` : 'Selon tarif',
+      totalLine > 0 ? `${totalLine.toLocaleString('fr-DZ')} DZD` : '-',
+    ];
+  });
+
+  const totalEstimated = params.items.reduce((sum, it) => sum + (it.estimatedUnitCostDzd || 0) * it.quantity, 0);
+
+  autoTable(doc, {
+    startY: 68,
+    head: [['N°', 'Référence', 'Désignation Article', 'Quantité', 'P.U Estimé', 'Total Estimé']],
+    body: tableRows,
+    theme: 'grid',
+    headStyles: {
+      fillColor: primaryBlue,
+      textColor: [255, 255, 255],
+      fontSize: 8,
+      fontStyle: 'bold',
+      halign: 'center',
+    },
+    bodyStyles: {
+      fontSize: 8,
+      textColor: slateDark,
+      cellPadding: 2.5,
+    },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center' },
+      1: { cellWidth: 32, fontStyle: 'bold' },
+      2: { cellWidth: 70 },
+      3: { cellWidth: 26, halign: 'center', fontStyle: 'bold' },
+      4: { cellWidth: 26, halign: 'right' },
+      5: { cellWidth: 26, halign: 'right', fontStyle: 'bold' },
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
+  });
+
+  let curY = (doc as any).lastAutoTable.finalY + 8;
+
+  // Total summary box if estimated cost > 0
+  if (totalEstimated > 0) {
+    doc.setDrawColor(203, 213, 225);
+    doc.setFillColor(241, 245, 249);
+    doc.roundedRect(120, curY, 76, 12, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...primaryBlue);
+    doc.text('TOTAL ESTIMÉ COMMANDE :', 124, curY + 7.5);
+
+    doc.setFontSize(9.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${totalEstimated.toLocaleString('fr-DZ')} DZD`, 192, curY + 7.5, { align: 'right' });
+
+    curY += 18;
+  }
+
+  // Notes and logistics directives
+  if (curY > 230) {
+    doc.addPage();
+    curY = 20;
+  }
+
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, curY, 182, 26, 2, 2, 'D');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('DIRECTIVES DE LIVRAISON ET CONDITIONS :', 18, curY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...textMuted);
+  doc.text('1. Contrôle quantitatif et qualitatif obligatoire au déchargement à l atelier.', 18, curY + 11);
+  doc.text('2. Profilés aluminium sous film protecteur intact sans rayures de transport.', 18, curY + 16);
+  doc.text('3. Règlement effectué selon les conditions habituelles convenues (comptant ou virement).', 18, curY + 21);
+
+  curY += 32;
+
+  // Signatures
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Visa Responsable Atelier', 30, curY);
+  doc.text('Accusé Réception Fournisseur', 140, curY);
+
+  doc.setDrawColor(203, 213, 225);
+  doc.roundedRect(20, curY + 4, 60, 20, 1.5, 1.5, 'D');
+  doc.roundedRect(130, curY + 4, 60, 20, 1.5, 1.5, 'D');
+
+  // QR Code Verification
+  try {
+    const qrPayload = `BAITI|BC|${params.orderReference}|${params.supplierName}|ART=${params.items.length}|${todayStr}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 94, curY + 3, 22, 22);
+  } catch {
+    // QR Code fallback
+  }
+
+  // Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Document généré par Baiti Atelier • Bon de Commande ${params.orderReference} • www.baitiatelier.dz`,
+    105,
+    288,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Bon_Commande_${params.orderReference}_${params.supplierName.replace(/\s+/g, '_')}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 

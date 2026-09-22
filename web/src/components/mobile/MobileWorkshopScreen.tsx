@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useConfigStore } from '../../store/configStore';
 import {
   getWorkshopJobs,
@@ -24,10 +24,28 @@ import {
   ClipboardList,
   FileCheck,
   Banknote,
+  Package,
+  AlertTriangle,
+  FileText,
+  RotateCcw,
 } from 'lucide-react';
 import { playTactileClick, playClampSound, playSwitchSound } from '../../utils/audioFeedback';
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
-import { generateInstallationAcceptancePdf, generateFabricationOrderPdf } from '../../utils/pdfGenerator';
+import {
+  generateInstallationAcceptancePdf,
+  generateFabricationOrderPdf,
+  generateSupplierPurchaseOrderPdf,
+} from '../../utils/pdfGenerator';
+import {
+  getWorkshopStock,
+  updateStockQuantity,
+  addStockItem,
+  deleteStockItem,
+  resetDefaultStock,
+  STOCK_CATEGORIES,
+  type WorkshopStockItem,
+  type WorkshopStockCategory,
+} from '../../utils/workshopInventoryManager';
 import type { MobileNavTab } from './MobileBottomNavigation';
 
 interface MobileWorkshopScreenProps {
@@ -96,6 +114,53 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
   const [selectedStageFilter, setSelectedStageFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isNewJobModalOpen, setIsNewJobModalOpen] = useState<boolean>(() => !!initialPrefill?.isOpen);
+
+  // Workshop view: 'jobs' (Affaires en cours) or 'stock' (Stock & Matières)
+  const [workshopView, setWorkshopView] = useState<'jobs' | 'stock'>('jobs');
+
+  // Stock inventory state
+  const [stockItems, setStockItems] = useState<WorkshopStockItem[]>(() => getWorkshopStock());
+  const [stockCategoryFilter, setStockCategoryFilter] = useState<WorkshopStockCategory | 'all'>('all');
+  const [stockSearchQuery, setStockSearchQuery] = useState<string>('');
+  const [isNewStockModalOpen, setIsNewStockModalOpen] = useState<boolean>(false);
+
+  // New stock item form state
+  const [newStockCode, setNewStockCode] = useState('');
+  const [newStockName, setNewStockName] = useState('');
+  const [newStockCategory, setNewStockCategory] = useState<WorkshopStockCategory>('profiles');
+  const [newStockQuantity, setNewStockQuantity] = useState<number>(10);
+  const [newStockMinThreshold, setNewStockMinThreshold] = useState<number>(5);
+  const [newStockUnit, setNewStockUnit] = useState('barres (6m)');
+  const [newStockUnitCost, setNewStockUnitCost] = useState<number>(12500);
+  const [newStockSupplier, setNewStockSupplier] = useState('Profilor Extrusion Alger');
+  const [newStockRack, setNewStockRack] = useState('RACK-A-01');
+
+  const lowStockCount = useMemo(() => {
+    return stockItems.filter((i) => i.currentQuantity <= i.minAlertThreshold).length;
+  }, [stockItems]);
+
+  const totalProfileBars = useMemo(() => {
+    return stockItems
+      .filter((i) => i.category === 'profiles' && i.unit.includes('barre'))
+      .reduce((sum, i) => sum + i.currentQuantity, 0);
+  }, [stockItems]);
+
+  const totalStockValueDzd = useMemo(() => {
+    return stockItems.reduce((sum, i) => sum + i.currentQuantity * (i.unitCostDzd || 0), 0);
+  }, [stockItems]);
+
+  const filteredStockItems = useMemo(() => {
+    return stockItems.filter((item) => {
+      const matchesCategory = stockCategoryFilter === 'all' || item.category === stockCategoryFilter;
+      const matchesSearch =
+        stockSearchQuery.trim() === '' ||
+        item.name.toLowerCase().includes(stockSearchQuery.toLowerCase()) ||
+        item.code.toLowerCase().includes(stockSearchQuery.toLowerCase()) ||
+        item.supplierName.toLowerCase().includes(stockSearchQuery.toLowerCase()) ||
+        (item.rackLocation && item.rackLocation.toLowerCase().includes(stockSearchQuery.toLowerCase()));
+      return matchesCategory && matchesSearch;
+    });
+  }, [stockItems, stockCategoryFilter, stockSearchQuery]);
 
   // Active survey notebook project data
   const [surveyProjectData, setSurveyProjectData] = useState<{
@@ -247,6 +312,97 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
     setPaymentToast(`Versement de ${paymentAmount.toLocaleString('fr-DZ')} DZD enregistré !`);
     setTimeout(() => setPaymentToast(null), 3500);
     setPaymentJob(null);
+  };
+
+  const handleStockDelta = (id: string, delta: number) => {
+    playTactileClick();
+    const updated = updateStockQuantity(id, delta);
+    setStockItems([...updated]);
+  };
+
+  const handleDeleteStockItem = (id: string) => {
+    playTactileClick();
+    const updated = deleteStockItem(id);
+    setStockItems([...updated]);
+  };
+
+  const handleResetDefaultStock = () => {
+    playClampSound();
+    const reset = resetDefaultStock();
+    setStockItems([...reset]);
+    setPaymentToast('Stock d atelier réinitialisé avec les valeurs par défaut.');
+    setTimeout(() => setPaymentToast(null), 3000);
+  };
+
+  const handleCreateStockItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStockName.trim()) return;
+    playClampSound();
+    const updated = addStockItem({
+      code: newStockCode.trim() || `ART-${Date.now().toString().slice(-4)}`,
+      name: newStockName.trim(),
+      category: newStockCategory,
+      currentQuantity: Math.max(0, newStockQuantity),
+      minAlertThreshold: Math.max(0, newStockMinThreshold),
+      unit: newStockUnit.trim() || 'pièces',
+      unitCostDzd: Math.max(0, newStockUnitCost),
+      supplierName: newStockSupplier.trim() || 'Fournisseur Atelier',
+      rackLocation: newStockRack.trim() || 'RACK-01',
+    });
+    setStockItems([...updated]);
+    setIsNewStockModalOpen(false);
+    setPaymentToast(`Article "${newStockName.trim()}" ajouté au stock !`);
+    setTimeout(() => setPaymentToast(null), 3000);
+    setNewStockCode('');
+    setNewStockName('');
+  };
+
+  const handleDownloadPurchaseOrderPdf = async () => {
+    playClampSound();
+    const lowItems = stockItems.filter((i) => i.currentQuantity <= i.minAlertThreshold);
+    const itemsToOrder = lowItems.length > 0 ? lowItems : filteredStockItems.slice(0, 10);
+
+    if (itemsToOrder.length === 0) return;
+
+    const supplier = itemsToOrder[0]?.supplierName || 'Fournisseur Principal Aluminium';
+
+    await generateSupplierPurchaseOrderPdf({
+      supplierName: supplier,
+      orderReference: `BC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      workshopName: 'Baiti Atelier Menuiserie',
+      wilaya: 'Alger',
+      items: itemsToOrder.map((it) => {
+        const neededQty = Math.max(1, it.minAlertThreshold * 2 - it.currentQuantity);
+        return {
+          code: it.code,
+          name: it.name,
+          category: it.category,
+          quantity: neededQty,
+          unit: it.unit,
+          estimatedUnitCostDzd: it.unitCostDzd,
+        };
+      }),
+    });
+  };
+
+  const handleWhatsAppSupplierReorder = () => {
+    playTactileClick();
+    const lowItems = stockItems.filter((i) => i.currentQuantity <= i.minAlertThreshold);
+    const itemsToOrder = lowItems.length > 0 ? lowItems : filteredStockItems.slice(0, 6);
+
+    if (itemsToOrder.length === 0) return;
+
+    let msg = `*BON DE COMMANDE RÉAPPROVISIONNEMENT • BAITI ATELIER*\n`;
+    msg += `Date : ${new Date().toLocaleDateString('fr-DZ')}\n`;
+    msg += `Émetteur : Baiti Atelier Menuiserie Aluminium & PVC\n\n`;
+    msg += `*ARTICLES ET QUANTITÉS COMMANDÉES :*\n`;
+    itemsToOrder.forEach((it, idx) => {
+      const neededQty = Math.max(1, it.minAlertThreshold * 2 - it.currentQuantity);
+      msg += `${idx + 1}. *${it.name}* [${it.code}]\n   Quantité : *${neededQty} ${it.unit}* (Stock restant : ${it.currentQuantity})\n`;
+    });
+    msg += `\nMerci de bien vouloir nous confirmer la disponibilité et le délai de mise à disposition à l'atelier.`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const handleAdvance = (jobId: string) => {
@@ -413,7 +569,48 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
         </div>
       )}
 
-      {/* 1. TOP ACTION & SEARCH BAR */}
+      {/* 0B. WORKSHOP VIEW SELECTOR */}
+      <div className="grid grid-cols-2 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 font-mono text-xs">
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setWorkshopView('jobs');
+          }}
+          className={`py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer transition-all ${
+            workshopView === 'jobs'
+              ? 'bg-[#D4AF37] text-slate-950 shadow-sm'
+              : isLight
+              ? 'text-slate-600 hover:text-slate-950'
+              : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <ClipboardList className="w-3.5 h-3.5 shrink-0" />
+          <span>Affaires ({jobs.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setWorkshopView('stock');
+          }}
+          className={`py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer transition-all ${
+            workshopView === 'stock'
+              ? 'bg-[#D4AF37] text-slate-950 shadow-sm'
+              : isLight
+              ? 'text-slate-600 hover:text-slate-950'
+              : 'text-zinc-400 hover:text-white'
+          }`}
+        >
+          <Package className="w-3.5 h-3.5 shrink-0" />
+          <span>Stock & Matières ({lowStockCount > 0 ? `⚠️ ${lowStockCount}` : stockItems.length})</span>
+        </button>
+      </div>
+
+      {workshopView === 'jobs' ? (
+        <>
+          {/* 1. TOP ACTION & SEARCH BAR */}
       <div className="flex items-center gap-2">
         <div
           className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-2xl border ${
@@ -714,8 +911,320 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
           })
         )}
       </div>
+    </>
+  ) : (
+    <div className="space-y-4">
+      {/* 1. STOCK KPI METRICS */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
+        <div className={`p-3 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-[#0B0F19] border-white/10'}`}>
+          <span className="text-[10px] text-zinc-400 block uppercase">Références</span>
+          <span className="text-xl font-black text-[#D4AF37]">{stockItems.length}</span>
+        </div>
 
-      {/* 4. MODAL NOUVELLE AFFAIRE (BOTTOM SHEET / DIALOG) */}
+        <div className={`p-3 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-[#0B0F19] border-white/10'}`}>
+          <span className="text-[10px] text-zinc-400 block uppercase">Barres 6m Profilés</span>
+          <span className="text-xl font-black text-cyan-400">{totalProfileBars}</span>
+        </div>
+
+        <div className={`p-3 rounded-2xl border ${
+          lowStockCount > 0
+            ? isLight ? 'bg-rose-50 border-rose-200' : 'bg-rose-500/10 border-rose-500/30'
+            : isLight ? 'bg-white border-slate-200' : 'bg-[#0B0F19] border-white/10'
+        }`}>
+          <span className="text-[10px] text-zinc-400 block uppercase">Alertes Seuil Bas</span>
+          <span className={`text-xl font-black ${lowStockCount > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+            {lowStockCount}
+          </span>
+        </div>
+
+        <div className={`p-3 rounded-2xl border ${isLight ? 'bg-white border-slate-200' : 'bg-[#0B0F19] border-white/10'}`}>
+          <span className="text-[10px] text-zinc-400 block uppercase">Valeur Stock</span>
+          <span className="text-sm font-black text-[#D4AF37] truncate block mt-1">
+            {(totalStockValueDzd / 1000).toFixed(0)}k DZD
+          </span>
+        </div>
+      </div>
+
+      {/* 2. SEARCH & NEW ARTICLE ACTION */}
+      <div className="flex items-center gap-2">
+        <div
+          className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-2xl border ${
+            isLight ? 'bg-white border-slate-200' : 'bg-[#0B0F19] border-white/10'
+          }`}
+        >
+          <Search className="w-4 h-4 text-zinc-400 shrink-0" />
+          <input
+            type="text"
+            placeholder="Rechercher code, désignation, casier..."
+            value={stockSearchQuery}
+            onChange={(e) => setStockSearchQuery(e.target.value)}
+            className={`w-full bg-transparent text-xs font-mono focus:outline-none ${
+              isLight ? 'text-slate-900 placeholder:text-slate-400' : 'text-white placeholder:text-zinc-500'
+            }`}
+          />
+          {stockSearchQuery && (
+            <button
+              type="button"
+              onClick={() => setStockSearchQuery('')}
+              className={`p-1 rounded-lg ${isLight ? 'text-slate-400 hover:text-slate-800' : 'text-zinc-400 hover:text-white'}`}
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsNewStockModalOpen(true);
+          }}
+          className="px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-[#C5A880] to-[#D4AF37] text-slate-950 font-mono font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md hover:brightness-110 active:scale-95 transition-all shrink-0 min-h-[44px]"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Nouvel Article</span>
+        </button>
+      </div>
+
+      {/* 3. CATEGORY FILTERS */}
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs font-mono">
+        {STOCK_CATEGORIES.map((cat) => {
+          const count = cat.id === 'all' ? stockItems.length : stockItems.filter((i) => i.category === cat.id).length;
+          const isSelected = stockCategoryFilter === cat.id;
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setStockCategoryFilter(cat.id as any);
+              }}
+              className={`px-3 py-2 rounded-2xl border transition-all shrink-0 cursor-pointer min-h-[40px] flex items-center gap-1.5 ${
+                isSelected
+                  ? 'bg-[#D4AF37] text-slate-950 font-bold border-[#D4AF37]'
+                  : isLight
+                  ? 'bg-white text-slate-700 border-slate-200'
+                  : 'bg-[#0B0F19] text-zinc-300 border-white/10'
+              }`}
+            >
+              <span>{cat.label}</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                isSelected ? 'bg-black/20 text-slate-950 font-bold' : 'bg-white/10 text-zinc-400'
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 4. PROCUREMENT ACTIONS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={handleDownloadPurchaseOrderPdf}
+          className="w-full py-2.5 rounded-2xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px] hover:bg-[#D4AF37]/25 active:scale-98 transition-all shadow-xs"
+        >
+          <FileText className="w-4 h-4" />
+          <span>Bon de Commande Fournisseur (PDF)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleWhatsAppSupplierReorder}
+          className="w-full py-2.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px] hover:bg-emerald-500/20 active:scale-98 transition-all shadow-xs"
+        >
+          <MessageCircle className="w-4 h-4" />
+          <span>WhatsApp Réappro Fournisseur</span>
+        </button>
+      </div>
+
+      {/* 5. STOCK ITEMS LIST */}
+      <div className="space-y-3 font-mono">
+        {filteredStockItems.length === 0 ? (
+          <div className={`p-8 rounded-3xl border text-center space-y-3 ${isLight ? 'bg-white border-slate-200' : 'bg-[#0B0F19] border-white/10'}`}>
+            <Package className="w-8 h-8 mx-auto text-zinc-500 opacity-50" />
+            <p className="text-xs text-zinc-400">Aucun article trouvé dans cette catégorie.</p>
+          </div>
+        ) : (
+          filteredStockItems.map((item) => {
+            const isLow = item.currentQuantity <= item.minAlertThreshold;
+            return (
+              <div
+                key={item.id}
+                className={`p-4 rounded-3xl border transition-all space-y-3 ${
+                  isLow
+                    ? isLight
+                      ? 'bg-rose-50/70 border-rose-200 shadow-xs'
+                      : 'bg-rose-500/5 border-rose-500/25 shadow-xs'
+                    : isLight
+                    ? 'bg-white border-slate-200 shadow-xs'
+                    : 'bg-[#0B0F19] border-white/10'
+                }`}
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                        item.category === 'profiles'
+                          ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                          : item.category === 'hardware'
+                          ? 'bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30'
+                          : item.category === 'gaskets'
+                          ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                          : item.category === 'screws'
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      }`}>
+                        {item.code}
+                      </span>
+                      {item.rackLocation && (
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                          isLight ? 'bg-slate-100 text-slate-600' : 'bg-white/5 text-zinc-400'
+                        }`}>
+                          {item.rackLocation}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className={`text-xs font-bold truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                      {item.name}
+                    </h4>
+                    <span className={`text-[10px] block ${isLight ? 'text-slate-500' : 'text-zinc-500'}`}>
+                      Fournisseur : {item.supplierName}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteStockItem(item.id)}
+                    className={`p-1.5 rounded-xl hover:text-rose-400 cursor-pointer ${
+                      isLight ? 'text-slate-300 hover:bg-slate-100' : 'text-zinc-600 hover:bg-white/5'
+                    }`}
+                    title="Supprimer cet article du stock"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Stock status indicator */}
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-black/5 dark:border-white/5">
+                  <div className="flex items-center gap-1.5">
+                    {isLow ? (
+                      <>
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                        <span className="text-[11px] font-bold text-rose-500">
+                          Seuil critique (Min : {item.minAlertThreshold})
+                        </span>
+                      </>
+                    ) : (
+                      <span className={`text-[11px] ${isLight ? 'text-slate-600' : 'text-zinc-400'}`}>
+                        Seuil min de sécurité : {item.minAlertThreshold} {item.unit}
+                      </span>
+                    )}
+                  </div>
+
+                  <span className={`text-xs font-bold ${isLight ? 'text-slate-700' : 'text-zinc-300'}`}>
+                    {item.unitCostDzd.toLocaleString('fr-DZ')} DZD / {item.unit.split(' ')[0]}
+                  </span>
+                </div>
+
+                {/* Quantity Stepper & Control */}
+                <div className={`p-2 rounded-2xl flex items-center justify-between gap-3 ${
+                  isLight ? 'bg-slate-50 border border-slate-200' : 'bg-black/30 border border-white/5'
+                }`}>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleStockDelta(item.id, -5)}
+                      disabled={item.currentQuantity < 5}
+                      className={`px-2 py-1.5 rounded-xl border text-[10px] font-bold cursor-pointer transition-all ${
+                        item.currentQuantity < 5
+                          ? 'opacity-30 cursor-not-allowed border-transparent'
+                          : isLight
+                          ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
+                          : 'bg-white/5 border-white/10 text-zinc-300 hover:bg-white/10'
+                      }`}
+                      title="Retirer 5 unités"
+                    >
+                      -5
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStockDelta(item.id, -1)}
+                      disabled={item.currentQuantity <= 0}
+                      className={`w-8 h-8 rounded-xl border flex items-center justify-center font-bold text-xs cursor-pointer transition-all ${
+                        item.currentQuantity <= 0
+                          ? 'opacity-30 cursor-not-allowed border-transparent'
+                          : isLight
+                          ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
+                          : 'bg-white/5 border-white/10 text-zinc-300 hover:bg-white/10'
+                      }`}
+                      title="Retirer 1 unité"
+                    >
+                      -1
+                    </button>
+                  </div>
+
+                  <div className="text-center">
+                    <span className={`text-base font-black ${
+                      isLow ? 'text-rose-500' : isLight ? 'text-slate-900' : 'text-white'
+                    }`}>
+                      {item.currentQuantity}
+                    </span>
+                    <span className={`text-[10px] block font-medium ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>
+                      {item.unit}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleStockDelta(item.id, 1)}
+                      className={`w-8 h-8 rounded-xl border flex items-center justify-center font-bold text-xs cursor-pointer transition-all ${
+                        isLight
+                          ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
+                          : 'bg-white/5 border-white/10 text-zinc-300 hover:bg-white/10'
+                      }`}
+                      title="Ajouter 1 unité"
+                    >
+                      +1
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStockDelta(item.id, 5)}
+                      className={`px-2 py-1.5 rounded-xl border text-[10px] font-bold cursor-pointer transition-all ${
+                        isLight
+                          ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
+                          : 'bg-white/5 border-white/10 text-zinc-300 hover:bg-white/10'
+                      }`}
+                      title="Ajouter 5 unités"
+                    >
+                      +5
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+
+        {/* Reset Defaults button */}
+        <div className="pt-2 text-center">
+          <button
+            type="button"
+            onClick={handleResetDefaultStock}
+            className="text-[11px] font-mono text-zinc-500 hover:text-[#D4AF37] cursor-pointer inline-flex items-center gap-1"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Réinitialiser avec le stock standard d atelier</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* 4. MODAL NOUVELLE AFFAIRE (BOTTOM SHEET / DIALOG) */}
       {isNewJobModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div
@@ -1155,6 +1664,183 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Valider l'Encaissement</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 5. MODAL NOUVEL ARTICLE STOCK */}
+      {isNewStockModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div
+            className={`w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border shadow-2xl p-5 space-y-4 font-mono text-xs ${
+              isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-[#0E131F] border-white/10 text-white'
+            }`}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-black/10 dark:border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <Package className="w-4 h-4 text-[#D4AF37]" />
+                <h3 className="text-sm font-bold">Nouvel Article en Stock</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsNewStockModalOpen(false)}
+                className={`p-1.5 rounded-xl ${
+                  isLight ? 'hover:bg-slate-100 text-slate-400 hover:text-slate-800' : 'hover:bg-white/10 text-zinc-400 hover:text-white'
+                }`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateStockItem} className="space-y-3">
+              <div className="space-y-1">
+                <label className={`text-[11px] block ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>Désignation de l'Article *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Meneau 45 RPT Tubulaire (6.00m)"
+                  value={newStockName}
+                  onChange={(e) => setNewStockName(e.target.value)}
+                  className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-[#D4AF37] ${
+                    isLight ? 'border-slate-300 bg-slate-50 text-slate-900 placeholder:text-slate-400' : 'border-white/10 bg-black/20 text-white placeholder:text-zinc-500'
+                  }`}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className={`text-[11px] block ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>Code / Référence</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: ALU-MEN-45"
+                    value={newStockCode}
+                    onChange={(e) => setNewStockCode(e.target.value)}
+                    className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-[#D4AF37] ${
+                      isLight ? 'border-slate-300 bg-slate-50 text-slate-900 placeholder:text-slate-400' : 'border-white/10 bg-black/20 text-white placeholder:text-zinc-500'
+                    }`}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className={`text-[11px] block ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>Catégorie</label>
+                  <select
+                    value={newStockCategory}
+                    onChange={(e) => setNewStockCategory(e.target.value as WorkshopStockCategory)}
+                    className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-[#D4AF37] ${
+                      isLight ? 'border-slate-300 bg-slate-50 text-slate-900' : 'border-white/10 bg-black/20 text-white'
+                    }`}
+                  >
+                    <option value="profiles">Profilés 6m</option>
+                    <option value="hardware">Quincaillerie</option>
+                    <option value="gaskets">Joints & Cales</option>
+                    <option value="screws">Visserie & Fixation</option>
+                    <option value="glass">Vitrage</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <label className={`text-[11px] block ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>Quantité Initiale</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={newStockQuantity}
+                    onChange={(e) => setNewStockQuantity(parseInt(e.target.value) || 0)}
+                    className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-[#D4AF37] ${
+                      isLight ? 'border-slate-300 bg-slate-50 text-slate-900' : 'border-white/10 bg-black/20 text-white'
+                    }`}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className={`text-[11px] block ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>Seuil Alerte Min</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={newStockMinThreshold}
+                    onChange={(e) => setNewStockMinThreshold(parseInt(e.target.value) || 0)}
+                    className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-[#D4AF37] ${
+                      isLight ? 'border-slate-300 bg-slate-50 text-slate-900' : 'border-white/10 bg-black/20 text-white'
+                    }`}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className={`text-[11px] block ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>Unité</label>
+                  <input
+                    type="text"
+                    value={newStockUnit}
+                    onChange={(e) => setNewStockUnit(e.target.value)}
+                    placeholder="barres, pcs..."
+                    className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-[#D4AF37] ${
+                      isLight ? 'border-slate-300 bg-slate-50 text-slate-900' : 'border-white/10 bg-black/20 text-white'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className={`text-[11px] block ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>Prix Unitaire Estimé (DZD)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={50}
+                    value={newStockUnitCost}
+                    onChange={(e) => setNewStockUnitCost(parseInt(e.target.value) || 0)}
+                    className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-[#D4AF37] ${
+                      isLight ? 'border-slate-300 bg-slate-50 text-slate-900' : 'border-white/10 bg-black/20 text-white'
+                    }`}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className={`text-[11px] block ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>Casier / Rack</label>
+                  <input
+                    type="text"
+                    value={newStockRack}
+                    onChange={(e) => setNewStockRack(e.target.value)}
+                    placeholder="Ex: RACK-A-03"
+                    className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-[#D4AF37] ${
+                      isLight ? 'border-slate-300 bg-slate-50 text-slate-900' : 'border-white/10 bg-black/20 text-white'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className={`text-[11px] block ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>Fournisseur Habituel</label>
+                <input
+                  type="text"
+                  value={newStockSupplier}
+                  onChange={(e) => setNewStockSupplier(e.target.value)}
+                  placeholder="Ex: Profilor, Algal, Quincaillerie El Eulma..."
+                  className={`w-full p-2.5 rounded-xl border focus:outline-none focus:border-[#D4AF37] ${
+                    isLight ? 'border-slate-300 bg-slate-50 text-slate-900' : 'border-white/10 bg-black/20 text-white'
+                  }`}
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-black/10 dark:border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsNewStockModalOpen(false)}
+                  className={`px-4 py-2 rounded-xl border font-bold text-xs cursor-pointer ${
+                    isLight ? 'border-slate-300 hover:bg-slate-100 text-slate-700' : 'border-white/10 hover:bg-white/5 text-zinc-300'
+                  }`}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#D4AF37] text-slate-950 font-bold text-xs cursor-pointer hover:brightness-110 active:scale-95 transition-all shadow-md"
+                >
+                  Enregistrer l'Article
                 </button>
               </div>
             </form>
