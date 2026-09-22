@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { playTactileClick, playClampSound, playSwitchSound } from '../../utils/audioFeedback';
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
-import { generateInstallationAcceptancePdf } from '../../utils/pdfGenerator';
+import { generateInstallationAcceptancePdf, generateFabricationOrderPdf } from '../../utils/pdfGenerator';
 import type { MobileNavTab } from './MobileBottomNavigation';
 
 interface MobileWorkshopScreenProps {
@@ -214,6 +214,25 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
         month: 'long',
         year: 'numeric',
       }),
+    });
+  };
+
+  const handleDownloadFabricationOrderPdf = async (job: WorkshopJob) => {
+    playClampSound();
+    await generateFabricationOrderPdf({
+      jobId: job.id,
+      clientName: job.clientName,
+      clientPhone: job.clientPhone,
+      wilaya: job.wilaya,
+      stage: job.stage,
+      description: job.description,
+      itemCount: job.itemCount,
+      totalAmountDzd: job.totalAmountDzd,
+      depositDzd: job.depositDzd,
+      dueDate: job.dueDate,
+      priority: job.priority,
+      profileSystem: job.profileSystem,
+      notes: job.notes,
     });
   };
 
@@ -500,12 +519,28 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
                   </button>
                 </div>
 
-                {/* Reception & Handover Actions (PV de Pose) */}
-                <div className="pt-2 border-t border-black/5 dark:border-white/5 flex items-center gap-1.5">
+                {/* Production Order & Handover Actions (OF & PV) */}
+                <div className="pt-2 border-t border-black/5 dark:border-white/5 flex items-center gap-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadFabricationOrderPdf(job)}
+                    className={`flex-1 py-2 px-2 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px] active:scale-98 transition-all ${
+                      job.stage !== 'pose' && job.stage !== 'termine'
+                        ? 'bg-sky-500/15 border-sky-500/30 text-sky-400 hover:bg-sky-500/25 shadow-xs'
+                        : isLight
+                        ? 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+                        : 'bg-white/5 border-white/10 text-zinc-300 hover:bg-white/10'
+                    }`}
+                    title="Générer la Fiche Suiveuse d'Atelier / Ordre de Fabrication officiel (PDF)"
+                  >
+                    <ClipboardList className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                    <span>Fiche OF</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => handleDownloadPvPdf(job)}
-                    className={`flex-1 py-2 px-2.5 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px] active:scale-98 transition-all ${
+                    className={`flex-1 py-2 px-2 rounded-xl border font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px] active:scale-98 transition-all ${
                       job.stage === 'pose' || job.stage === 'termine'
                         ? 'bg-[#D4AF37]/15 border-[#D4AF37]/40 text-[#D4AF37] hover:bg-[#D4AF37]/25 shadow-xs'
                         : isLight
@@ -514,17 +549,17 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
                     }`}
                     title="Générer le Procès-Verbal de Réception de Pose officiel (PDF)"
                   >
-                    <FileCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
-                    <span>PV de Pose (PDF)</span>
+                    <FileCheck className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                    <span>PV de Pose</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleSharePvWhatsApp(job)}
-                    className="py-2 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px] hover:bg-emerald-500/20 active:scale-98 transition-all"
+                    className="py-2 px-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px] hover:bg-emerald-500/20 active:scale-98 transition-all"
                     title="Partager le résumé de réception et solde par WhatsApp"
                   >
-                    <MessageCircle className="w-3.5 h-3.5" />
+                    <MessageCircle className="w-3.5 h-3.5 shrink-0" />
                     <span>WhatsApp PV</span>
                   </button>
                 </div>

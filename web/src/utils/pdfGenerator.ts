@@ -1928,3 +1928,252 @@ export async function generateGlazierCuttingOrderPdf(params: GlazierCuttingOrder
   doc.save(safeFilename);
 }
 
+export interface FabricationOrderPdfParams {
+  jobId: string;
+  clientName: string;
+  clientPhone: string;
+  wilaya: string;
+  stage: string;
+  description: string;
+  itemCount: number;
+  totalAmountDzd: number;
+  depositDzd: number;
+  dueDate: string;
+  priority: string;
+  profileSystem?: string;
+  notes?: string;
+}
+
+/**
+ * Generates an official Algerian Workshop Fabrication & Traveler Order Sheet (Fiche Suiveuse d'Atelier / OF)
+ * for tracking aluminum and PVC joinery across 5 fabrication workstations.
+ */
+export async function generateFabricationOrderPdf(params: FabricationOrderPdfParams) {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const ofNumber = `OF-2026-${params.jobId.replace(/\D/g, '') || Math.floor(1000 + Math.random() * 9000)}`;
+  const emissionDate = new Date().toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const balanceDzd = Math.max(0, params.totalAmountDzd - params.depositDzd);
+
+  // 1. Header Banner
+  doc.setFillColor(15, 23, 42); // Deep slate #0F172A
+  doc.rect(0, 0, 210, 38, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('BAITI ATELIER', 14, 16);
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(203, 213, 225);
+  doc.text('Menuiserie Aluminium & PVC • Gestion de la Production Atelier', 14, 23);
+  doc.text('Fiche Suiveuse d\'Atelier • Contrôle Qualité aux Postes', 14, 28);
+  doc.text('Zone Industrielle • 58 Wilayas Algérie • Tel: +213 (0) 550 12 34 56', 14, 33);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(212, 175, 55); // Accent Gold #D4AF37
+  doc.text('ORDRE DE FABRICATION', 130, 16);
+
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(226, 232, 240);
+  doc.text(`N° OF : ${ofNumber}`, 130, 23);
+  doc.text(`Émis le : ${emissionDate}`, 130, 28);
+  doc.text(`Livraison : ${params.dueDate || 'À convenir'}`, 130, 33);
+
+  // 2. Client & Job Summary Cards
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 43, 88, 30, 2, 2, 'FD');
+  doc.roundedRect(108, 43, 88, 30, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  doc.text('DONNÉES CLIENT & CHANTIER :', 18, 49);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Client : ${params.clientName || 'Client Particulier'}`, 18, 55);
+  doc.text(`Téléphone : ${params.clientPhone || 'Non renseigné'}`, 18, 60);
+  doc.text(`Wilaya : ${params.wilaya || 'Alger'}`, 18, 65);
+  doc.text(`Statut initial : ${params.stage.toUpperCase()}`, 18, 70);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  doc.text('RÉCAPITULATIF FINANCIER & PRIORITÉ :', 112, 49);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Priorité : ${params.priority === 'critique' ? 'Critique (Urgentissime)' : params.priority === 'urgent' ? 'Urgente' : 'Normale'}`, 112, 55);
+  doc.text(`Montant Devis : ${params.totalAmountDzd.toLocaleString('fr-DZ')} DZD`, 112, 60);
+  doc.text(`Acompte Reçu : ${params.depositDzd.toLocaleString('fr-DZ')} DZD`, 112, 65);
+  doc.text(`Solde à Percevoir : ${balanceDzd.toLocaleString('fr-DZ')} DZD`, 112, 70);
+
+  // 3. Technical Specifications Banner
+  doc.setDrawColor(212, 175, 55);
+  doc.setFillColor(254, 252, 232); // Pale amber #FEFCE8
+  doc.roundedRect(14, 76, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(120, 53, 15);
+  doc.text('SPÉCIFICATIONS TECHNIQUES DE L\'OUVRAGE :', 18, 81);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(69, 26, 3);
+  const profileLabel = formatProfileSystemFr(params.profileSystem || 'gamme_45_thermal');
+  doc.text(`Série Profilés : ${profileLabel} • Quantité : ${params.itemCount} châssis`, 18, 86);
+  doc.text(`Description : ${params.description || 'Menuiserie standard selon cotes carnet.'}`, 18, 91);
+
+  // 4. Five Fabrication Workstations Table
+  const stations = [
+    [
+      'Poste 1\nDébitage & Tronçonnage',
+      '• Coupe profilés dormant et ouvrant (45° / 90°)\n• Coupe parcloses et rejets d\'eau\n• Contrôle ébavurage et vérification longueurs',
+      '[   ] Conforme\nTolérance ±0.5mm',
+      '[   ] Fait\nDate : ___/___',
+    ],
+    [
+      'Poste 2\nUsinage & Fraisage',
+      '• Lumières d\'évacuation d\'eau (drainage dormant)\n• Trous de poignée et logement têtière de serrure\n• Fraisage des embouts de traverse et meneaux',
+      '[   ] Conforme\nDrainage vérifié',
+      '[   ] Fait\nDate : ___/___',
+    ],
+    [
+      'Poste 3\nAssemblage & Sertissage',
+      '• Mise en place équerres de sertissage / vissage\n• Injection colle polyuréthane étanchéité d\'angle\n• Insertion joints d\'étanchéité EPDM dans gorge',
+      '[   ] Conforme\nDiagonales égales',
+      '[   ] Fait\nDate : ___/___',
+    ],
+    [
+      'Poste 4\nQuincaillerie & Vitrage',
+      '• Pose galets roulement inox ou compas OB\n• Calage périmétrique des vitrages (cales 2 à 5mm)\n• Clippage des parcloses et joints de bourrage',
+      '[   ] Conforme\nManœuvre fluide',
+      '[   ] Fait\nDate : ___/___',
+    ],
+    [
+      'Poste 5\nContrôle Final & Emballage',
+      '• Nettoyage résidus aluminium et dépoussiérage\n• Contrôle fermeture, compression joints et jeu\n• Filmage étirable et étiquetage repère chantier',
+      '[   ] Validé\nBon pour pose',
+      '[   ] Fait\nDate : ___/___',
+    ],
+  ];
+
+  autoTable(doc, {
+    startY: 97,
+    head: [
+      ['Poste d\'Atelier', 'Opérations Techniques de Fabrication', 'Contrôle Qualité Requis', 'Visa Opérateur'],
+    ],
+    body: stations,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
+      fontSize: 8,
+      fontStyle: 'bold',
+      halign: 'center',
+    },
+    bodyStyles: {
+      fontSize: 7,
+      textColor: [15, 23, 42],
+      valign: 'middle',
+    },
+    columnStyles: {
+      0: { cellWidth: 38, fontStyle: 'bold' },
+      1: { cellWidth: 88 },
+      2: { cellWidth: 32, fontSize: 6.5 },
+      3: { cellWidth: 24, halign: 'center', fontSize: 6.5 },
+    },
+  });
+
+  // 5. Notes and Directives
+  const tableEndY = (doc as any).lastAutoTable.finalY + 4;
+  const isOverflow = tableEndY > 235;
+
+  if (isOverflow) {
+    doc.addPage();
+  }
+
+  const specY = isOverflow ? 20 : tableEndY;
+
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, specY, 182, 20, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Prescriptions d\'Atelier & Directives de Sécurité :', 18, specY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text('1. Port obligatoire des lunettes de protection, gants anti-coupure et coquilles antibruit à tous les postes.', 18, specY + 9.5);
+  doc.text('2. Contrôle impératif de l\'équerrage et de l\'égalité des diagonales avant la pose des vitrages.', 18, specY + 13.5);
+  doc.text('3. Toute non-conformité supérieure à 1 mm doit être signalée au chef d\'atelier avant sertissage définitif.', 18, specY + 17.5);
+
+  // 6. Signatures & Stamp Blocks
+  const signY = specY + 23;
+  const qrDataUrl = await QRCode.toDataURL(
+    `https://web-two-tan-31.vercel.app/verify/of?job=${params.jobId}&ref=${ofNumber}`,
+    { width: 120, margin: 1 }
+  );
+
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 88, 28, 2, 2, 'FD');
+  doc.roundedRect(108, signY, 88, 28, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Le Chef d\'Atelier (Lancement de Fabrication) :', 18, signY + 5.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Visa de validation des débits et plans :', 18, signY + 11);
+  doc.text(`Date : ${emissionDate}`, 18, signY + 16);
+  doc.text('Signature : ____________________', 18, signY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Contrôle Qualité & Libération Sortie :', 112, signY + 5.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Bon pour expédition et pose sur chantier', 112, signY + 11);
+  doc.text('Cachet de l\'Atelier :', 112, signY + 16);
+
+  // QR Code embedded
+  doc.addImage(qrDataUrl, 'PNG', 166, signY + 7, 18, 18);
+
+  // Footer Note
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text('Fiche suiveuse de fabrication éditée via Baiti Atelier • À conserver avec les châssis jusqu\'à la pose', 105, 290, {
+    align: 'center',
+  });
+
+  const safeFilename = `Fiche_OF_Fabrication_${ofNumber}_${(params.clientName || 'Client').replace(/\s+/g, '_')}.pdf`;
+  doc.save(safeFilename);
+}
+
+
