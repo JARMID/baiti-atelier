@@ -7,6 +7,7 @@ import {
   FileDown,
   ChevronDown,
   ChevronUp,
+  Check,
 } from 'lucide-react';
 import {
   playTactileClick,
@@ -22,6 +23,40 @@ interface PresetItem {
   h: number;
   opening: OpeningType;
 }
+
+interface AccessoryItem {
+  id: string;
+  name: string;
+  desc: string;
+  priceDzd: number;
+}
+
+const ACCESSORIES_LIST: AccessoryItem[] = [
+  {
+    id: 'multipoint_lock',
+    name: 'Serrure 3 Points Sécurité',
+    desc: 'Crémone européenne et pênes basculants',
+    priceDzd: 6500,
+  },
+  {
+    id: 'heavy_rollers',
+    name: 'Galets Roulements Inox',
+    desc: 'Haute charge pour glisse silencieuse',
+    priceDzd: 4200,
+  },
+  {
+    id: 'mosquito_screen',
+    name: 'Moustiquaire Intégrée',
+    desc: 'Toile fibre de verre enroulable',
+    priceDzd: 8500,
+  },
+  {
+    id: 'silicone_seal_pack',
+    name: 'Pack Calfeutrement & Cales',
+    desc: 'Silicone neutre bâtiment et calage pro',
+    priceDzd: 2500,
+  },
+];
 
 const ALGERIAN_PRESETS: PresetItem[] = [
   { id: 'p1', name: 'Fenêtre 120×120 Coulissante', w: 1200, h: 1200, opening: 'sliding_2' },
@@ -52,6 +87,21 @@ export const MobileConfiguratorScreen: React.FC = () => {
   const isRtl = language === 'ar';
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
+  const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
+
+  const toggleAccessory = (id: string) => {
+    playTactileClick();
+    setSelectedAccessories((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const accessoriesTotal = selectedAccessories.reduce((sum, id) => {
+    const item = ACCESSORIES_LIST.find((a) => a.id === id);
+    return sum + (item ? item.priceDzd : 0);
+  }, 0);
+
+  const grandTotal = cost.totalEstimatedDzd + accessoriesTotal;
 
   const handleAdjustWidth = (delta: number) => {
     playTactileClick();
@@ -74,7 +124,11 @@ export const MobileConfiguratorScreen: React.FC = () => {
 
   const handleShareWhatsApp = () => {
     playTactileClick();
-    const msg = `*DEMANDE DE DEVIS BAITI ATELIER*\nChâssis : ${config.width} × ${config.height} mm\nOuverture : ${config.openingType}\nProfilé : ${config.profileSystem}\nFinition : ${config.finishColor}\nVitrage : ${config.glassType}\nWilaya : ${selectedWilaya}\nMontant Estimé : ${cost.totalEstimatedDzd.toLocaleString('fr-DZ')} DZD\n\nConçu sur https://web-two-tan-31.vercel.app`;
+    const accList = selectedAccessories
+      .map((id) => ACCESSORIES_LIST.find((a) => a.id === id)?.name)
+      .filter(Boolean)
+      .join(', ');
+    const msg = `*DEMANDE DE DEVIS BAITI ATELIER*\nChâssis : ${config.width} × ${config.height} mm\nOuverture : ${config.openingType}\nProfilé : ${config.profileSystem}\nFinition : ${config.finishColor}\nVitrage : ${config.glassType}\nWilaya : ${selectedWilaya}${accList ? `\nOptions : ${accList}` : ''}\nMontant Estimé : ${grandTotal.toLocaleString('fr-DZ')} DZD\n\nConçu sur https://web-two-tan-31.vercel.app`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
@@ -82,9 +136,14 @@ export const MobileConfiguratorScreen: React.FC = () => {
     playTactileClick();
     setIsPdfGenerating(true);
     try {
+      const adjustedCost = {
+        ...cost,
+        hardwareCostDzd: cost.hardwareCostDzd + accessoriesTotal,
+        totalEstimatedDzd: grandTotal,
+      };
       await generateClientDevisPdf(
         config,
-        cost,
+        adjustedCost,
         'Client Atelier Mobile',
         '05 50 00 00 00',
         selectedWilaya
@@ -405,7 +464,60 @@ export const MobileConfiguratorScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* 8. ESTIMATION BREAKDOWN & ACTION CARD */}
+      {/* 8. ACCESSORIES & HARDWARE PACK */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
+          <span>Options & Quincaillerie Chantier</span>
+          {accessoriesTotal > 0 && (
+            <span className="text-emerald-400 font-bold">+{accessoriesTotal.toLocaleString('fr-DZ')} DZD</span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {ACCESSORIES_LIST.map((acc) => {
+            const isChecked = selectedAccessories.includes(acc.id);
+            return (
+              <button
+                key={acc.id}
+                type="button"
+                onClick={() => toggleAccessory(acc.id)}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer min-h-[52px] flex items-start justify-between gap-2 ${
+                  isChecked
+                    ? 'border-[#D4AF37] bg-[#D4AF37]/10'
+                    : isLight
+                    ? 'bg-white border-slate-200 text-slate-800'
+                    : 'bg-[#0B0F19] border-white/10 text-white'
+                }`}
+              >
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 font-bold text-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+                    <span>{acc.name}</span>
+                  </div>
+                  <div className="text-[10px] text-zinc-400 pl-3 leading-tight">{acc.desc}</div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="text-xs font-mono font-bold text-[#D4AF37]">
+                    +{acc.priceDzd.toLocaleString('fr-DZ')}
+                  </span>
+                  <div
+                    className={`w-4 h-4 rounded-md border flex items-center justify-center mt-1 ml-auto ${
+                      isChecked
+                        ? 'border-[#D4AF37] bg-[#D4AF37] text-slate-950'
+                        : 'border-zinc-500'
+                    }`}
+                  >
+                    {isChecked && <Check className="w-3 h-3" />}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 9. ESTIMATION BREAKDOWN & ACTION CARD */}
       <div
         className={`p-4 rounded-3xl border shadow-xl space-y-3 ${
           isLight ? 'bg-white border-slate-200' : 'bg-[#0B0F19] border-white/10'
@@ -417,7 +529,7 @@ export const MobileConfiguratorScreen: React.FC = () => {
               Estimation Totale Atelier
             </span>
             <div className="text-2xl font-black font-mono text-[#D4AF37]">
-              {cost.totalEstimatedDzd.toLocaleString('fr-DZ')} <span className="text-xs font-normal">DZD</span>
+              {grandTotal.toLocaleString('fr-DZ')} <span className="text-xs font-normal">DZD</span>
             </div>
           </div>
 
@@ -444,6 +556,12 @@ export const MobileConfiguratorScreen: React.FC = () => {
               <span>Quincaillerie & Joints EPDM :</span>
               <span className="font-semibold text-white">{cost.hardwareCostDzd.toLocaleString('fr-DZ')} DZD</span>
             </div>
+            {accessoriesTotal > 0 && (
+              <div className="flex justify-between text-zinc-400">
+                <span>Options Renforcées Sélectionnées :</span>
+                <span className="font-semibold text-emerald-400">+{accessoriesTotal.toLocaleString('fr-DZ')} DZD</span>
+              </div>
+            )}
             <div className="flex justify-between text-zinc-400">
               <span>Main-d'œuvre Atelier & Montage :</span>
               <span className="font-semibold text-white">{cost.laborCostDzd.toLocaleString('fr-DZ')} DZD</span>
