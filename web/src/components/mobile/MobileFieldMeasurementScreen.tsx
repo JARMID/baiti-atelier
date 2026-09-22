@@ -16,6 +16,7 @@ import {
   FileCheck,
   Copy,
   Minus,
+  Compass,
 } from 'lucide-react';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -26,6 +27,7 @@ import {
   formatGlassTypeFr,
   formatShutterTypeFr,
 } from '../../utils/pdfGenerator';
+import { MasonrySquareCalculatorModal } from './MasonrySquareCalculatorModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 
 export interface FieldOpeningItem {
@@ -183,6 +185,10 @@ export const MobileFieldMeasurementScreen: React.FC<MobileFieldMeasurementScreen
   const [newShutter, setNewShutter] = useState<ShutterType>('manual');
   const [newQty, setNewQty] = useState(1);
   const [isGeneratingGlazierPdf, setIsGeneratingGlazierPdf] = useState(false);
+
+  // Masonry Out-of-Square Calculator Modal state
+  const [isSquareModalOpen, setIsSquareModalOpen] = useState(false);
+  const [selectedOpeningForSquare, setSelectedOpeningForSquare] = useState<FieldOpeningItem | null>(null);
 
   // Total project cost and surfaces calculation
   const totalProjectDzd = openings.reduce(
@@ -669,6 +675,24 @@ export const MobileFieldMeasurementScreen: React.FC<MobileFieldMeasurementScreen
                     <Copy className="w-3.5 h-3.5 text-[#D4AF37]" />
                   </button>
 
+                  {/* Square / Diagonals Calculator for this Opening */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTactileClick();
+                      setSelectedOpeningForSquare(op);
+                      setIsSquareModalOpen(true);
+                    }}
+                    className={`p-1.5 rounded-xl border cursor-pointer active:scale-95 transition-all ${
+                      isLight
+                        ? 'border-slate-300 bg-white hover:bg-slate-100 text-cyan-700'
+                        : 'border-white/10 bg-white/5 hover:bg-white/10 text-cyan-400'
+                    }`}
+                    title="Vérifier le faux-équerrage et les diagonales pour ce châssis"
+                  >
+                    <Compass className="w-3.5 h-3.5" />
+                  </button>
+
                   {/* Remove Opening */}
                   <button
                     type="button"
@@ -768,6 +792,30 @@ export const MobileFieldMeasurementScreen: React.FC<MobileFieldMeasurementScreen
                 <option value="gamme_67_slide">Coulissant 67</option>
                 <option value="pvc_70_chamber">PVC 70mm 5Ch</option>
               </select>
+            </div>
+
+            {/* Out-of-Square / Diagonals Assistant button */}
+            <div className="col-span-12">
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick();
+                  setSelectedOpeningForSquare(null);
+                  setIsSquareModalOpen(true);
+                }}
+                className={`w-full py-2 px-3 rounded-xl border text-[11px] font-bold flex items-center justify-between cursor-pointer transition-all active:scale-98 ${
+                  isLight
+                    ? 'bg-cyan-50 border-cyan-300 text-cyan-950 hover:bg-cyan-100 shadow-xs'
+                    : 'bg-cyan-950/40 border-cyan-500/30 text-cyan-300 hover:bg-cyan-900/40'
+                }`}
+                title="Calculer le faux-équerrage par les diagonales D1/D2 et déduire le jeu de pose"
+              >
+                <div className="flex items-center gap-2">
+                  <Compass className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span>Assistant Faux-Équerrage (Diagonales D1 / D2)</span>
+                </div>
+                <span className="text-[10px] text-cyan-400/80 font-mono">DTU 36.5</span>
+              </button>
             </div>
 
             {/* Width */}
@@ -1025,6 +1073,42 @@ export const MobileFieldMeasurementScreen: React.FC<MobileFieldMeasurementScreen
           </div>
         )}
       </div>
+
+      {/* 4. MASONRY OUT-OF-SQUARE & DIAGONALS MODAL */}
+      {isSquareModalOpen && (
+        <MasonrySquareCalculatorModal
+          key={selectedOpeningForSquare ? selectedOpeningForSquare.id : `new_${newWidth}_${newHeight}`}
+          isOpen={isSquareModalOpen}
+          onClose={() => {
+            setIsSquareModalOpen(false);
+            setSelectedOpeningForSquare(null);
+          }}
+          initialWidth={selectedOpeningForSquare ? selectedOpeningForSquare.width : newWidth}
+          initialHeight={selectedOpeningForSquare ? selectedOpeningForSquare.height : newHeight}
+          openingLabel={
+            selectedOpeningForSquare
+              ? selectedOpeningForSquare.roomName
+              : newRoom || 'Nouvelle ouverture'
+          }
+          onApplyDimensions={(w, h) => {
+            playClampSound();
+            if (selectedOpeningForSquare) {
+              setOpenings((prev) =>
+                prev.map((item) =>
+                  item.id === selectedOpeningForSquare.id
+                    ? { ...item, width: w, height: h }
+                    : item
+                )
+              );
+            } else {
+              setNewWidth(w);
+              setNewHeight(h);
+            }
+            setIsSquareModalOpen(false);
+            setSelectedOpeningForSquare(null);
+          }}
+        />
+      )}
     </div>
   );
 };
