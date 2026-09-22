@@ -106,45 +106,137 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
     return () => window.removeEventListener('storage', syncSurvey);
   }, []);
 
-  // Pre-fill initial demands from current active window
-  const [demands, setDemands] = useState<CutDemand1D[]>(() => [
-    {
-      id: 'd1',
-      length: config.width,
-      quantity: 2,
-      miterLeft: 45,
-      miterRight: 45,
-      label: 'Dormant Haut/Bas',
-      profileCode: 'DORMANT-45',
-    },
-    {
-      id: 'd2',
-      length: config.height,
-      quantity: 2,
-      miterLeft: 45,
-      miterRight: 45,
-      label: 'Dormant Montants',
-      profileCode: 'DORMANT-45',
-    },
-    {
-      id: 'd3',
-      length: Math.round(config.width / 2 + 15),
-      quantity: 4,
-      miterLeft: 45,
-      miterRight: 45,
-      label: 'Ouvrant Traverses',
-      profileCode: 'OUVRANT-45',
-    },
-    {
-      id: 'd4',
-      length: config.height - 70,
-      quantity: 4,
-      miterLeft: 45,
-      miterRight: 45,
-      label: 'Ouvrant Montants',
-      profileCode: 'OUVRANT-45',
-    },
-  ]);
+  // Pre-fill initial demands from current active window or auto-imported survey
+  const [demands, setDemands] = useState<CutDemand1D[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const autoImport = sessionStorage.getItem('baiti_auto_import_survey_cutting');
+        if (autoImport === 'true') {
+          sessionStorage.removeItem('baiti_auto_import_survey_cutting');
+          const rawOpenings = localStorage.getItem('baiti_field_measurement_project');
+          if (rawOpenings) {
+            const openings = JSON.parse(rawOpenings);
+            if (Array.isArray(openings) && openings.length > 0) {
+              const projectDemands: CutDemand1D[] = [];
+              openings.forEach((op: any, opIdx: number) => {
+                const room = op.roomName?.trim() || `Châssis #${opIdx + 1}`;
+                const qty = op.quantity || 1;
+                const w = Math.round(op.width || 1200);
+                const h = Math.round(op.height || 1200);
+
+                projectDemands.push({
+                  id: `d_s_${opIdx}_1`,
+                  length: w,
+                  quantity: 2 * qty,
+                  miterLeft: 45,
+                  miterRight: 45,
+                  label: `[${room}] Dormant H/B`,
+                  profileCode: 'DORMANT-45',
+                });
+                projectDemands.push({
+                  id: `d_s_${opIdx}_2`,
+                  length: h,
+                  quantity: 2 * qty,
+                  miterLeft: 45,
+                  miterRight: 45,
+                  label: `[${room}] Dormant Montants`,
+                  profileCode: 'DORMANT-45',
+                });
+
+                if (op.openingType === 'sliding_2' || op.openingType === 'sliding_3') {
+                  const panesCount = op.openingType === 'sliding_3' ? 3 : 2;
+                  const sashWidth = Math.round(w / panesCount + 15);
+                  const sashHeight = h - 70;
+                  projectDemands.push({
+                    id: `d_s_${opIdx}_3`,
+                    length: sashWidth,
+                    quantity: 2 * panesCount * qty,
+                    miterLeft: 45,
+                    miterRight: 45,
+                    label: `[${room}] Ouvrant Traverses`,
+                    profileCode: 'OUVRANT-45',
+                  });
+                  projectDemands.push({
+                    id: `d_s_${opIdx}_4`,
+                    length: sashHeight,
+                    quantity: 2 * panesCount * qty,
+                    miterLeft: 45,
+                    miterRight: 45,
+                    label: `[${room}] Ouvrant Montants`,
+                    profileCode: 'OUVRANT-45',
+                  });
+                } else if (op.openingType !== 'fixed') {
+                  const sashesCount = op.openingType === 'casement_2' ? 2 : 1;
+                  const sashWidth = Math.round(w / sashesCount - (sashesCount === 2 ? 65 : 60));
+                  const sashHeight = h - 70;
+                  projectDemands.push({
+                    id: `d_s_${opIdx}_3`,
+                    length: sashWidth,
+                    quantity: 2 * sashesCount * qty,
+                    miterLeft: 45,
+                    miterRight: 45,
+                    label: `[${room}] Ouvrant H/B`,
+                    profileCode: 'OUVRANT-45',
+                  });
+                  projectDemands.push({
+                    id: `d_s_${opIdx}_4`,
+                    length: sashHeight,
+                    quantity: 2 * sashesCount * qty,
+                    miterLeft: 45,
+                    miterRight: 45,
+                    label: `[${room}] Ouvrant Montants`,
+                    profileCode: 'OUVRANT-45',
+                  });
+                }
+              });
+              if (projectDemands.length > 0) return projectDemands;
+            }
+          }
+        }
+      } catch {
+        // Handled
+      }
+    }
+
+    return [
+      {
+        id: 'd1',
+        length: config.width,
+        quantity: 2,
+        miterLeft: 45,
+        miterRight: 45,
+        label: 'Dormant Haut/Bas',
+        profileCode: 'DORMANT-45',
+      },
+      {
+        id: 'd2',
+        length: config.height,
+        quantity: 2,
+        miterLeft: 45,
+        miterRight: 45,
+        label: 'Dormant Montants',
+        profileCode: 'DORMANT-45',
+      },
+      {
+        id: 'd3',
+        length: Math.round(config.width / 2 + 15),
+        quantity: 4,
+        miterLeft: 45,
+        miterRight: 45,
+        label: 'Ouvrant Traverses',
+        profileCode: 'OUVRANT-45',
+      },
+      {
+        id: 'd4',
+        length: config.height - 70,
+        quantity: 4,
+        miterLeft: 45,
+        miterRight: 45,
+        label: 'Ouvrant Montants',
+        profileCode: 'OUVRANT-45',
+      },
+    ];
+  });
 
   const [newLength, setNewLength] = useState(1200);
   const [newQty, setNewQty] = useState(2);

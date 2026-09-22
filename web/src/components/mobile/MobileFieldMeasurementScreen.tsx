@@ -14,6 +14,8 @@ import {
   Layers,
   Scissors,
   FileCheck,
+  Copy,
+  Minus,
 } from 'lucide-react';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -240,6 +242,55 @@ export const MobileFieldMeasurementScreen: React.FC<MobileFieldMeasurementScreen
   const handleRemoveOpening = (id: string) => {
     playTactileClick();
     setOpenings((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleDuplicateOpening = (op: FieldOpeningItem) => {
+    playClampSound();
+    const duplicated: FieldOpeningItem = {
+      ...op,
+      id: createOpeningId(),
+      roomName: `${op.roomName} (Copie)`,
+    };
+    setOpenings((prev) => [...prev, duplicated]);
+  };
+
+  const handleUpdateQuantity = (id: string, delta: number) => {
+    playTactileClick();
+    setOpenings((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const updatedQty = Math.max(1, item.quantity + delta);
+        return { ...item, quantity: updatedQty };
+      })
+    );
+  };
+
+  const handleSendSurveyToCutting = () => {
+    playClampSound();
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('baiti_auto_import_survey_cutting', 'true');
+      } catch {
+        // Handled
+      }
+    }
+    if (onNavigateTab) {
+      onNavigateTab('cutting');
+    }
+  };
+
+  const handleLaunchWorkshopJob = () => {
+    playClampSound();
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('baiti_auto_open_new_job_survey', 'true');
+      } catch {
+        // Handled
+      }
+    }
+    if (onNavigateTab) {
+      onNavigateTab('workshop');
+    }
   };
 
   const handleShareProjectWhatsApp = () => {
@@ -563,7 +614,7 @@ export const MobileFieldMeasurementScreen: React.FC<MobileFieldMeasurementScreen
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 shrink-0">
                 <div className="text-right">
                   <div className="font-black text-cyan-400">
                     {(op.estimatedUnitPriceDzd * op.quantity).toLocaleString('fr-DZ')} DZD
@@ -575,13 +626,59 @@ export const MobileFieldMeasurementScreen: React.FC<MobileFieldMeasurementScreen
                   )}
                 </div>
 
-                <button
-                  onClick={() => handleRemoveOpening(op.id)}
-                  className="p-1.5 rounded-lg text-zinc-400 hover:text-red-400 cursor-pointer"
-                  title="Supprimer ce châssis"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-1 self-end sm:self-auto">
+                  {/* Quantity Stepper */}
+                  <div
+                    className={`flex items-center border rounded-xl overflow-hidden ${
+                      isLight ? 'border-slate-300 bg-white' : 'border-white/10 bg-black/40'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateQuantity(op.id, -1)}
+                      disabled={op.quantity <= 1}
+                      className="px-2 py-1 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 cursor-pointer transition-all"
+                      title="Diminuer la quantité"
+                    >
+                      <Minus className="w-2.5 h-2.5" />
+                    </button>
+                    <span className="px-1.5 text-[11px] font-bold min-w-[20px] text-center">
+                      {op.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateQuantity(op.id, 1)}
+                      className="px-2 py-1 hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer transition-all"
+                      title="Augmenter la quantité"
+                    >
+                      <Plus className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+
+                  {/* Duplicate Opening */}
+                  <button
+                    type="button"
+                    onClick={() => handleDuplicateOpening(op)}
+                    className={`p-1.5 rounded-xl border cursor-pointer active:scale-95 transition-all ${
+                      isLight
+                        ? 'border-slate-300 bg-white hover:bg-slate-100 text-slate-700'
+                        : 'border-white/10 bg-white/5 hover:bg-white/10 text-zinc-300'
+                    }`}
+                    title="Dupliquer ce châssis avec toutes ses options"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  </button>
+
+                  {/* Remove Opening */}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveOpening(op.id)}
+                    className="p-1.5 rounded-xl text-zinc-400 hover:text-red-400 cursor-pointer active:scale-95 transition-all"
+                    title="Supprimer ce châssis"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -897,24 +994,35 @@ export const MobileFieldMeasurementScreen: React.FC<MobileFieldMeasurementScreen
         </div>
 
         {openings.length > 0 && (
-          <button
-            type="button"
-            onClick={() => {
-              playClampSound();
-              if (onNavigateTab) {
-                onNavigateTab('cutting');
-              }
-            }}
-            className={`w-full py-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[46px] active:scale-98 transition-all ${
-              isLight
-                ? 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-300 shadow-xs'
-                : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/30'
-            }`}
-            title="Optimiser et générer les débits pour l'atelier scie"
-          >
-            <Scissors className="w-4 h-4 text-[#D4AF37]" />
-            <span>Optimiser le Débit Scie 1D ({openings.length} châssis)</span>
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={handleLaunchWorkshopJob}
+              className={`py-3 px-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[46px] active:scale-98 transition-all ${
+                isLight
+                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-300 shadow-xs'
+                  : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/30'
+              }`}
+              title="Créer une affaire de fabrication directement dans le suivi d'atelier"
+            >
+              <Building className="w-4 h-4 text-[#D4AF37]" />
+              <span className="truncate">Lancer Affaire Atelier ({openings.length} châssis)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSendSurveyToCutting}
+              className={`py-3 px-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[46px] active:scale-98 transition-all ${
+                isLight
+                  ? 'bg-sky-50 hover:bg-sky-100 text-sky-950 border-sky-300 shadow-xs'
+                  : 'bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border-sky-500/30'
+              }`}
+              title="Optimiser et générer les débits pour l'atelier scie"
+            >
+              <Scissors className="w-4 h-4 text-sky-400" />
+              <span className="truncate">Débiter à la Scie 1D</span>
+            </button>
+          </div>
         )}
       </div>
     </div>

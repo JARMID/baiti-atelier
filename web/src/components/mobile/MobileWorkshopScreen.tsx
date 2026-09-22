@@ -32,15 +32,68 @@ interface MobileWorkshopScreenProps {
   onNavigateTab?: (tab: MobileNavTab) => void;
 }
 
+interface SurveyPrefillData {
+  isOpen: boolean;
+  client: string;
+  phone: string;
+  desc: string;
+  count: number;
+  total: number;
+  deposit: number;
+  prof: string;
+}
+
+function getSurveyPrefill(): SurveyPrefillData | null {
+  if (typeof window !== 'undefined') {
+    try {
+      const autoOpen = sessionStorage.getItem('baiti_auto_open_new_job_survey');
+      if (autoOpen === 'true') {
+        sessionStorage.removeItem('baiti_auto_open_new_job_survey');
+        const rawOpenings = localStorage.getItem('baiti_field_measurement_project');
+        const rawInfo = localStorage.getItem('baiti_field_measurement_info');
+        const openings = rawOpenings ? JSON.parse(rawOpenings) : [];
+        const info = rawInfo ? JSON.parse(rawInfo) : undefined;
+        if (Array.isArray(openings) && openings.length > 0) {
+          const client = info?.clientName?.trim() || 'Client Chantier';
+          const phone = info?.clientPhone?.trim() || '';
+          const site = info?.projectSite?.trim() || '';
+          const count = openings.reduce((sum: number, o: any) => sum + (o.quantity || 1), 0);
+          const total = openings.reduce(
+            (sum: number, o: any) => sum + (o.estimatedUnitPriceDzd || 0) * (o.quantity || 1),
+            0
+          );
+          const rooms = openings.map((o: any) => o.roomName).slice(0, 3).join(', ');
+          const desc = `${count} Châssis (${rooms}${openings.length > 3 ? '...' : ''})${site ? ` • ${site}` : ''}`;
+          const prof = openings[0]?.profileSystem || 'gamme_45_thermal';
+          return {
+            isOpen: true,
+            client,
+            phone,
+            desc,
+            count,
+            total,
+            deposit: Math.round(total * 0.5),
+            prof,
+          };
+        }
+      }
+    } catch {
+      // Handled
+    }
+  }
+  return null;
+}
+
 export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
   const { theme, language } = useConfigStore();
   const isLight = theme === 'light';
   const isRtl = language === 'ar';
 
+  const [initialPrefill] = useState<SurveyPrefillData | null>(() => getSurveyPrefill());
   const [jobs, setJobs] = useState<WorkshopJob[]>(() => getWorkshopJobs());
   const [selectedStageFilter, setSelectedStageFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [isNewJobModalOpen, setIsNewJobModalOpen] = useState<boolean>(false);
+  const [isNewJobModalOpen, setIsNewJobModalOpen] = useState<boolean>(() => !!initialPrefill?.isOpen);
 
   // Active survey notebook project data
   const [surveyProjectData, setSurveyProjectData] = useState<{
@@ -86,13 +139,13 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
   }, []);
 
   // Form State for New Job
-  const [newClientName, setNewClientName] = useState('');
-  const [newClientPhone, setNewClientPhone] = useState('');
+  const [newClientName, setNewClientName] = useState(() => initialPrefill?.client || '');
+  const [newClientPhone, setNewClientPhone] = useState(() => initialPrefill?.phone || '');
   const [newWilaya, setNewWilaya] = useState('16 - Alger');
-  const [newDescription, setNewDescription] = useState('');
-  const [newItemCount, setNewItemCount] = useState<number>(1);
-  const [newTotalAmount, setNewTotalAmount] = useState<number>(150000);
-  const [newDeposit, setNewDeposit] = useState<number>(75000);
+  const [newDescription, setNewDescription] = useState(() => initialPrefill?.desc || '');
+  const [newItemCount, setNewItemCount] = useState<number>(() => initialPrefill?.count || 1);
+  const [newTotalAmount, setNewTotalAmount] = useState<number>(() => initialPrefill?.total || 150000);
+  const [newDeposit, setNewDeposit] = useState<number>(() => initialPrefill?.deposit || 75000);
   const [newDueDate, setNewDueDate] = useState<string>(() => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
@@ -100,7 +153,7 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
   });
   const [newPriority, setNewPriority] = useState<'normal' | 'urgent' | 'critique'>('normal');
   const [newStage, setNewStage] = useState<WorkshopJobStage>('devis');
-  const [newProfileSystem, setNewProfileSystem] = useState('gamme_45_thermal');
+  const [newProfileSystem, setNewProfileSystem] = useState(() => initialPrefill?.prof || 'gamme_45_thermal');
   const [formError, setFormError] = useState<string | null>(null);
 
   const handlePrefillFromSurvey = () => {
