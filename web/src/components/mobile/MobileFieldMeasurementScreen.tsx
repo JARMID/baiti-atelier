@@ -355,6 +355,29 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
         <div className="pt-3 border-t border-black/5 dark:border-white/10 space-y-2 text-xs font-mono">
           <span className="text-[11px] font-bold text-zinc-400 block">+ Ajouter une Fenêtre / Baie</span>
 
+          {/* Quick Room Suggestions */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+            {['Salon', 'Cuisine', 'Chambre 1', 'Chambre 2', 'Chambre Parents', 'SDB', 'Couloir', 'Balcon'].map((rm) => (
+              <button
+                key={rm}
+                type="button"
+                onClick={() => {
+                  playTactileClick();
+                  setNewRoom(rm);
+                }}
+                className={`px-2.5 py-1 rounded-xl border text-[10px] whitespace-nowrap cursor-pointer transition-all ${
+                  newRoom === rm
+                    ? 'bg-[#D4AF37] text-slate-950 font-bold border-[#D4AF37]'
+                    : isLight
+                    ? 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+                    : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
+                }`}
+              >
+                {rm}
+              </button>
+            ))}
+          </div>
+
           <div className="grid grid-cols-12 gap-1.5">
             <input
               type="text"
@@ -401,7 +424,25 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
             </div>
 
             <div className="col-span-4">
-              <label className="text-[9px] text-zinc-500 block mb-0.5">Largeur (mm)</label>
+              <div className="flex items-center justify-between text-[9px] text-zinc-500 mb-0.5">
+                <span>Largeur (mm)</span>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setNewWidth((w) => Math.max(500, w - 50))}
+                    className="hover:text-white"
+                  >
+                    -50
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewWidth((w) => Math.min(3200, w + 50))}
+                    className="text-[#D4AF37]"
+                  >
+                    +50
+                  </button>
+                </div>
+              </div>
               <input
                 type="number"
                 placeholder="1200"
@@ -414,7 +455,25 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
             </div>
 
             <div className="col-span-4">
-              <label className="text-[9px] text-zinc-500 block mb-0.5">Hauteur (mm)</label>
+              <div className="flex items-center justify-between text-[9px] text-zinc-500 mb-0.5">
+                <span>Hauteur (mm)</span>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setNewHeight((h) => Math.max(500, h - 50))}
+                    className="hover:text-white"
+                  >
+                    -50
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewHeight((h) => Math.min(2800, h + 50))}
+                    className="text-[#D4AF37]"
+                  >
+                    +50
+                  </button>
+                </div>
+              </div>
               <input
                 type="number"
                 placeholder="1400"

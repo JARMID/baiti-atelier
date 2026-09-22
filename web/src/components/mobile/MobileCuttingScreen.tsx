@@ -7,6 +7,8 @@ import {
   Plus,
   Trash2,
   Download,
+  MessageCircle,
+  FileDown,
 } from 'lucide-react';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
 
@@ -58,16 +60,17 @@ export const MobileCuttingScreen: React.FC = () => {
   const [newLength, setNewLength] = useState(1200);
   const [newQty, setNewQty] = useState(2);
   const [newLabel, setNewLabel] = useState('Nouvelle Pièce');
+  const [kerfMm, setKerfMm] = useState<number>(3.0);
 
   // Compute 1D optimization
   const optimizationResult: LinearOptimizationResult = useMemo(() => {
     return optimize1DLinearStock(demands, [], {
-      kerf: 3,
+      kerf: kerfMm,
       clampTrim: 25,
       minRemnantLength: 800,
       standardBarLength: 6000,
     });
-  }, [demands]);
+  }, [demands, kerfMm]);
 
   const handleAddDemand = () => {
     if (newLength <= 0 || newQty <= 0) return;
@@ -87,6 +90,43 @@ export const MobileCuttingScreen: React.FC = () => {
   const handleRemoveDemand = (id: string) => {
     playTactileClick();
     setDemands((prev) => prev.filter((d) => d.id !== id));
+  };
+
+  const handleShareWhatsAppCutSheet = () => {
+    playTactileClick();
+    let text = `*PLAN DE DÉBIT SCIE 1D - BAITI ATELIER*\n`;
+    text += `Barres 6.00m requises : *${optimizationResult.totalStockBars}*\n`;
+    text += `Rendement matière : *${(optimizationResult.overallUtilizationRate * 100).toFixed(1)}%*\n`;
+    text += `Trait de scie : ${kerfMm} mm\n\n`;
+    optimizationResult.bars.forEach((bar, idx) => {
+      text += `*Barre #${idx + 1} (6000 mm)* :\n`;
+      bar.cuts.forEach((c) => {
+        text += `  • ${c.length} mm (${c.label})\n`;
+      });
+      if (bar.wasteLength > 0) {
+        text += `  > Reste/Chute : ${bar.wasteLength} mm\n`;
+      }
+    });
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const handleDownloadCsv = () => {
+    playClampSound();
+    let csv = 'Barre,Longueur_mm,Designation,Chute_mm\n';
+    optimizationResult.bars.forEach((b, idx) => {
+      b.cuts.forEach((c) => {
+        csv += `${idx + 1},${c.length},"${c.label}",\n`;
+      });
+      csv += `${idx + 1},,,${b.wasteLength}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `debit_scie_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleImportCurrentWindow = () => {
@@ -180,7 +220,25 @@ export const MobileCuttingScreen: React.FC = () => {
             <Scissors className="w-4 h-4 text-[#D4AF37]" />
             <span>Découpe Linéaire Optimisée</span>
           </div>
-          <span className="text-[10px] text-zinc-400">Lame : 3.0 mm</span>
+          <div className="flex items-center gap-1 text-[10px]">
+            <span className="text-zinc-400">Lame :</span>
+            {[2.5, 3.0, 4.0].map((k) => (
+              <button
+                key={k}
+                onClick={() => {
+                  playTactileClick();
+                  setKerfMm(k);
+                }}
+                className={`px-1.5 py-0.5 rounded cursor-pointer transition-all ${
+                  kerfMm === k
+                    ? 'bg-[#D4AF37] text-slate-950 font-bold shadow-xs'
+                    : 'bg-white/10 text-zinc-400 hover:text-white'
+                }`}
+              >
+                {k}mm
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Visual Bar Render */}
@@ -228,6 +286,25 @@ export const MobileCuttingScreen: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Export & Action Buttons */}
+        <div className="pt-1 grid grid-cols-2 gap-2">
+          <button
+            onClick={handleShareWhatsAppCutSheet}
+            className="w-full py-2.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:bg-emerald-500/20 active:scale-98 transition-all"
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>WhatsApp Scie</span>
+          </button>
+
+          <button
+            onClick={handleDownloadCsv}
+            className="w-full py-2.5 rounded-2xl bg-[#D4AF37] text-slate-950 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:brightness-110 active:scale-98 transition-all shadow-md"
+          >
+            <FileDown className="w-4 h-4" />
+            <span>Télécharger CSV</span>
+          </button>
         </div>
       </div>
 
