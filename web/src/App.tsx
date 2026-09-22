@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { SmoothScrollProvider } from './components/layout/SmoothScrollProvider';
 import { Header } from './components/landing/Header';
-import { IndustrialLiveTicker } from './components/landing/IndustrialLiveTicker';
 import { HeroScrollytellingStudio } from './components/landing/HeroScrollytellingStudio';
 import { WindowCanvas } from './components/3d/WindowCanvas';
 import { VillaFacadeStudio3D } from './components/3d/VillaFacadeStudio3D';
@@ -116,9 +115,6 @@ export function App() {
           isLight ? 'bg-[#F8FAFC] text-slate-900' : 'bg-[#06080C] text-zinc-100'
         }`}
       >
-        {/* Industrial Real-Time Workshop Ticker */}
-        <IndustrialLiveTicker />
-
         {/* Navigation Header */}
         <Header
           onOpenSketchModal={() => setIsSketchModalOpen(true)}

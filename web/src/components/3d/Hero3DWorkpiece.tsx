@@ -73,33 +73,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
     return mat;
   }, [clippingPlane]);
 
-  const shutterJointMaterial = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
-      color: '#CBD5E1',
-      roughness: 0.6,
-      metalness: 0.05,
-      side: THREE.DoubleSide,
-    });
-    if (clippingPlane) {
-      mat.clippingPlanes = [clippingPlane];
-      mat.clipShadows = true;
-    }
-    return mat;
-  }, [clippingPlane]);
 
-  const shutterSlatsMaterial = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
-      color: '#F8FAFC',
-      roughness: 0.35,
-      metalness: 0.1,
-      side: THREE.DoubleSide,
-    });
-    if (clippingPlane) {
-      mat.clippingPlanes = [clippingPlane];
-      mat.clipShadows = true;
-    }
-    return mat;
-  }, [clippingPlane]);
 
   const hardwareSteelMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
@@ -266,28 +240,13 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
       {/* ============================================================ */}
       {trade === 'aluminum' && (
         <group>
-          {/* Top Roller Shutter Caisson Monobloc (Pure White RAL 9016, Zero Z-fighting) */}
-          <group position={[0, 0.92 + explodeDilation, 0]}>
-            {/* Main Caisson Housing Box */}
-            <mesh material={whiteShutterMaterial}>
-              <boxGeometry args={[1.52 + explodeDilation * 2, 0.24, 0.22]} />
-            </mesh>
-
-            {/* Front Inspection Panel Groove (Recessed slightly, NO Z-FIGHTING) */}
-            <mesh position={[0, -0.07, 0.111]} material={shutterJointMaterial}>
-              <boxGeometry args={[1.46, 0.005, 0.003]} />
-            </mesh>
-
-            {/* Bottom Chamfer Flap */}
-            <mesh position={[0, -0.118, 0.05]} material={whiteShutterMaterial}>
-              <boxGeometry args={[1.48, 0.015, 0.12]} />
-            </mesh>
-
-            {/* Roller Shutter Exit Slot & Visible Rolled Slats */}
-            <mesh position={[0, -0.128, 0.04]} material={shutterSlatsMaterial}>
-              <boxGeometry args={[1.38, 0.02, 0.012]} />
-            </mesh>
-          </group>
+          {/* Top Roller Shutter Caisson Monobloc (Seamless Flush Fit, Zero Gaps, Zero Flickering) */}
+          <mesh
+            position={[0, 0.85 + explodeDilation, 0]}
+            material={whiteShutterMaterial}
+          >
+            <boxGeometry args={[1.44 + explodeDilation * 2, 0.18, 0.11]} />
+          </mesh>
 
           {/* Outer Frame (Dormant 45/52 RPT) */}
           <group position={[0, 0, 0]}>

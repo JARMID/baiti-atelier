@@ -9,13 +9,12 @@ import type { TradeCategory } from '../../types/trades';
 import type { FinishColor } from '../../types/window';
 import { Hero3DWorkpiece, type WindowModelType } from '../3d/Hero3DWorkpiece';
 import {
-  ArrowRight,
-  Rotate3d,
-  Layers,
   Compass,
-  Download,
   Scissors,
+  Layers,
+  ArrowRight,
   ArrowLeftRight,
+  Rotate3d,
 } from 'lucide-react';
 import {
   playTactileClick,
@@ -209,58 +208,8 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
           />
         </div>
 
-        {/* TOP BRAND EMBLEM (Architectural Clean Design) */}
-        <div className="relative z-20 pt-6 px-6 sm:px-12 flex items-center justify-between pointer-events-none">
-          <div className="flex items-center gap-3 pointer-events-auto">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#C5A880] to-[#D4AF37] p-0.5 flex items-center justify-center shadow-lg shadow-[#D4AF37]/20">
-              <div
-                className={`w-full h-full rounded-[6px] flex items-center justify-center ${
-                  isLight ? 'bg-white text-slate-900' : 'bg-[#07090E] text-[#D4AF37]'
-                }`}
-              >
-                <Compass className="w-4 h-4 text-[#D4AF37]" />
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`font-serif tracking-[0.22em] text-xs uppercase font-bold ${
-                    isLight ? 'text-slate-900' : 'text-zinc-100'
-                  }`}
-                >
-                  BAITI ATELIER
-                </span>
-                <span className="text-xs text-[#D4AF37] font-bold font-arabic">بيتي</span>
-              </div>
-              <span
-                className={`text-[9px] font-mono tracking-widest uppercase -mt-0.5 ${
-                  isLight ? 'text-slate-500' : 'text-zinc-500'
-                }`}
-              >
-                ATELIER NUMÉRIQUE & DÉBITAGE · 58 WILAYAS
-              </span>
-            </div>
-          </div>
-
-          <div className="hidden md:flex items-center gap-4 text-[10px] font-mono tracking-widest uppercase pointer-events-auto">
-            <span className={isLight ? 'text-slate-600' : 'text-zinc-400'}>DTR C3-2 COMPLIANT</span>
-            <span className="text-zinc-400">•</span>
-            <span className={isLight ? 'text-slate-600' : 'text-zinc-400'}>TOLÉRANCE 0.1 MM</span>
-            <span className="text-zinc-400">•</span>
-            <a
-              href="/downloads/baiti-atelier-desktop-setup.exe"
-              download
-              className={`px-3 py-1 rounded-full border text-[10px] font-mono tracking-wider transition-all flex items-center gap-1.5 cursor-pointer hover-lift ${
-                isLight
-                  ? 'bg-white border-slate-300 text-slate-800 hover:border-[#D4AF37]'
-                  : 'bg-white/5 border-white/15 text-zinc-200 hover:border-white/30'
-              }`}
-            >
-              <Download className="w-3 h-3 text-[#D4AF37]" />
-              <span>App Atelier (.exe)</span>
-            </a>
-          </div>
-        </div>
+        {/* Spacer for sticky header */}
+        <div className="relative z-20 pt-3 px-4 pointer-events-none" />
 
         {/* 3D WEBGL CANVAS */}
         <div className="absolute inset-0 z-10">
@@ -337,43 +286,39 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
             }`}
           >
             <div
-              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-mono mb-4 backdrop-blur-md ${
+              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-mono mb-3 backdrop-blur-md ${
                 isLight
-                  ? 'bg-white/80 border-slate-200 text-slate-700 shadow-xs'
+                  ? 'bg-white/90 border-slate-200 text-slate-700 shadow-xs'
                   : 'bg-white/5 border-white/10 text-[#D4AF37]'
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
-              <span>CONCEPTION & DÉBITAGE INDUSTRIEL</span>
+              <span>Menuiserie Aluminium & PVC Algérie</span>
             </div>
 
             <h1
-              className={`text-3xl sm:text-5xl lg:text-7xl font-serif tracking-tight leading-[1.08] sm:leading-[1.05] ${
+              className={`text-2xl sm:text-4xl lg:text-6xl font-extrabold tracking-tight leading-tight ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}
             >
-              L'ART DU DÉBIT <br />
-              <span className="italic font-normal text-[#C5A880] font-serif">en</span>{' '}
-              <span className="bg-gradient-to-r from-[#C5A880] via-[#D4AF37] to-[#E2C799] bg-clip-text text-transparent font-bold">
-                PRÉCISION
-              </span>
+              Conception 3D & Chiffrage d'Atelier
             </h1>
 
             <p
-              className={`mt-4 text-xs sm:text-base font-light leading-relaxed max-w-lg ${
-                isLight ? 'text-slate-600' : 'text-zinc-400'
+              className={`mt-3 text-xs sm:text-sm leading-relaxed max-w-lg ${
+                isLight ? 'text-slate-600' : 'text-zinc-300'
               }`}
             >
-              Châssis aluminium à rupture thermique, agencements d'ébénisterie, ferronnerie d'art et draperie architecturale pour les maîtres ateliers des 58 Wilayas.
+              Configurez vos fenêtres et baies vitrées sur mesure, générez les débits de profilés et calculez vos devis avec les prix réels des 58 wilayas.
             </p>
 
-            <div className="mt-6 sm:mt-8 flex items-center gap-4">
+            <div className="mt-5 flex items-center gap-3">
               <a
-                href="#cad-studio"
+                href="#configurator"
                 onClick={() => playTactileClick()}
-                className="px-5 py-3 sm:px-6 sm:py-3.5 rounded-full border border-white/20 bg-[#D4AF37] hover:bg-[#C5A880] text-slate-950 text-xs font-mono tracking-wider uppercase transition-all duration-300 shadow-xl flex items-center gap-2 group cursor-pointer hover-lift btn-press"
+                className="px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl bg-[#D4AF37] hover:brightness-110 text-slate-950 text-xs sm:text-sm font-bold transition-all shadow-md shadow-[#D4AF37]/25 flex items-center gap-2 group cursor-pointer hover-lift btn-press"
               >
-                <span>OUVRIR LE STUDIO CAO</span>
+                <span>Lancer le Configurateur 3D</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </a>
             </div>
@@ -390,23 +335,20 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
             <div
               className={`inline-flex items-center gap-2 px-3.5 py-1 rounded-full border text-xs font-mono mb-3 backdrop-blur-md ${
                 isLight
-                  ? 'bg-white/80 border-slate-200 text-slate-800 shadow-xs'
+                  ? 'bg-white/90 border-slate-200 text-slate-800 shadow-xs'
                   : 'bg-[#D4AF37]/15 border-[#D4AF37]/30 text-[#D4AF37]'
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
-              <span>CONFORMITÉ TECHNIQUE DTR C3-2 · TOLÉRANCE 0.1 MM</span>
+              <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+              <span>Norme DTR C3-2 • Tolérance 0.1 mm</span>
             </div>
 
             <h2
-              className={`text-2xl sm:text-4xl lg:text-5xl font-serif tracking-tight leading-tight ${
+              className={`text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}
             >
-              COUPE & STRUCTURE <br />
-              <span className="bg-gradient-to-r from-[#C5A880] to-[#D4AF37] bg-clip-text text-transparent italic">
-                DÉVOILÉES
-              </span>
+              Coupe & Usinage des Profilés
             </h2>
 
             <p
@@ -414,7 +356,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                 isLight ? 'text-slate-600' : 'text-zinc-300'
               }`}
             >
-              Chaque profilé RPT, chaque chant ABS et chaque barreau forgé est calculé pour éliminer les chutes. L'isolation thermique Uw 1.4 W/m²K répond aux exigences des chantiers algériens.
+              Châssis à rupture de pont thermique avec double vitrage isolant. L'optimiseur calcule les débits pour réduire les chutes de barres et préparer le montage en atelier.
             </p>
 
             {/* Technical Metric Chips */}
@@ -435,7 +377,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                 }`}
               >
                 <span className={`block text-[10px] ${isLight ? 'text-slate-500' : 'text-zinc-500'}`}>
-                  TAUX DE CHUTE ESTIMÉ
+                  RÉDUCTION DES CHUTES
                 </span>
                 <span className="text-emerald-500 font-bold text-sm">&lt; 3.5% Chutes</span>
               </div>
@@ -445,7 +387,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                 }`}
               >
                 <span className={`block text-[10px] ${isLight ? 'text-slate-500' : 'text-zinc-500'}`}>
-                  COUPE ONGLET CNC
+                  PRÉCISION D'USINAGE
                 </span>
                 <span className="text-cyan-500 font-bold text-sm">Tolérance 0.1 mm</span>
               </div>
@@ -460,27 +402,31 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                 : 'opacity-0 translate-y-8 pointer-events-none hidden'
             }`}
           >
-            <span className="text-[11px] font-mono tracking-[0.25em] text-[#D4AF37] uppercase block mb-2">
-              INSPECTION TECHNIQUE 360°
+            <span className="text-[11px] font-mono tracking-[0.2em] text-[#D4AF37] uppercase block mb-2 font-bold">
+              Inspection 3D Interactive
             </span>
             <h2
-              className={`text-2xl sm:text-4xl lg:text-5xl font-serif tracking-tight leading-tight ${
+              className={`text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}
             >
-              EXAMINEZ CHAQUE ANGLE <br />
-              <span className={`italic font-serif ${isLight ? 'text-slate-600' : 'text-zinc-400'}`}>
-                de l'ouvrage en atelier
-              </span>
+              Contrôle Visuel sous Tous les Angles
             </h2>
+            <p
+              className={`mt-3 text-xs sm:text-sm max-w-lg mx-auto leading-relaxed ${
+                isLight ? 'text-slate-600' : 'text-zinc-300'
+              }`}
+            >
+              Faites pivoter le châssis avec le doigt ou la souris, testez l'ouverture des vantaux et vérifiez chaque détail d'assemblage avant fabrication.
+            </p>
 
             <div
               className={`mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-mono backdrop-blur-xl shadow-lg ${
                 isLight ? 'bg-white/90 border-slate-200 text-slate-800' : 'bg-white/10 border-white/20 text-zinc-200'
               }`}
             >
-              <Compass className="w-4 h-4 text-[#D4AF37] animate-spin" style={{ animationDuration: '6s' }} />
-              <span>Faites pivoter avec le doigt ou la souris</span>
+              <Compass className="w-4 h-4 text-[#D4AF37]" />
+              <span>Glissez pour faire pivoter le châssis</span>
             </div>
           </div>
         </div>
