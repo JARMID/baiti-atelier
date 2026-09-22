@@ -19,6 +19,11 @@ import { CuttingAssemblyTerminal } from '../optimizer/CuttingAssemblyTerminal';
 import { computeDetailedBOM } from '../../utils/cadEngine';
 
 let remnantSequence = 100;
+let demandSequence = 100;
+function createDemandId(): string {
+  demandSequence += 1;
+  return `d_${demandSequence}`;
+}
 
 export const MobileCuttingScreen: React.FC = () => {
   const { config, language, theme } = useConfigStore();
@@ -142,7 +147,7 @@ export const MobileCuttingScreen: React.FC = () => {
     if (newLength <= 0 || newQty <= 0) return;
     playClampSound();
     const newDemand: CutDemand1D = {
-      id: `d_${Date.now()}`,
+      id: createDemandId(),
       length: newLength,
       quantity: newQty,
       miterLeft: 45,
@@ -204,7 +209,7 @@ export const MobileCuttingScreen: React.FC = () => {
     playClampSound();
     setDemands([
       {
-        id: `d1_${Date.now()}`,
+        id: createDemandId(),
         length: config.width,
         quantity: 2,
         miterLeft: 45,
@@ -213,7 +218,7 @@ export const MobileCuttingScreen: React.FC = () => {
         profileCode: 'DORMANT-45',
       },
       {
-        id: `d2_${Date.now()}`,
+        id: createDemandId(),
         length: config.height,
         quantity: 2,
         miterLeft: 45,
@@ -222,7 +227,7 @@ export const MobileCuttingScreen: React.FC = () => {
         profileCode: 'DORMANT-45',
       },
       {
-        id: `d3_${Date.now()}`,
+        id: createDemandId(),
         length: Math.round(config.width / 2 + 15),
         quantity: 4,
         miterLeft: 45,
@@ -231,7 +236,7 @@ export const MobileCuttingScreen: React.FC = () => {
         profileCode: 'OUVRANT-45',
       },
       {
-        id: `d4_${Date.now()}`,
+        id: createDemandId(),
         length: config.height - 70,
         quantity: 4,
         miterLeft: 45,
@@ -412,7 +417,11 @@ export const MobileCuttingScreen: React.FC = () => {
 
             <button
               onClick={handleDownloadCsv}
-              className="w-full py-2.5 rounded-2xl bg-black/10 dark:bg-white/10 border border-black/10 dark:border-white/10 text-zinc-300 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:bg-black/20 dark:hover:bg-white/15 active:scale-98 transition-all"
+              className={`w-full py-2.5 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] active:scale-98 transition-all ${
+                isLight
+                  ? 'bg-black/5 hover:bg-black/10 border-black/10 text-slate-800'
+                  : 'bg-white/10 hover:bg-white/15 border-white/10 text-zinc-300'
+              }`}
             >
               <FileDown className="w-4 h-4 text-[#D4AF37]" />
               <span>Télécharger CSV</span>
@@ -457,7 +466,11 @@ export const MobileCuttingScreen: React.FC = () => {
               key={len}
               type="button"
               onClick={() => handleAddRemnant(len)}
-              className="px-2 py-1 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 text-zinc-300 text-[10px] shrink-0 cursor-pointer active:scale-95 transition-all"
+              className={`px-2 py-1 rounded-lg border text-[10px] shrink-0 cursor-pointer active:scale-95 transition-all ${
+                isLight
+                  ? 'bg-black/5 hover:bg-black/10 border-black/10 text-slate-800'
+                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300'
+              }`}
             >
               +{len} mm
             </button>
@@ -505,7 +518,7 @@ export const MobileCuttingScreen: React.FC = () => {
                 value={newRemnantLength}
                 onChange={(e) => setNewRemnantLength(parseInt(e.target.value) || 0)}
                 className={`flex-1 p-2 rounded-xl border ${
-                  isLight ? 'bg-white border-slate-300' : 'bg-black/40 border-white/10 text-white'
+                  isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
                 }`}
               />
               <button
@@ -548,7 +561,7 @@ export const MobileCuttingScreen: React.FC = () => {
               }`}
             >
               <div>
-                <span className="font-bold">{d.label}</span>
+                <span className={`font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{d.label}</span>
                 <span className="text-[10px] text-zinc-500 block">
                   Coupes 45°/45° • Longueur : {d.length} mm
                 </span>
@@ -575,7 +588,7 @@ export const MobileCuttingScreen: React.FC = () => {
             value={newLabel}
             onChange={(e) => setNewLabel(e.target.value)}
             className={`col-span-5 p-2 rounded-xl border ${
-              isLight ? 'bg-white border-slate-300' : 'bg-black/40 border-white/10 text-white'
+              isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
             }`}
           />
           <input
@@ -584,7 +597,7 @@ export const MobileCuttingScreen: React.FC = () => {
             value={newLength}
             onChange={(e) => setNewLength(parseInt(e.target.value) || 0)}
             className={`col-span-4 p-2 rounded-xl border ${
-              isLight ? 'bg-white border-slate-300' : 'bg-black/40 border-white/10 text-white'
+              isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
             }`}
           />
           <input
@@ -593,7 +606,7 @@ export const MobileCuttingScreen: React.FC = () => {
             value={newQty}
             onChange={(e) => setNewQty(parseInt(e.target.value) || 1)}
             className={`col-span-3 p-2 rounded-xl border ${
-              isLight ? 'bg-white border-slate-300' : 'bg-black/40 border-white/10 text-white'
+              isLight ? 'bg-white border-slate-300 text-slate-900' : 'bg-black/40 border-white/10 text-white'
             }`}
           />
 

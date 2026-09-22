@@ -11,7 +11,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
-import { generateWorkshopCutSheetPdf } from '../../utils/pdfGenerator';
+import { generateWorkshopCutSheetPdf, formatGlassTypeFr } from '../../utils/pdfGenerator';
 import { computeCadCells, computeDetailedBOM } from '../../utils/cadEngine';
 import type { CadStructure, CellType } from '../../types/cad';
 import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
@@ -213,12 +213,9 @@ export const MobileCadScreen: React.FC = () => {
     playTactileClick();
     if (!bom.glasses || bom.glasses.length === 0) return;
     const glassListText = bom.glasses
-      .map(
-        (g, idx) =>
-          `${idx + 1}. ${g.label} : ${g.widthMm} × ${g.heightMm} mm (${g.areaM2} m²)`
-      )
+      .map((g, idx) => `  ${idx + 1}. ${g.label} : ${g.widthMm} × ${g.heightMm} mm (×${g.quantity}) • ${g.areaM2} m²`)
       .join('\n');
-    const msg = `*COMMANDE VITRAGE & MIROITERIE*\nChâssis : ${config.width} × ${config.height} mm\nType Vitrage : ${config.glassType}\nNombre de vitrages : ${bom.glasses.length}\nSurface totale : ${bom.totalGlassAreaM2.toFixed(2)} m²\n\n*Détail Découpe Verre :*\n${glassListText}\n\nConçu sur https://web-two-tan-31.vercel.app`;
+    const msg = `*COMMANDE VITRAGE & MIROITERIE*\nChâssis : ${config.width} × ${config.height} mm\nType Vitrage : ${formatGlassTypeFr(config.glassType)}\nNombre de vitrages : ${bom.glasses.length}\nSurface totale : ${bom.totalGlassAreaM2.toFixed(2)} m²\n\n*Détail Découpe Verre :*\n${glassListText}\n\nConçu sur https://web-two-tan-31.vercel.app`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
@@ -680,7 +677,7 @@ export const MobileCadScreen: React.FC = () => {
                 <div>
                   <div className="font-bold flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-                    <span>{p.label}</span>
+                    <span className={isLight ? 'text-slate-900 font-bold' : 'text-white font-bold'}>{p.label}</span>
                   </div>
                   <div className="text-[10px] text-zinc-500 pl-3">
                     Coupes: {p.cutLeftAngle}° / {p.cutRightAngle}° • Rôle: {p.role}
@@ -712,10 +709,10 @@ export const MobileCadScreen: React.FC = () => {
                   <div>
                     <div className="font-bold flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                      <span>{g.label}</span>
+                      <span className={isLight ? 'text-slate-900 font-bold' : 'text-white font-bold'}>{g.label}</span>
                     </div>
                     <div className="text-[10px] text-zinc-500 pl-3">
-                      Vitrage {config.glassType.replace('_', ' ')} • Surface: {g.areaM2} m²
+                      {formatGlassTypeFr(config.glassType)} • Surface: {g.areaM2} m²
                     </div>
                   </div>
 
