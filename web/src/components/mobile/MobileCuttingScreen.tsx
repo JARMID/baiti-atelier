@@ -16,11 +16,12 @@ import {
   ClipboardList,
   Check,
   X,
+  Tag,
 } from 'lucide-react';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
 import { CuttingAssemblyTerminal } from '../optimizer/CuttingAssemblyTerminal';
 import { computeDetailedBOM } from '../../utils/cadEngine';
-import { generateLinearCuttingPlanPdf } from '../../utils/pdfGenerator';
+import { generateLinearCuttingPlanPdf, generatePieceLabelsPdf, type PieceLabelItem } from '../../utils/pdfGenerator';
 import type { MobileNavTab } from './MobileBottomNavigation';
 
 let remnantSequence = 100;
@@ -528,6 +529,48 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
     });
   };
 
+  const handleDownloadLabelsPdf = async () => {
+    playClampSound();
+    const pieces: PieceLabelItem[] = [];
+    optimizationResult.bars.forEach((b) => {
+      b.cuts.forEach((c) => {
+        pieces.push({
+          id: c.id || c.demandId || `c_${Math.random().toString(36).substring(2, 7)}`,
+          label: c.label,
+          length: c.length,
+          miterLeft: c.miterLeft,
+          miterRight: c.miterRight,
+          profileCode: c.profileCode || 'DORMANT-45',
+          destinationRoom: surveyProjectData?.info?.projectSite || 'Chantier Atelier',
+          quantity: 1,
+        });
+      });
+    });
+
+    if (pieces.length === 0) {
+      demands.forEach((d) => {
+        pieces.push({
+          id: d.id,
+          label: d.label,
+          length: d.length,
+          miterLeft: d.miterLeft,
+          miterRight: d.miterRight,
+          profileCode: d.profileCode || 'DORMANT-45',
+          destinationRoom: surveyProjectData?.info?.projectSite || 'Chantier Atelier',
+          quantity: d.quantity,
+        });
+      });
+    }
+
+    await generatePieceLabelsPdf({
+      projectTitle: surveyProjectData?.info?.clientName ? `Chantier ${surveyProjectData.info.clientName}` : 'Débit Atelier Scie',
+      clientName: surveyProjectData?.info?.clientName || 'Atelier Baiti',
+      finishColor: config.finishColor || 'Bronze 124',
+      profileSystem: 'Système Alu 45 RPT',
+      pieces,
+    });
+  };
+
   const handleImportCadDemands = () => {
     playClampSound();
     if (!cadDemandsAvailable || !cadDemandsAvailable.length) return;
@@ -891,13 +934,13 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
             <span>Terminal Scie & Assemblage Atelier</span>
           </button>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
               onClick={handleShareWhatsAppCutSheet}
               className="w-full py-2.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:bg-emerald-500/20 active:scale-98 transition-all"
             >
-              <MessageCircle className="w-4 h-4" />
-              <span>WhatsApp Scie</span>
+              <MessageCircle className="w-4 h-4 shrink-0" />
+              <span>WhatsApp</span>
             </button>
 
             <button
@@ -905,8 +948,17 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
               onClick={handleDownloadCutSheetPdf}
               className="w-full py-2.5 rounded-2xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:bg-[#D4AF37]/25 active:scale-98 transition-all"
             >
-              <FileDown className="w-4 h-4" />
-              <span>Fiche Scie PDF</span>
+              <FileDown className="w-4 h-4 shrink-0" />
+              <span>Fiche PDF</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadLabelsPdf}
+              className="w-full py-2.5 rounded-2xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:bg-cyan-500/25 active:scale-98 transition-all"
+            >
+              <Tag className="w-4 h-4 shrink-0" />
+              <span>Étiquettes PDF</span>
             </button>
 
             <button
@@ -917,8 +969,8 @@ export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
                   : 'bg-white/10 hover:bg-white/15 border-white/10 text-zinc-300'
               }`}
             >
-              <Download className="w-4 h-4 text-zinc-400" />
-              <span>Télécharger CSV</span>
+              <Download className="w-4 h-4 text-zinc-400 shrink-0" />
+              <span>Export CSV</span>
             </button>
           </div>
         </div>

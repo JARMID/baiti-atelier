@@ -2176,4 +2176,177 @@ export async function generateFabricationOrderPdf(params: FabricationOrderPdfPar
   doc.save(safeFilename);
 }
 
+export interface PieceLabelItem {
+  id: string;
+  label: string;
+  length: number;
+  miterLeft: number;
+  miterRight: number;
+  profileCode?: string;
+  destinationRoom?: string;
+  quantity?: number;
+}
+
+export interface PieceLabelsPdfParams {
+  projectTitle: string;
+  clientName: string;
+  finishColor?: string;
+  profileSystem?: string;
+  pieces: PieceLabelItem[];
+}
+
+export async function generatePieceLabelsPdf(params: PieceLabelsPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const expandedPieces: PieceLabelItem[] = [];
+  params.pieces.forEach((p) => {
+    const qty = p.quantity && p.quantity > 0 ? p.quantity : 1;
+    for (let q = 1; q <= qty; q++) {
+      expandedPieces.push({
+        ...p,
+        label: qty > 1 ? `${p.label} (${q}/${qty})` : p.label,
+      });
+    }
+  });
+
+  const labelsPerPage = 10;
+  const cols = 2;
+  const labelWidth = 92;
+  const labelHeight = 50;
+  const marginX = 10;
+  const marginY = 12;
+  const colGap = 6;
+  const rowGap = 4;
+
+  const totalPages = Math.ceil(expandedPieces.length / labelsPerPage) || 1;
+  const todayStr = new Date().toLocaleDateString('fr-DZ');
+
+  for (let i = 0; i < expandedPieces.length; i++) {
+    const pageIndex = Math.floor(i / labelsPerPage);
+    const indexOnPage = i % labelsPerPage;
+
+    if (i > 0 && indexOnPage === 0) {
+      doc.addPage();
+    }
+
+    const col = indexOnPage % cols;
+    const row = Math.floor(indexOnPage / cols);
+    const x = marginX + col * (labelWidth + colGap);
+    const y = marginY + row * (labelHeight + rowGap);
+
+    const piece = expandedPieces[i];
+
+    // Label Outer Border
+    doc.setDrawColor(203, 213, 225);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(x, y, labelWidth, labelHeight, 2, 2, 'FD');
+
+    // Header Stripe
+    doc.setFillColor(241, 245, 249);
+    doc.roundedRect(x, y, labelWidth, 7, 2, 2, 'F');
+    doc.rect(x, y + 4, labelWidth, 3, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(0, 51, 102);
+    const clientTitle = `BAITI • ${params.clientName || 'Chantier Atelier'}`;
+    doc.text(clientTitle.slice(0, 32), x + 3, y + 5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(todayStr, x + labelWidth - 3, y + 5, { align: 'right' });
+
+    // QR Code
+    try {
+      const qrPayload = `BAITI|${piece.label}|L=${piece.length}mm|A=${piece.miterLeft}/${piece.miterRight}|${params.clientName || ''}`;
+      const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+      doc.addImage(qrDataUrl, 'PNG', x + labelWidth - 25, y + 10, 22, 22);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(5);
+      doc.setTextColor(148, 163, 184);
+      doc.text('SCAN ATELIER', x + labelWidth - 14, y + 34.5, { align: 'center' });
+      doc.text(`ID: ${piece.id.slice(-6)}`, x + labelWidth - 14, y + 37.5, { align: 'center' });
+    } catch {
+      // Fallback
+    }
+
+    // Left Column Info
+    // Room / Destination
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(0, 51, 102);
+    const roomText = piece.destinationRoom ? `[${piece.destinationRoom}]` : '[Châssis Atelier]';
+    doc.text(roomText.slice(0, 28), x + 3, y + 12.5);
+
+    // Piece designation
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(30, 41, 59);
+    doc.text(piece.label.slice(0, 30), x + 3, y + 17);
+
+    // Big Cutting Length
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text('LONGUEUR DE COUPE :', x + 3, y + 22);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(0, 51, 102);
+    doc.text(`${piece.length} mm`, x + 3, y + 28);
+
+    // Miter angles
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(15, 23, 42);
+    const miterDesc =
+      piece.miterLeft === 45 && piece.miterRight === 45
+        ? '45° / 45° (Biseau)'
+        : piece.miterLeft === 90 && piece.miterRight === 90
+        ? '90° / 90° (Droit)'
+        : `${piece.miterLeft}° / ${piece.miterRight}°`;
+    doc.text(`Onglets : ${miterDesc}`, x + 3, y + 33.5);
+
+    // Profile & Finish
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(100, 116, 139);
+    const finishLine = `${piece.profileCode || params.profileSystem || 'Alu 45 RPT'} • ${params.finishColor || 'Standard'}`;
+    doc.text(finishLine.slice(0, 32), x + 3, y + 38);
+
+    // Mini status checkbox
+    doc.setDrawColor(203, 213, 225);
+    doc.rect(x + 3, y + 41.5, 3.5, 3.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text('Usiné', x + 8, y + 44.5);
+
+    doc.rect(x + 20, y + 41.5, 3.5, 3.5);
+    doc.text('Assemblé', x + 25, y + 44.5);
+
+    // Footer on page bottom (if last label on page or last overall)
+    if (indexOnPage === labelsPerPage - 1 || i === expandedPieces.length - 1) {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(6.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text(
+        `Planche d'étiquettes de débitage Baiti Atelier • Page ${pageIndex + 1}/${totalPages} • Total : ${expandedPieces.length} étiquettes`,
+        105,
+        290,
+        { align: 'center' }
+      );
+    }
+  }
+
+  const safeFilename = `Etiquettes_Debit_${(params.clientName || 'Chantier').replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+  doc.save(safeFilename);
+}
+
 
