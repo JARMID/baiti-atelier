@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useConfigStore } from '../../store/configStore';
 import {
   getWorkshopJobs,
@@ -20,6 +20,7 @@ import {
   AlertCircle,
   Search,
   Calendar,
+  ClipboardList,
 } from 'lucide-react';
 import { playTactileClick, playClampSound, playSwitchSound } from '../../utils/audioFeedback';
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
@@ -33,6 +34,49 @@ export const MobileWorkshopScreen: React.FC = () => {
   const [selectedStageFilter, setSelectedStageFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isNewJobModalOpen, setIsNewJobModalOpen] = useState<boolean>(false);
+
+  // Active survey notebook project data
+  const [surveyProjectData, setSurveyProjectData] = useState<{
+    info?: { clientName?: string; clientPhone?: string; projectSite?: string };
+    openings: any[];
+  } | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const rawOpenings = localStorage.getItem('baiti_field_measurement_project');
+        const rawInfo = localStorage.getItem('baiti_field_measurement_info');
+        const openings = rawOpenings ? JSON.parse(rawOpenings) : [];
+        const info = rawInfo ? JSON.parse(rawInfo) : undefined;
+        if (Array.isArray(openings) && openings.length > 0) {
+          return { info, openings };
+        }
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    const syncSurvey = () => {
+      if (typeof window !== 'undefined') {
+        try {
+          const rawOpenings = localStorage.getItem('baiti_field_measurement_project');
+          const rawInfo = localStorage.getItem('baiti_field_measurement_info');
+          const openings = rawOpenings ? JSON.parse(rawOpenings) : [];
+          const info = rawInfo ? JSON.parse(rawInfo) : undefined;
+          if (Array.isArray(openings) && openings.length > 0) {
+            setSurveyProjectData({ info, openings });
+          } else {
+            setSurveyProjectData(null);
+          }
+        } catch {
+          setSurveyProjectData(null);
+        }
+      }
+    };
+    window.addEventListener('storage', syncSurvey);
+    return () => window.removeEventListener('storage', syncSurvey);
+  }, []);
 
   // Form State for New Job
   const [newClientName, setNewClientName] = useState('');
@@ -51,6 +95,32 @@ export const MobileWorkshopScreen: React.FC = () => {
   const [newStage, setNewStage] = useState<WorkshopJobStage>('devis');
   const [newProfileSystem, setNewProfileSystem] = useState('gamme_45_thermal');
   const [formError, setFormError] = useState<string | null>(null);
+
+  const handlePrefillFromSurvey = () => {
+    playClampSound();
+    if (!surveyProjectData) return;
+    const client = surveyProjectData.info?.clientName?.trim() || 'Client Chantier';
+    const phone = surveyProjectData.info?.clientPhone?.trim() || '';
+    const site = surveyProjectData.info?.projectSite?.trim() || '';
+    const count = surveyProjectData.openings.reduce((sum, o) => sum + (o.quantity || 1), 0);
+    const total = surveyProjectData.openings.reduce(
+      (sum, o) => sum + (o.estimatedUnitPriceDzd || 0) * (o.quantity || 1),
+      0
+    );
+    const rooms = surveyProjectData.openings.map((o) => o.roomName).slice(0, 3).join(', ');
+    const desc = `${count} Châssis (${rooms}${surveyProjectData.openings.length > 3 ? '...' : ''})${site ? ` • ${site}` : ''}`;
+
+    setNewClientName(client);
+    if (phone) setNewClientPhone(phone);
+    setNewDescription(desc);
+    setNewItemCount(count);
+    setNewTotalAmount(total);
+    setNewDeposit(Math.round(total * 0.5));
+    if (surveyProjectData.openings[0]?.profileSystem) {
+      setNewProfileSystem(surveyProjectData.openings[0].profileSystem);
+    }
+    setIsNewJobModalOpen(true);
+  };
 
   const handleAdvance = (jobId: string) => {
     playClampSound();
@@ -122,6 +192,41 @@ export const MobileWorkshopScreen: React.FC = () => {
 
   return (
     <div className="pb-36 px-3 sm:px-6 pt-2 max-w-xl md:max-w-2xl mx-auto space-y-4" dir={isRtl ? 'rtl' : 'ltr'}>
+      {/* 0. ACTIVE SURVEY NOTEBOOK BANNER */}
+      {surveyProjectData && surveyProjectData.openings.length > 0 && (
+        <div
+          className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs font-mono shadow-xs transition-all ${
+            isLight
+              ? 'bg-amber-50/90 border-amber-200 text-slate-800'
+              : 'bg-amber-500/10 border-amber-500/25 text-amber-200'
+          }`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-[#D4AF37]/20 border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37] shrink-0">
+              <ClipboardList className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="font-bold flex items-center gap-1.5 truncate">
+                <span className={isLight ? 'text-slate-900 font-bold' : 'text-white font-bold'}>
+                  Chantier Relevé : {surveyProjectData.info?.clientName || 'M. Amrani'}
+                </span>
+              </div>
+              <div className={`text-[10px] truncate ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>
+                {surveyProjectData.openings.length} châssis mesurés • {surveyProjectData.openings.reduce((sum, o) => sum + (o.estimatedUnitPriceDzd || 0) * (o.quantity || 1), 0).toLocaleString('fr-DZ')} DZD
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handlePrefillFromSurvey}
+            className="px-3 py-2 rounded-xl bg-[#D4AF37] text-slate-950 font-bold text-[11px] shrink-0 cursor-pointer hover:brightness-110 active:scale-95 transition-all shadow-xs"
+          >
+            Lancer Fabrication
+          </button>
+        </div>
+      )}
+
       {/* 1. TOP ACTION & SEARCH BAR */}
       <div className="flex items-center gap-2">
         <div
@@ -386,6 +491,27 @@ export const MobileWorkshopScreen: React.FC = () => {
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{formError}</span>
               </div>
+            )}
+
+            {/* Quick Prefill from Field Survey */}
+            {surveyProjectData && surveyProjectData.openings.length > 0 && (
+              <button
+                type="button"
+                onClick={handlePrefillFromSurvey}
+                className={`w-full p-2.5 rounded-2xl border flex items-center justify-between gap-2 text-xs font-mono font-medium transition-all cursor-pointer ${
+                  isLight
+                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-300 shadow-xs'
+                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="w-4 h-4 text-[#D4AF37]" />
+                  <span>Importer depuis le carnet ({surveyProjectData.info?.clientName || 'Client Chantier'})</span>
+                </div>
+                <span className="text-[10px] opacity-75 font-normal">
+                  {surveyProjectData.openings.length} châssis
+                </span>
+              </button>
             )}
 
             <form onSubmit={handleCreateJob} className="space-y-3">
