@@ -3808,3 +3808,238 @@ export async function generatePaymentReceiptPdf(
   doc.save(safeFilename);
 }
 
+export interface SiteDeliveryManifestPdfParams {
+  manifestId: string;
+  jobId: string;
+  clientName: string;
+  clientPhone: string;
+  deliverySiteAddress: string;
+  wilayaName: string;
+  vehicleTypeFr: string;
+  vehiclePlate: string;
+  driverName: string;
+  driverPhone: string;
+  departureDate: string;
+  departureTime: string;
+  totalPackagesCount: number;
+  totalWeightKg: number;
+  packages: {
+    packageNumber: number;
+    labelFr: string;
+    categoryFr: string;
+    contentsDescription: string;
+    itemCount: number;
+    weightEstimatedKg: number;
+    dimensionsEstimated: string;
+    isFragileGlass: boolean;
+    conditionFr: string;
+  }[];
+  generalNotes?: string;
+}
+
+/**
+ * Generates an official A4 Site Delivery Manifest and Packaging Slip (Bordereau de Livraison par Chantier)
+ */
+export async function generateSiteDeliveryManifestPdf(params: SiteDeliveryManifestPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryBlue: [number, number, number] = [0, 51, 102];
+  const goldAccent: [number, number, number] = [212, 175, 55];
+  const darkSlate: [number, number, number] = [15, 23, 42];
+
+  // 1. Top Decorative Bar
+  doc.setFillColor(...primaryBlue);
+  doc.rect(0, 0, 210, 5, 'F');
+  doc.setFillColor(...goldAccent);
+  doc.rect(0, 5, 210, 1.5, 'F');
+
+  // 2. Company Brand & Document Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.setTextColor(...primaryBlue);
+  doc.text('BAITI ATELIER ALGERIE', 14, 16);
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 116, 139);
+  doc.text('Menuiserie Aluminium & PVC • Logistique & Expédition Chantier', 14, 21);
+
+  // Document Badge
+  doc.setFillColor(241, 245, 249);
+  doc.roundedRect(120, 10, 76, 15, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...primaryBlue);
+  doc.text('BORDEREAU DE LIVRAISON', 123, 16);
+  doc.setFontSize(7.5);
+  doc.setTextColor(...goldAccent);
+  doc.text(`Réf : ${params.manifestId}`, 123, 22);
+
+  // 3. Side-by-side Info Cards
+  const cardY = 28;
+  const cardH = 29;
+
+  // Left Card: Chantier & Destinataire
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, cardY, 88, cardH, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...primaryBlue);
+  doc.text('CHANTIER & DESTINATAIRE', 18, cardY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...darkSlate);
+  doc.text(`Client : ${params.clientName}`, 18, cardY + 11);
+  doc.text(`Téléphone : ${params.clientPhone || 'Non renseigné'}`, 18, cardY + 16);
+  doc.text(`Adresse : ${params.deliverySiteAddress}`, 18, cardY + 21);
+  doc.text(`Wilaya : ${params.wilayaName} • Affaire : ${params.jobId}`, 18, cardY + 26);
+
+  // Right Card: Véhicule & Transport
+  doc.roundedRect(108, cardY, 88, cardH, 2, 2, 'FD');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...primaryBlue);
+  doc.text('ACHEMINEMENT & TRANSPORTEUR', 112, cardY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...darkSlate);
+  doc.text(`Véhicule : ${params.vehicleTypeFr} [${params.vehiclePlate}]`, 112, cardY + 11);
+  doc.text(`Chauffeur : ${params.driverName}`, 112, cardY + 16);
+  doc.text(`Contact Livreur : ${params.driverPhone}`, 112, cardY + 21);
+  doc.text(`Date & Heure : ${params.departureDate} à ${params.departureTime}`, 112, cardY + 26);
+
+  // 4. Packaging Table (autoTable)
+  const tableData = params.packages.map((pkg) => [
+    `Colis #${pkg.packageNumber}`,
+    `${pkg.labelFr}\n${pkg.contentsDescription}${pkg.isFragileGlass ? ' [VITRAGE FRAGILE]' : ''}`,
+    pkg.categoryFr,
+    `${pkg.itemCount} u\n${pkg.dimensionsEstimated}`,
+    `~${pkg.weightEstimatedKg} kg`,
+    '[  ] Conforme\n[  ] Réserve',
+  ]);
+
+  autoTable(doc, {
+    startY: cardY + cardH + 4,
+    margin: { left: 14, right: 14 },
+    head: [['N°', 'Désignation & Contenu du Colis', 'Catégorie', 'Qté / Dim.', 'Poids Est.', 'Pointage Chantier']],
+    body: tableData,
+    theme: 'grid',
+    styles: {
+      font: 'helvetica',
+      fontSize: 7.5,
+      cellPadding: 2.2,
+      overflow: 'linebreak',
+    },
+    headStyles: {
+      fillColor: primaryBlue,
+      textColor: [255, 255, 255],
+      fontSize: 7.5,
+      fontStyle: 'bold',
+      halign: 'center',
+    },
+    bodyStyles: {
+      fontSize: 7.5,
+      textColor: darkSlate,
+      valign: 'middle',
+    },
+    columnStyles: {
+      0: { cellWidth: 18, halign: 'center', fontStyle: 'bold' },
+      1: { cellWidth: 70 },
+      2: { cellWidth: 32 },
+      3: { cellWidth: 26, halign: 'center' },
+      4: { cellWidth: 16, halign: 'center' },
+      5: { cellWidth: 20, halign: 'center', fontSize: 6.5 },
+    },
+  });
+
+  const finalY = (doc as any).lastAutoTable.finalY || 180;
+
+  // 5. Total Summary Bar
+  const sumY = finalY + 4;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(241, 245, 249);
+  doc.roundedRect(14, sumY, 182, 8, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...primaryBlue);
+  doc.text(
+    `TOTAL COLISAGE : ${params.totalPackagesCount} Colis expédiés • Poids cumulé approximatif : ~${params.totalWeightKg} kg`,
+    18,
+    sumY + 5.5
+  );
+
+  // 6. Site Storage & Legal Responsibility Clause
+  const legalY = sumY + 11;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, legalY, 182, 17, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Clause de Décharge et Transfert de Garde sur Chantier :', 18, legalY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  const clauseText =
+    params.generalNotes ||
+    'La signature du présent bordereau atteste du contrôle contradictoire du nombre de colis et de l intégrité visuelle des profilés et vitrages. Le stockage sur chantier incombe au destinataire : les cadres et vitrages doivent être stockés sur cales bois, à l abri des intempéries, des poussières de ciment et des chocs.';
+  doc.text(doc.splitTextToSize(clauseText, 174), 18, legalY + 10);
+
+  // 7. Signature Blocks & QR Code
+  const signY = legalY + 21;
+
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 24, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 24, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Pour l Expéditeur (Chauffeur / Atelier) :', 18, signY + 5.5);
+  doc.text('Pour le Réceptionnaire (Chantier) :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Livreur : ${params.driverName}`, 18, signY + 11);
+  doc.text('Signature & Date de remise :', 18, signY + 18);
+  doc.text(`Nom client : ${params.clientName}`, 135, signY + 11);
+  doc.text('Mention "Reçu conforme sans réserve" & Signature :', 135, signY + 18);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|DELIVERY|${params.manifestId}|JOB=${params.jobId}|COLIS=${params.totalPackagesCount}|POIDS=${params.totalWeightKg}KG|DATE=${params.departureDate}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Bordereau officiel d expédition émis par Baiti Atelier Menuiserie • ${params.manifestId} • www.baitiatelier.dz`,
+    105,
+    288,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Bordereau_Livraison_${params.manifestId}.pdf`;
+  doc.save(safeFilename);
+}
+
+

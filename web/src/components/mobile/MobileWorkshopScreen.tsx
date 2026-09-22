@@ -33,6 +33,7 @@ import {
   Disc,
   Recycle,
   CreditCard,
+  Truck,
 } from 'lucide-react';
 import { playTactileClick, playClampSound, playSwitchSound } from '../../utils/audioFeedback';
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
@@ -42,6 +43,7 @@ import { InstallationAcceptanceModal } from './InstallationAcceptanceModal';
 import { BladeMaintenanceModal } from './BladeMaintenanceModal';
 import { OffcutScrapBinModal } from './OffcutScrapBinModal';
 import { BaridiMobReconciliationModal } from './BaridiMobReconciliationModal';
+import { SiteDeliveryManifestModal } from './SiteDeliveryManifestModal';
 import { getJobQualityInspection, computeQualityScore } from '../../utils/qualityControlManager';
 import { getJobInstallationAcceptance } from '../../utils/installationAcceptanceManager';
 import { getScrapBins, type ScrapBin } from '../../utils/workshopScrapManager';
@@ -315,6 +317,16 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
     playTactileClick();
     setPvJob(job);
     setIsPvModalOpen(true);
+  };
+
+  // Site Delivery Manifest modal state
+  const [deliveryJob, setDeliveryJob] = useState<WorkshopJob | null>(null);
+  const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState<boolean>(false);
+
+  const handleOpenDeliveryModal = (job: WorkshopJob) => {
+    playTactileClick();
+    setDeliveryJob(job);
+    setIsDeliveryModalOpen(true);
   };
 
   // Stock Receiving modal state
@@ -952,6 +964,16 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
                   >
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     <span>Fiche QA</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenDeliveryModal(job)}
+                    className="py-2 px-2 rounded-xl bg-sky-500/10 border border-sky-500/25 text-sky-400 font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer min-h-[38px] hover:bg-sky-500/20 active:scale-98 transition-all"
+                    title="Bordereau de livraison, colisage et décharge transporteur"
+                  >
+                    <Truck className="w-3.5 h-3.5 shrink-0" />
+                    <span>Livraison</span>
                   </button>
 
                   <button
@@ -1959,6 +1981,23 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
             );
             setPaymentToast('Affaire clôturée et réceptionnée sans réserve !');
             setTimeout(() => setPaymentToast(null), 3500);
+          }}
+        />
+      )}
+
+      {/* Site Delivery & Multi-Unit Logistics Manifest Modal */}
+      {deliveryJob && (
+        <SiteDeliveryManifestModal
+          key={deliveryJob.id}
+          isOpen={isDeliveryModalOpen}
+          onClose={() => {
+            setIsDeliveryModalOpen(false);
+            setDeliveryJob(null);
+          }}
+          job={deliveryJob}
+          onManifestUpdated={(manifest) => {
+            setPaymentToast(`Bordereau de livraison ${manifest.manifestId} enregistré (${manifest.packages.length} colis) !`);
+            setTimeout(() => setPaymentToast(null), 3000);
           }}
         />
       )}
