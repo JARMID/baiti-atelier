@@ -26,15 +26,59 @@ export interface FieldOpeningItem {
 }
 
 const STORAGE_KEY = 'baiti_field_measurement_project';
+const STORAGE_INFO_KEY = 'baiti_field_measurement_info';
 
 export const MobileFieldMeasurementScreen: React.FC = () => {
   const { selectedWilaya, theme, language, calibration } = useConfigStore();
   const isLight = theme === 'light';
   const isRtl = language === 'ar';
 
-  const [clientName, setClientName] = useState('M. Amrani');
-  const [clientPhone, setClientPhone] = useState('0550123456');
-  const [projectSite, setProjectSite] = useState('Chantier Villa Bir Mourad Raïs');
+  const [clientName, setClientName] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_INFO_KEY);
+        if (saved) return JSON.parse(saved).clientName || 'M. Amrani';
+      } catch {
+        // Fallback
+      }
+    }
+    return 'M. Amrani';
+  });
+
+  const [clientPhone, setClientPhone] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_INFO_KEY);
+        if (saved) return JSON.parse(saved).clientPhone || '0550123456';
+      } catch {
+        // Fallback
+      }
+    }
+    return '0550123456';
+  });
+
+  const [projectSite, setProjectSite] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(STORAGE_INFO_KEY);
+        if (saved) return JSON.parse(saved).projectSite || 'Chantier Villa Bir Mourad Raïs';
+      } catch {
+        // Fallback
+      }
+    }
+    return 'Chantier Villa Bir Mourad Raïs';
+  });
+
+  // Save project header info to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_INFO_KEY, JSON.stringify({ clientName, clientPhone, projectSite }));
+      } catch {
+        // Fallback
+      }
+    }
+  }, [clientName, clientPhone, projectSite]);
 
   const [openings, setOpenings] = useState<FieldOpeningItem[]>(() => {
     if (typeof window !== 'undefined') {
