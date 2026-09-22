@@ -1202,3 +1202,243 @@ export async function generateDtrThermalCertificatePdf(params: DtrCertificatePar
 
   doc.save(`Attestation_DTR_C32_${currentWilaya.code}_${certNumber}.pdf`);
 }
+
+export interface LinearCuttingPlanPdfParams {
+  projectTitle?: string;
+  clientName?: string;
+  clientWilaya?: string;
+  kerfMm: number;
+  totalStockBars: number;
+  totalRemnantsUsed: number;
+  overallYieldPercent: number;
+  bars: Array<{
+    barIndex: number;
+    stockLength: number;
+    isRemnant?: boolean;
+    cuts: Array<{
+      length: number;
+      label: string;
+      miterLeft?: number;
+      miterRight?: number;
+    }>;
+    wasteLength: number;
+  }>;
+}
+
+/**
+ * Generates an official Algerian workshop 1D linear saw cutting plan (A4 PDF)
+ * detailing stock bar allocations, prioritized offcut reuse, and operator checkoff boxes.
+ */
+export function generateLinearCuttingPlanPdf(params: LinearCuttingPlanPdfParams) {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const refNumber = `SCIE-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+  const docDate = new Date().toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  // 1. Header Banner
+  doc.setFillColor(15, 23, 42); // Deep slate #0F172A
+  doc.rect(0, 0, 210, 36, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('BAITI ATELIER ALGERIE', 14, 15);
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(203, 213, 225);
+  doc.text('Menuiserie Aluminium & PVC • Fiche d\'Optimisation de Débit Scie 1D', 14, 22);
+  doc.text('Standard Barres 6.00m • Réemploi Prioritaire des Chutes d\'Atelier', 14, 27);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(212, 175, 55); // Accent Gold #D4AF37
+  doc.text('PLAN DE DÉBIT SCIE', 145, 15);
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(226, 232, 240);
+  doc.text(`Réf : ${refNumber}`, 145, 22);
+  doc.text(`Date : ${docDate}`, 145, 27);
+
+  // 2. Project Metadata Box
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 42, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Paramètres du Chantier & Réglage Scie :', 20, 49);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Chantier / Client : ${params.clientName || 'Atelier Général'}`, 20, 56);
+  doc.text(`Wilaya : ${params.clientWilaya || 'Alger'}`, 20, 61);
+
+  doc.text(`Épaisseur trait de scie (Lame) : ${params.kerfMm} mm`, 110, 56);
+  doc.text(`Rognage mors de serrage : 25 mm`, 110, 61);
+
+  // 3. KPI Summary Tiles
+  const kpiY = 70;
+  const tileWidth = 43;
+  const tileHeight = 16;
+
+  // Tile 1: Barres 6m
+  doc.setFillColor(241, 245, 249);
+  doc.roundedRect(14, kpiY, tileWidth, tileHeight, 1.5, 1.5, 'FD');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 116, 139);
+  doc.text('BARRES 6M NEUVES', 14 + tileWidth / 2, kpiY + 5, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(212, 175, 55);
+  doc.text(`${params.totalStockBars}`, 14 + tileWidth / 2, kpiY + 12, { align: 'center' });
+
+  // Tile 2: Chutes Réutilisées
+  doc.setFillColor(241, 245, 249);
+  doc.roundedRect(60, kpiY, tileWidth, tileHeight, 1.5, 1.5, 'FD');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 116, 139);
+  doc.text('CHUTES RÉEMPLOYÉES', 60 + tileWidth / 2, kpiY + 5, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(14, 165, 233);
+  doc.text(`${params.totalRemnantsUsed}`, 60 + tileWidth / 2, kpiY + 12, { align: 'center' });
+
+  // Tile 3: Rendement Matière
+  doc.setFillColor(241, 245, 249);
+  doc.roundedRect(106, kpiY, tileWidth, tileHeight, 1.5, 1.5, 'FD');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 116, 139);
+  doc.text('RENDEMENT MATIÈRE', 106 + tileWidth / 2, kpiY + 5, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(16, 185, 129);
+  doc.text(`${params.overallYieldPercent.toFixed(1)}%`, 106 + tileWidth / 2, kpiY + 12, { align: 'center' });
+
+  // Tile 4: Économie Estimée
+  doc.setFillColor(241, 245, 249);
+  doc.roundedRect(152, kpiY, tileWidth, tileHeight, 1.5, 1.5, 'FD');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 116, 139);
+  doc.text('GAIN CHUTES ATELIER', 152 + tileWidth / 2, kpiY + 5, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  const savingDzd = params.totalRemnantsUsed * 3200;
+  doc.text(`+${savingDzd.toLocaleString('fr-DZ')} DZD`, 152 + tileWidth / 2, kpiY + 12, { align: 'center' });
+
+  // 4. Cutting Schedule Table
+  const tableRows = params.bars.map((bar) => {
+    const typeLabel = bar.isRemnant || bar.stockLength < 6000
+      ? `Chute Atelier (${bar.stockLength} mm)`
+      : `Barre Neuve (6000 mm)`;
+
+    const cutsFormatted = bar.cuts
+      .map((c) => {
+        const mLeft = c.miterLeft !== undefined ? `${c.miterLeft}°` : '45°';
+        const mRight = c.miterRight !== undefined ? `${c.miterRight}°` : '45°';
+        return `• ${c.length} mm (${mLeft}/${mRight}) : ${c.label}`;
+      })
+      .join('\n');
+
+    const totalCutsLength = bar.cuts.reduce((sum, c) => sum + c.length, 0);
+
+    const wasteLabel = bar.wasteLength >= 800
+      ? `${bar.wasteLength} mm (À réintégrer au stock chute)`
+      : bar.wasteLength > 0
+      ? `${bar.wasteLength} mm (Reste / Déchet)`
+      : '0 mm';
+
+    return [
+      `#${bar.barIndex}`,
+      typeLabel,
+      cutsFormatted,
+      `${totalCutsLength} mm`,
+      wasteLabel,
+      '[   ] Fait',
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 92,
+    head: [['N°', 'Origine Support', 'Tronçons de Découpe (Longueur • Onglets • Emplacement)', 'Longueur Nette', 'Chute Résiduelle', 'Visa Scie']],
+    body: tableRows,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
+      fontSize: 8,
+      fontStyle: 'bold',
+    },
+    bodyStyles: {
+      fontSize: 7.5,
+      textColor: [15, 23, 42],
+      valign: 'middle',
+    },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
+      1: { cellWidth: 32 },
+      2: { cellWidth: 78 },
+      3: { cellWidth: 22, halign: 'right', fontStyle: 'bold' },
+      4: { cellWidth: 26, fontSize: 6.5 },
+      5: { cellWidth: 14, halign: 'center' },
+    },
+  });
+
+  // 5. Workshop Quality & Safety Signatures
+  const finalY = (doc as any).lastAutoTable.finalY + 8;
+  const isCloseToBottom = finalY > 240;
+  const targetSignY = isCloseToBottom ? 245 : finalY;
+
+  if (isCloseToBottom) {
+    doc.addPage();
+  }
+
+  const signBlockY = isCloseToBottom ? 20 : targetSignY;
+
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, signBlockY, 182, 30, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Consignes d\'Atelier & Émargement Opérateurs :', 20, signBlockY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text('1. Contrôler l\'état de la lame carbure et lubrifier lors de la coupe aluminium.', 20, signBlockY + 12);
+  doc.text('2. Ranger immédiatement les chutes de longueur supérieure ou égale à 800 mm dans le rack à chutes.', 20, signBlockY + 17);
+  doc.text('3. Ébavurer chaque arête avant transmission au poste d\'usinage et de sertissage.', 20, signBlockY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Visa Opérateur Scie :', 125, signBlockY + 12);
+  doc.text('Visa Contrôle Qualité :', 125, signBlockY + 22);
+
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text('Document généré via Baiti Atelier • Système de Débit Linéaire Optimisé', 105, 290, {
+    align: 'center',
+  });
+
+  doc.save(`Fiche_Debit_Scie_${refNumber}.pdf`);
+}

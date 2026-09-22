@@ -61,8 +61,8 @@ export const DedicatedMobileApp: React.FC<DedicatedMobileAppProps> = ({
       <main className="flex-1 w-full overflow-y-auto">
         {activeTab === 'configurator' && <MobileConfiguratorScreen />}
         {activeTab === 'cad' && <MobileCadScreen />}
-        {activeTab === 'cutting' && <MobileCuttingScreen />}
-        {activeTab === 'field_quotes' && <MobileFieldMeasurementScreen />}
+        {activeTab === 'cutting' && <MobileCuttingScreen onNavigateTab={setActiveTab} />}
+        {activeTab === 'field_quotes' && <MobileFieldMeasurementScreen onNavigateTab={setActiveTab} />}
         {activeTab === 'workshop' && <MobileWorkshopScreen />}
       </main>
 

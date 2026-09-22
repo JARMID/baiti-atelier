@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useConfigStore } from '../../store/configStore';
 import { optimize1DLinearStock } from '../../utils/linearCutOptimizer';
 import type { CutDemand1D, LinearOptimizationResult, StockBar1D } from '../../types/optimizer';
@@ -13,10 +13,13 @@ import {
   Recycle,
   ChevronDown,
   ChevronUp,
+  ClipboardList,
 } from 'lucide-react';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
 import { CuttingAssemblyTerminal } from '../optimizer/CuttingAssemblyTerminal';
 import { computeDetailedBOM } from '../../utils/cadEngine';
+import { generateLinearCuttingPlanPdf } from '../../utils/pdfGenerator';
+import type { MobileNavTab } from './MobileBottomNavigation';
 
 let remnantSequence = 100;
 let demandSequence = 100;
@@ -25,10 +28,57 @@ function createDemandId(): string {
   return `d_${demandSequence}`;
 }
 
-export const MobileCuttingScreen: React.FC = () => {
-  const { config, language, theme } = useConfigStore();
+interface MobileCuttingScreenProps {
+  onNavigateTab?: (tab: MobileNavTab) => void;
+}
+
+export const MobileCuttingScreen: React.FC<MobileCuttingScreenProps> = () => {
+  const { config, language, theme, selectedWilaya } = useConfigStore();
   const isLight = theme === 'light';
   const isRtl = language === 'ar';
+
+  // Active survey notebook project data
+  const [surveyProjectData, setSurveyProjectData] = useState<{
+    info?: { clientName?: string; clientPhone?: string; projectSite?: string };
+    openings: any[];
+  } | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const rawOpenings = localStorage.getItem('baiti_field_measurement_project');
+        const rawInfo = localStorage.getItem('baiti_field_measurement_info');
+        const openings = rawOpenings ? JSON.parse(rawOpenings) : [];
+        const info = rawInfo ? JSON.parse(rawInfo) : undefined;
+        if (Array.isArray(openings) && openings.length > 0) {
+          return { info, openings };
+        }
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    const syncSurvey = () => {
+      if (typeof window !== 'undefined') {
+        try {
+          const rawOpenings = localStorage.getItem('baiti_field_measurement_project');
+          const rawInfo = localStorage.getItem('baiti_field_measurement_info');
+          const openings = rawOpenings ? JSON.parse(rawOpenings) : [];
+          const info = rawInfo ? JSON.parse(rawInfo) : undefined;
+          if (Array.isArray(openings) && openings.length > 0) {
+            setSurveyProjectData({ info, openings });
+          } else {
+            setSurveyProjectData(null);
+          }
+        } catch {
+          setSurveyProjectData(null);
+        }
+      }
+    };
+    window.addEventListener('storage', syncSurvey);
+    return () => window.removeEventListener('storage', syncSurvey);
+  }, []);
 
   // Pre-fill initial demands from current active window
   const [demands, setDemands] = useState<CutDemand1D[]>(() => [
@@ -205,6 +255,115 @@ export const MobileCuttingScreen: React.FC = () => {
     document.body.removeChild(link);
   };
 
+  const handleImportSurveyProject = () => {
+    playClampSound();
+    if (!surveyProjectData || !surveyProjectData.openings.length) return;
+    const projectDemands: CutDemand1D[] = [];
+
+    surveyProjectData.openings.forEach((op, opIdx) => {
+      const room = op.roomName?.trim() || `Châssis #${opIdx + 1}`;
+      const qty = op.quantity || 1;
+      const w = Math.round(op.width || 1200);
+      const h = Math.round(op.height || 1200);
+
+      // 1. Frame Horizontals
+      projectDemands.push({
+        id: createDemandId(),
+        length: w,
+        quantity: 2 * qty,
+        miterLeft: 45,
+        miterRight: 45,
+        label: `[${room}] Dormant H/B`,
+        profileCode: 'DORMANT-45',
+      });
+
+      // 2. Frame Verticals
+      projectDemands.push({
+        id: createDemandId(),
+        length: h,
+        quantity: 2 * qty,
+        miterLeft: 45,
+        miterRight: 45,
+        label: `[${room}] Dormant Montants`,
+        profileCode: 'DORMANT-45',
+      });
+
+      // 3. Sashes
+      if (op.openingType === 'sliding_2' || op.openingType === 'sliding_3') {
+        const panesCount = op.openingType === 'sliding_3' ? 3 : 2;
+        const sashWidth = Math.round(w / panesCount + 15);
+        const sashHeight = h - 70;
+        projectDemands.push({
+          id: createDemandId(),
+          length: sashWidth,
+          quantity: 2 * panesCount * qty,
+          miterLeft: 45,
+          miterRight: 45,
+          label: `[${room}] Ouvrant Traverses`,
+          profileCode: 'OUVRANT-45',
+        });
+        projectDemands.push({
+          id: createDemandId(),
+          length: sashHeight,
+          quantity: 2 * panesCount * qty,
+          miterLeft: 45,
+          miterRight: 45,
+          label: `[${room}] Ouvrant Montants`,
+          profileCode: 'OUVRANT-45',
+        });
+      } else if (op.openingType !== 'fixed') {
+        const sashesCount = op.openingType === 'casement_2' ? 2 : 1;
+        const sashWidth = Math.round(w / sashesCount - (sashesCount === 2 ? 65 : 60));
+        const sashHeight = h - 70;
+        projectDemands.push({
+          id: createDemandId(),
+          length: sashWidth,
+          quantity: 2 * sashesCount * qty,
+          miterLeft: 45,
+          miterRight: 45,
+          label: `[${room}] Ouvrant H/B`,
+          profileCode: 'OUVRANT-45',
+        });
+        projectDemands.push({
+          id: createDemandId(),
+          length: sashHeight,
+          quantity: 2 * sashesCount * qty,
+          miterLeft: 45,
+          miterRight: 45,
+          label: `[${room}] Ouvrant Montants`,
+          profileCode: 'OUVRANT-45',
+        });
+      }
+    });
+
+    setDemands(projectDemands);
+  };
+
+  const handleDownloadCutSheetPdf = () => {
+    playClampSound();
+    generateLinearCuttingPlanPdf({
+      projectTitle: surveyProjectData?.info?.clientName ? `Chantier ${surveyProjectData.info.clientName}` : 'Débit Atelier Scie',
+      clientName: surveyProjectData?.info?.clientName || 'Atelier Baiti',
+      clientWilaya: selectedWilaya || 'Alger',
+      kerfMm,
+      totalStockBars: optimizationResult.totalStockBars,
+      totalRemnantsUsed: optimizationResult.totalRemnantsUsed,
+      overallYieldPercent: optimizationResult.overallUtilizationRate * 100,
+      bars: optimizationResult.bars.map((b, idx) => ({
+        barIndex: idx + 1,
+        stockLength: b.stockLength,
+        isRemnant: b.stockLength < 6000,
+        cuts: b.cuts.map((c) => ({
+          length: c.length,
+          label: c.label,
+          miterLeft: c.miterLeft,
+          miterRight: c.miterRight,
+        })),
+        wasteLength: b.wasteLength,
+      })),
+    });
+  };
+
   const handleImportCurrentWindow = () => {
     playClampSound();
     setDemands([
@@ -249,6 +408,55 @@ export const MobileCuttingScreen: React.FC = () => {
 
   return (
     <div className="pb-36 px-3 sm:px-6 pt-2 max-w-xl md:max-w-2xl mx-auto space-y-4" dir={isRtl ? 'rtl' : 'ltr'}>
+      {/* 0. ACTIVE FIELD SURVEY BANNER */}
+      {surveyProjectData && surveyProjectData.openings.length > 0 && (
+        <div
+          className={`p-3.5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono shadow-xs transition-all ${
+            isLight
+              ? 'bg-amber-50/90 border-amber-200 text-slate-800'
+              : 'bg-amber-500/10 border-amber-500/25 text-amber-200'
+          }`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-[#D4AF37]/20 border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37] shrink-0">
+              <ClipboardList className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="font-bold flex items-center gap-1.5 truncate">
+                <span className={isLight ? 'text-slate-900 font-bold' : 'text-white font-bold'}>
+                  Chantier Relevé : {surveyProjectData.info?.clientName || 'M. Amrani'}
+                </span>
+              </div>
+              <div className={`text-[10px] truncate ${isLight ? 'text-slate-600 font-medium' : 'text-zinc-400'}`}>
+                {surveyProjectData.openings.length} châssis mesurés • {surveyProjectData.openings.reduce((sum, o) => sum + (o.quantity || 1) * 8, 0)} pièces estimées
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+            <button
+              type="button"
+              onClick={handleImportSurveyProject}
+              className="px-3 py-2 rounded-xl bg-[#D4AF37] text-slate-950 font-bold text-[11px] cursor-pointer hover:brightness-110 active:scale-95 transition-all shadow-xs"
+            >
+              Importer Tout le Chantier
+            </button>
+            <button
+              type="button"
+              onClick={handleImportCurrentWindow}
+              className={`px-2.5 py-2 rounded-xl border text-[11px] font-medium cursor-pointer active:scale-95 transition-all ${
+                isLight
+                  ? 'border-slate-300 bg-white hover:bg-slate-100 text-slate-700'
+                  : 'border-white/10 bg-white/5 hover:bg-white/10 text-zinc-300'
+              }`}
+              title="Charger uniquement le châssis 3D actif"
+            >
+              Châssis 3D
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 1. TOP STATS CARDS */}
       <div className="space-y-2 font-mono">
         <div className="grid grid-cols-3 gap-2 text-center">
@@ -406,13 +614,22 @@ export const MobileCuttingScreen: React.FC = () => {
             <span>Terminal Scie & Assemblage Atelier</span>
           </button>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button
               onClick={handleShareWhatsAppCutSheet}
               className="w-full py-2.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:bg-emerald-500/20 active:scale-98 transition-all"
             >
               <MessageCircle className="w-4 h-4" />
               <span>WhatsApp Scie</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadCutSheetPdf}
+              className="w-full py-2.5 rounded-2xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] hover:bg-[#D4AF37]/25 active:scale-98 transition-all"
+            >
+              <FileDown className="w-4 h-4" />
+              <span>Fiche Scie PDF</span>
             </button>
 
             <button
@@ -423,7 +640,7 @@ export const MobileCuttingScreen: React.FC = () => {
                   : 'bg-white/10 hover:bg-white/15 border-white/10 text-zinc-300'
               }`}
             >
-              <FileDown className="w-4 h-4 text-[#D4AF37]" />
+              <Download className="w-4 h-4 text-zinc-400" />
               <span>Télécharger CSV</span>
             </button>
           </div>

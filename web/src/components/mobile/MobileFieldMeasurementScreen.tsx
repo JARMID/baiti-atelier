@@ -12,6 +12,7 @@ import {
   Upload,
   RotateCcw,
   Layers,
+  Scissors,
 } from 'lucide-react';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -21,6 +22,7 @@ import {
   formatGlassTypeFr,
   formatShutterTypeFr,
 } from '../../utils/pdfGenerator';
+import type { MobileNavTab } from './MobileBottomNavigation';
 
 export interface FieldOpeningItem {
   id: string;
@@ -45,7 +47,13 @@ function createOpeningId(): string {
 const STORAGE_KEY = 'baiti_field_measurement_project';
 const STORAGE_INFO_KEY = 'baiti_field_measurement_info';
 
-export const MobileFieldMeasurementScreen: React.FC = () => {
+interface MobileFieldMeasurementScreenProps {
+  onNavigateTab?: (tab: MobileNavTab) => void;
+}
+
+export const MobileFieldMeasurementScreen: React.FC<MobileFieldMeasurementScreenProps> = ({
+  onNavigateTab,
+}) => {
   const { selectedWilaya, theme, language, calibration } = useConfigStore();
   const isLight = theme === 'light';
   const isRtl = language === 'ar';
@@ -835,6 +843,27 @@ export const MobileFieldMeasurementScreen: React.FC = () => {
             <span>Devis Chantier PDF</span>
           </button>
         </div>
+
+        {openings.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              playClampSound();
+              if (onNavigateTab) {
+                onNavigateTab('cutting');
+              }
+            }}
+            className={`w-full py-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[46px] active:scale-98 transition-all ${
+              isLight
+                ? 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-300 shadow-xs'
+                : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/30'
+            }`}
+            title="Optimiser et générer les débits pour l'atelier scie"
+          >
+            <Scissors className="w-4 h-4 text-[#D4AF37]" />
+            <span>Optimiser le Débit Scie 1D ({openings.length} châssis)</span>
+          </button>
+        )}
       </div>
     </div>
   );
