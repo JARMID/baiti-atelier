@@ -14,6 +14,7 @@ import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/a
 import { generateWorkshopCutSheetPdf } from '../../utils/pdfGenerator';
 import { computeCadCells, computeDetailedBOM } from '../../utils/cadEngine';
 import type { CadStructure, CellType } from '../../types/cad';
+import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
 
 const CELL_TYPE_CONFIG: {
   type: CellType;
@@ -51,6 +52,7 @@ export const MobileCadScreen: React.FC = () => {
   const [rawSelectedCellKey, setRawSelectedCellKey] = useState<string>('0-0');
   const [isGeneratingCutSheet, setIsGeneratingCutSheet] = useState(false);
   const [activeBomTab, setActiveBomTab] = useState<'cuts' | 'glasses'>('cuts');
+  const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
 
   // Derived CAD Structure with current config dimensions
   const cadStructure: CadStructure = useMemo(() => ({
@@ -329,6 +331,19 @@ export const MobileCadScreen: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowCrossSectionModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-sky-400 font-semibold"
+              title="Afficher la coupe technique d'extrusion 2D"
+            >
+              <Layers className="w-3 h-3" />
+              <span>Coupe 2D</span>
+            </button>
+
             <button
               type="button"
               onClick={handleMirrorBlueprint}
@@ -746,6 +761,24 @@ export const MobileCadScreen: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* 2D ARCHITECTURAL CROSS-SECTION MODAL */}
+      {showCrossSectionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl">
+            <ProfileCrossSectionViewer
+              initialSeries={
+                config.profileSystem === 'pvc_70_chamber'
+                  ? 'pvc_60_multi'
+                  : config.profileSystem === 'gamme_67_slide'
+                  ? 'alu_52_rpt'
+                  : 'alu_45_rpt'
+              }
+              onClose={() => setShowCrossSectionModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -10,6 +10,7 @@ import {
   Check,
   MapPin,
   Thermometer,
+  Layers,
 } from 'lucide-react';
 import {
   playTactileClick,
@@ -19,6 +20,7 @@ import {
 import { generateClientDevisPdf } from '../../utils/pdfGenerator';
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
 import { DTR_ZONE_THRESHOLDS, getDtrZoneForWilaya } from '../../utils/dtrThermal';
+import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
 
 interface PresetItem {
   id: string;
@@ -93,6 +95,7 @@ export const MobileConfiguratorScreen: React.FC = () => {
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
+  const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
 
   const currentWilaya = useMemo(() => {
     return (
@@ -388,9 +391,23 @@ export const MobileConfiguratorScreen: React.FC = () => {
 
       {/* 5. PROFILE SYSTEM CARDS */}
       <div className="space-y-2">
-        <label className="text-xs font-mono font-bold text-zinc-400 block">
-          Gamme de Profilé
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-mono font-bold text-zinc-400 block">
+            Gamme de Profilé
+          </label>
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick();
+              setShowCrossSectionModal(true);
+            }}
+            className="text-[11px] font-mono text-sky-400 hover:text-sky-300 flex items-center gap-1 cursor-pointer transition-colors"
+            title="Consulter la coupe technique d'extrusion 2D"
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Coupe 2D</span>
+          </button>
+        </div>
         <div className="space-y-1.5">
           {PROFILE_OPTIONS.map((pf) => {
             const isSelected = config.profileSystem === pf.id;
@@ -707,6 +724,24 @@ export const MobileConfiguratorScreen: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* 2D ARCHITECTURAL CROSS-SECTION MODAL */}
+      {showCrossSectionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl">
+            <ProfileCrossSectionViewer
+              initialSeries={
+                config.profileSystem === 'pvc_70_chamber'
+                  ? 'pvc_60_multi'
+                  : config.profileSystem === 'gamme_67_slide'
+                  ? 'alu_52_rpt'
+                  : 'alu_45_rpt'
+              }
+              onClose={() => setShowCrossSectionModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
