@@ -3597,3 +3597,214 @@ export async function generateStoreRequisitionPdf(
   const safeFilename = `Bon_Sortie_Matiere_${params.slipNumber}.pdf`;
   doc.save(safeFilename);
 }
+
+export interface GeneratePaymentReceiptPdfParams {
+  receiptNumber: string;
+  date: string;
+  clientName: string;
+  clientPhone?: string;
+  projectTitle: string;
+  amountDzd: number;
+  amountInWordsFr: string;
+  paymentMethodFr: string;
+  transactionRef: string;
+  jobTotalDzd: number;
+  depositTotalDzd: number;
+  balanceDzd: number;
+  issuerName: string;
+  notes?: string;
+}
+
+export async function generatePaymentReceiptPdf(
+  params: GeneratePaymentReceiptPdfParams
+): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryBlue: [number, number, number] = [0, 51, 102];
+  const goldAccent: [number, number, number] = [212, 175, 55];
+  const darkSlate: [number, number, number] = [15, 23, 42];
+
+  // 1. Header Banner
+  doc.setFillColor(...primaryBlue);
+  doc.rect(0, 0, 210, 28, 'F');
+
+  doc.setFillColor(...goldAccent);
+  doc.rect(0, 28, 210, 1.5, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('QUITTANCE OFFICIELLE DE RÈGLEMENT', 14, 13);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(226, 232, 240);
+  doc.text(
+    'Reçu certifié de versement d acompte • Baiti Atelier Menuiserie Aluminium & PVC',
+    14,
+    20
+  );
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...goldAccent);
+  doc.text(`RÉF : ${params.receiptNumber}`, 196, 13, { align: 'right' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Date : ${params.date}`, 196, 20, { align: 'right' });
+
+  // 2. Client & Project Metadata Container
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 34, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...darkSlate);
+  doc.text('Client Bénéficiaire :', 18, 42);
+  doc.setFont('helvetica', 'normal');
+  doc.text(params.clientName, 55, 42);
+
+  if (params.clientPhone) {
+    doc.setFont('helvetica', 'bold');
+    doc.text('Téléphone :', 18, 50);
+    doc.setFont('helvetica', 'normal');
+    doc.text(params.clientPhone, 55, 50);
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Affaire / Commande :', 115, 42);
+  doc.setFont('helvetica', 'normal');
+  doc.text(params.projectTitle, 150, 42);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Émetteur Quittance :', 115, 50);
+  doc.setFont('helvetica', 'normal');
+  doc.text(params.issuerName, 150, 50);
+
+  // 3. Highlighted Payment Amount Box
+  doc.setFillColor(241, 245, 249);
+  doc.setDrawColor(203, 213, 225);
+  doc.roundedRect(14, 63, 182, 30, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(100, 116, 139);
+  doc.text('MONTANT NET ENCAISSÉ ET CRÉDITÉ :', 18, 71);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(...primaryBlue);
+  doc.text(`+${params.amountDzd.toLocaleString('fr-DZ')} DZD`, 18, 80);
+
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...darkSlate);
+  doc.text(`Soit en toutes lettres : ${params.amountInWordsFr}`, 18, 87);
+
+  // 4. Payment Settlement AutoTable
+  const paymentRows = [
+    ['Mode de Règlement', params.paymentMethodFr],
+    ['Référence Transaction / N° Reçu', params.transactionRef],
+    ['Date & Heure d Encaissement', params.date],
+    ['Montant de la présente quittance', `${params.amountDzd.toLocaleString('fr-DZ')} DZD`],
+    ['Montant total TTC de la commande', `${params.jobTotalDzd.toLocaleString('fr-DZ')} DZD`],
+    ['Cumul des acomptes perçus à ce jour', `${params.depositTotalDzd.toLocaleString('fr-DZ')} DZD`],
+    ['Solde restant à régler à la livraison', `${params.balanceDzd.toLocaleString('fr-DZ')} DZD`],
+  ];
+
+  autoTable(doc, {
+    startY: 98,
+    head: [['Désignation Comptable', 'Valeur / Référence Enregistrée']],
+    body: paymentRows,
+    theme: 'grid',
+    headStyles: {
+      fillColor: primaryBlue,
+      textColor: [255, 255, 255],
+      fontSize: 8,
+      fontStyle: 'bold',
+    },
+    bodyStyles: {
+      fontSize: 8,
+      textColor: darkSlate,
+      valign: 'middle',
+    },
+    columnStyles: {
+      0: { cellWidth: 80, fontStyle: 'bold' },
+      1: { cellWidth: 102, halign: 'right' },
+    },
+  });
+
+  const finalY = (doc as any).lastAutoTable.finalY || 160;
+
+  // 5. Legal Quittance Clause Container
+  const legalY = finalY + 6;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, legalY, 182, 18, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...darkSlate);
+  doc.text('Clause Juridique de Quittance :', 18, legalY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  const legalText =
+    params.notes ||
+    'La présente quittance atteste du paiement effectif de la somme mentionnée ci-dessus au titre d acompte sur commande. Les acomptes versés sont déduits du montant final exigible à la réception définitive et pose des ouvrages.';
+  doc.text(doc.splitTextToSize(legalText, 174), 18, legalY + 11);
+
+  // 6. Signatures Box
+  const signY = legalY + 22;
+
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 24, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 24, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Pour le Client (Soussigné) :', 18, signY + 5.5);
+  doc.text('Pour l Entreprise / Baiti Atelier :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Nom : ${params.clientName}`, 18, signY + 11);
+  doc.text('Émargement & Mention "Bon pour versement" :', 18, signY + 18);
+  doc.text(`Responsable : ${params.issuerName}`, 135, signY + 11);
+  doc.text('Cachet commercial & Signature certifiée :', 135, signY + 18);
+
+  // 7. Dynamic QR Code
+  try {
+    const qrPayload = `BAITI|REC|${params.receiptNumber}|MONTANT=${params.amountDzd}|CLIENT=${params.clientName}|TX=${params.transactionRef}|DATE=${params.date}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Quittance de paiement certifiée par Baiti Atelier • ${params.receiptNumber} • www.baitiatelier.dz`,
+    105,
+    288,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Quittance_Versement_${params.receiptNumber}.pdf`;
+  doc.save(safeFilename);
+}
+
