@@ -92,7 +92,7 @@ export const WindowCanvas: React.FC = () => {
 
   return (
     <div
-      className={`relative w-full h-[520px] md:h-[640px] rounded-2xl overflow-hidden glass-panel border transition-all duration-300 shadow-2xl ${
+      className={`relative w-full h-[400px] sm:h-[500px] md:h-[640px] rounded-2xl overflow-hidden glass-panel border transition-all duration-300 shadow-2xl ${
         isLight
           ? 'bg-gradient-to-b from-[#FFFFFF] via-[#F8FAFC] to-[#EDF2F7] border-slate-200 text-slate-800 shadow-slate-200/60'
           : 'bg-gradient-to-b from-[#13161F] via-[#0E1017] to-[#0A0C10] border-white/10 text-white'
@@ -282,14 +282,14 @@ export const WindowCanvas: React.FC = () => {
       {/* 3D CLIPPING SECTION TRAY (DISPLAYED WHEN ACTIVE) */}
       {isClippingActive && (
         <div
-          className={`absolute bottom-12 left-4 right-4 z-20 p-3 rounded-2xl border backdrop-blur-xl flex flex-wrap items-center justify-between gap-3 text-xs font-mono shadow-2xl transition-all ${
+          className={`absolute bottom-10 sm:bottom-12 left-2 sm:left-4 right-2 sm:right-4 z-20 p-2.5 sm:p-3 rounded-2xl border backdrop-blur-xl flex flex-wrap items-center justify-between gap-2 sm:gap-3 text-xs font-mono shadow-2xl transition-all ${
             isLight
               ? 'bg-white/95 border-slate-200 text-slate-900 shadow-slate-300/50'
               : 'bg-[#090D18]/90 border-cyan-500/30 text-white shadow-cyan-950/50'
           }`}
         >
           <div className="flex items-center gap-2">
-            <span className="text-cyan-400 font-bold flex items-center gap-1.5">
+            <span className="text-cyan-400 font-bold flex items-center gap-1.5 text-[11px] sm:text-xs">
               <Scissors className="w-3.5 h-3.5" />
               <span>Coupe 3D :</span>
             </span>
@@ -301,7 +301,7 @@ export const WindowCanvas: React.FC = () => {
                     playSwitchSound();
                     setClippingAxis(axis);
                   }}
-                  className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold uppercase transition-all cursor-pointer ${
+                  className={`px-2.5 sm:px-3 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase transition-all cursor-pointer min-h-[28px] flex items-center justify-center ${
                     clippingAxis === axis
                       ? 'bg-cyan-500 text-slate-950 shadow-xs'
                       : 'text-zinc-400 hover:text-white'
@@ -314,7 +314,7 @@ export const WindowCanvas: React.FC = () => {
           </div>
 
           {/* Slider */}
-          <div className="flex-1 min-w-[180px] flex items-center gap-2">
+          <div className="flex-1 min-w-[140px] sm:min-w-[180px] flex items-center gap-2">
             <span className="text-[10px] text-zinc-400">Position:</span>
             <input
               type="range"
@@ -337,7 +337,7 @@ export const WindowCanvas: React.FC = () => {
                 setClippingInverted(!clippingInverted);
               }}
               title="Inverser le sens de coupe"
-              className={`p-1.5 rounded-xl border flex items-center gap-1 text-[11px] cursor-pointer transition-colors ${
+              className={`p-1.5 sm:p-2 rounded-xl border flex items-center gap-1 text-[11px] cursor-pointer transition-colors ${
                 clippingInverted
                   ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300'
                   : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
@@ -353,7 +353,7 @@ export const WindowCanvas: React.FC = () => {
                 setShowSectionTags(!showSectionTags);
               }}
               title="Afficher/masquer les étiquettes de profilé"
-              className={`p-1.5 rounded-xl border flex items-center gap-1 text-[11px] cursor-pointer transition-colors ${
+              className={`p-1.5 sm:p-2 rounded-xl border flex items-center gap-1 text-[11px] cursor-pointer transition-colors ${
                 showSectionTags
                   ? 'bg-[#D4AF37]/20 border-[#D4AF37] text-[#D4AF37]'
                   : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
@@ -368,7 +368,7 @@ export const WindowCanvas: React.FC = () => {
 
       {/* Floating Instruction Hint */}
       <div
-        className={`absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none text-[11px] font-mono px-3 py-1 rounded-full border backdrop-blur-sm ${
+        className={`hidden sm:block absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none text-[11px] font-mono px-3 py-1 rounded-full border backdrop-blur-sm ${
           isLight
             ? 'bg-white/80 border-slate-200 text-slate-600 shadow-sm'
             : 'bg-black/40 border-white/5 text-zinc-500'

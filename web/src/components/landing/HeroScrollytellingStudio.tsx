@@ -327,7 +327,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
         </div>
 
         {/* DYNAMIC SCROLLYTELLING OVERLAY CONTENT */}
-        <div className="relative z-20 flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-20 pointer-events-none">
+        <div className="relative z-20 flex-1 flex flex-col justify-center px-4 sm:px-12 lg:px-20 pointer-events-none">
           {/* STAGE 1: HERO OVERVIEW (0.0 to 0.35) */}
           <div
             className={`max-w-xl transition-all duration-700 ${
@@ -348,7 +348,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
             </div>
 
             <h1
-              className={`text-4xl sm:text-6xl lg:text-7xl font-serif tracking-tight leading-[1.05] ${
+              className={`text-3xl sm:text-5xl lg:text-7xl font-serif tracking-tight leading-[1.08] sm:leading-[1.05] ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}
             >
@@ -360,18 +360,18 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
             </h1>
 
             <p
-              className={`mt-4 text-sm sm:text-base font-light leading-relaxed max-w-lg ${
+              className={`mt-4 text-xs sm:text-base font-light leading-relaxed max-w-lg ${
                 isLight ? 'text-slate-600' : 'text-zinc-400'
               }`}
             >
               Châssis aluminium à rupture thermique, agencements d'ébénisterie, ferronnerie d'art et draperie architecturale pour les maîtres ateliers des 58 Wilayas.
             </p>
 
-            <div className="mt-8 flex items-center gap-4">
+            <div className="mt-6 sm:mt-8 flex items-center gap-4">
               <a
                 href="#cad-studio"
                 onClick={() => playTactileClick()}
-                className="px-6 py-3.5 rounded-full border border-white/20 bg-[#D4AF37] hover:bg-[#C5A880] text-slate-950 text-xs font-mono tracking-wider uppercase transition-all duration-300 shadow-xl flex items-center gap-2 group cursor-pointer hover-lift btn-press"
+                className="px-5 py-3 sm:px-6 sm:py-3.5 rounded-full border border-white/20 bg-[#D4AF37] hover:bg-[#C5A880] text-slate-950 text-xs font-mono tracking-wider uppercase transition-all duration-300 shadow-xl flex items-center gap-2 group cursor-pointer hover-lift btn-press"
               >
                 <span>OUVRIR LE STUDIO CAO</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -399,7 +399,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
             </div>
 
             <h2
-              className={`text-3xl sm:text-5xl font-serif tracking-tight leading-tight ${
+              className={`text-2xl sm:text-4xl lg:text-5xl font-serif tracking-tight leading-tight ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}
             >
@@ -418,9 +418,9 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
             </p>
 
             {/* Technical Metric Chips */}
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
               <div
-                className={`px-4 py-2 rounded-2xl border backdrop-blur-xl text-xs font-mono ${
+                className={`px-3 sm:px-4 py-2 rounded-2xl border backdrop-blur-xl text-xs font-mono ${
                   isLight ? 'bg-white/90 border-slate-200 shadow-xs' : 'bg-black/60 border-white/15'
                 }`}
               >
@@ -430,7 +430,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                 <span className="text-[#D4AF37] font-bold text-sm">Uw = 1.4 W/m²K</span>
               </div>
               <div
-                className={`px-4 py-2 rounded-2xl border backdrop-blur-xl text-xs font-mono ${
+                className={`px-3 sm:px-4 py-2 rounded-2xl border backdrop-blur-xl text-xs font-mono ${
                   isLight ? 'bg-white/90 border-slate-200 shadow-xs' : 'bg-black/60 border-white/15'
                 }`}
               >
@@ -440,7 +440,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                 <span className="text-emerald-500 font-bold text-sm">&lt; 3.5% Chutes</span>
               </div>
               <div
-                className={`px-4 py-2 rounded-2xl border backdrop-blur-xl text-xs font-mono ${
+                className={`px-3 sm:px-4 py-2 rounded-2xl border backdrop-blur-xl text-xs font-mono ${
                   isLight ? 'bg-white/90 border-slate-200 shadow-xs' : 'bg-black/60 border-white/15'
                 }`}
               >
@@ -464,7 +464,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
               INSPECTION TECHNIQUE 360°
             </span>
             <h2
-              className={`text-3xl sm:text-5xl font-serif tracking-tight leading-tight ${
+              className={`text-2xl sm:text-4xl lg:text-5xl font-serif tracking-tight leading-tight ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}
             >
@@ -479,49 +479,49 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                 isLight ? 'bg-white/90 border-slate-200 text-slate-800' : 'bg-white/10 border-white/20 text-zinc-200'
               }`}
             >
-              <Rotate3d className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>CLIQUEZ ET FAITES GLISSER POUR PIVOTER EN TEMPS RÉEL</span>
+              <Compass className="w-4 h-4 text-[#D4AF37] animate-spin" style={{ animationDuration: '6s' }} />
+              <span>Faites pivoter avec le doigt ou la souris</span>
             </div>
           </div>
         </div>
 
-        {/* BOTTOM HUD / FOOTPRINT LABELS */}
+        {/* BOTTOM METRIC HUD TAPE */}
         <div
-          className={`relative z-20 px-6 sm:px-12 pb-24 flex items-center justify-between text-[11px] font-mono tracking-wider pointer-events-none ${
+          className={`absolute bottom-20 sm:bottom-24 left-0 right-0 z-20 flex items-center justify-between px-4 sm:px-8 text-[11px] font-mono pointer-events-none transition-colors ${
             isLight ? 'text-slate-500' : 'text-zinc-500'
           }`}
         >
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
-            <span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+            <span className="truncate max-w-[200px] sm:max-w-none">
               {isStage1
-                ? 'FAITES DÉFILER POUR EXPLORER L’INTÉRIEUR'
+                ? 'VUE D\'ENSEMBLE DU CHÂSSIS'
                 : isStage2
                 ? 'VUE ÉCLATÉE & QUINCAILLERIE'
                 : 'INSPECTION 360° ACTIVE'}
             </span>
           </div>
-          <div>
+          <div className="hidden sm:block">
             <span>ALGER · ORAN · CONSTANTINE · 58 WILAYAS</span>
           </div>
         </div>
 
         {/* FLOATING LUXURY CUSTOMIZER DOCK */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-auto max-w-[95vw]">
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-full max-w-[96vw] sm:max-w-max flex justify-center">
           <div
-            className={`inline-flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 rounded-3xl sm:rounded-full border backdrop-blur-2xl transition-colors shadow-2xl ${
+            className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full border backdrop-blur-2xl transition-colors shadow-2xl overflow-x-auto no-scrollbar max-w-full whitespace-nowrap scroll-smooth ${
               isLight
-                ? 'bg-white/90 border-slate-200 text-slate-800 shadow-slate-300/50'
-                : 'bg-black/75 border-white/15 text-white shadow-black/80'
+                ? 'bg-white/95 border-slate-200 text-slate-800 shadow-slate-300/50'
+                : 'bg-black/80 border-white/15 text-white shadow-black/90'
             }`}
           >
             {/* SEGMENT 1: TRADE SELECTOR */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               {tradePills.map((tr) => (
                 <button
                   key={tr.id}
                   onClick={() => handleTradeSwitch(tr.id)}
-                  className={`px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] font-mono tracking-wide transition-all duration-200 cursor-pointer btn-press ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] font-mono tracking-wide transition-all duration-200 cursor-pointer btn-press shrink-0 ${
                     selectedTrade === tr.id
                       ? 'bg-[#D4AF37] text-slate-950 font-bold shadow-md shadow-[#D4AF37]/30 scale-[1.03]'
                       : isLight
@@ -537,8 +537,8 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
             {/* SEGMENT 1.5: WINDOW MODEL SELECTOR (WHEN ALUMINUM SELECTED) */}
             {selectedTrade === 'aluminum' && (
               <>
-                <div className={`hidden sm:block w-px h-5 ${isLight ? 'bg-slate-200' : 'bg-white/20'}`} />
-                <div className="flex items-center gap-1">
+                <div className={`w-px h-5 shrink-0 ${isLight ? 'bg-slate-200' : 'bg-white/20'}`} />
+                <div className="flex items-center gap-1 shrink-0">
                   {windowModelPills.map((wm) => (
                     <button
                       key={wm.id}
@@ -546,7 +546,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                         playSwitchSound();
                         setWindowModel(wm.id);
                       }}
-                      className={`px-2.5 py-1.5 rounded-full text-[10px] font-mono transition-all cursor-pointer btn-press ${
+                      className={`px-2.5 py-1.5 rounded-full text-[10px] font-mono transition-all cursor-pointer btn-press shrink-0 ${
                         windowModel === wm.id
                           ? isLight
                             ? 'bg-slate-900 text-white font-bold'
@@ -564,22 +564,22 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
             )}
 
             {/* DIVIDER */}
-            <div className={`hidden sm:block w-px h-5 ${isLight ? 'bg-slate-200' : 'bg-white/20'}`} />
+            <div className={`w-px h-5 shrink-0 ${isLight ? 'bg-slate-200' : 'bg-white/20'}`} />
 
             {/* SEGMENT 2: FINISH PALETTE SWATCHES */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <span className={`hidden lg:inline text-[10px] font-mono uppercase ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>
                 TEINTE :
               </span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1 sm:gap-1.5">
                 {colorSwatches.map((sw) => (
                   <button
                     key={sw.id}
                     onClick={() => handleColorSwitch(sw.id)}
                     title={sw.label}
-                    className={`w-5 h-5 rounded-full border transition-all cursor-pointer ${
+                    className={`w-6 h-6 sm:w-5 sm:h-5 rounded-full border transition-all cursor-pointer shrink-0 ${
                       config.finishColor === sw.id
-                        ? 'ring-2 ring-[#D4AF37] scale-125 border-white shadow-xs'
+                        ? 'ring-2 ring-[#D4AF37] scale-110 border-white shadow-xs'
                         : isLight
                         ? 'opacity-80 hover:opacity-100 border-slate-300'
                         : 'opacity-70 hover:opacity-100 border-white/30'
@@ -591,14 +591,14 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
             </div>
 
             {/* DIVIDER */}
-            <div className={`w-px h-5 ${isLight ? 'bg-slate-200' : 'bg-white/20'}`} />
+            <div className={`w-px h-5 shrink-0 ${isLight ? 'bg-slate-200' : 'bg-white/20'}`} />
 
             {/* SEGMENT 3: ACTION CONTROLS */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 onClick={handleToggleExploded}
                 title="Vue Éclatée"
-                className={`p-1.5 rounded-full border transition-all cursor-pointer ${
+                className={`w-8 h-8 sm:w-7 sm:h-7 rounded-full border flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                   isExploded
                     ? 'bg-[#D4AF37] text-slate-950 border-[#D4AF37]'
                     : isLight
@@ -615,7 +615,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                   setIsClippingActive(!isClippingActive);
                 }}
                 title="Coupe Technique 3D"
-                className={`p-1.5 rounded-full border transition-all cursor-pointer ${
+                className={`w-8 h-8 sm:w-7 sm:h-7 rounded-full border flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                   isClippingActive
                     ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold shadow-md shadow-cyan-500/20'
                     : isLight
@@ -627,13 +627,13 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
               </button>
 
               {isClippingActive && (
-                <div className="flex items-center gap-1.5 pl-1.5 pr-2 py-0.5 rounded-full bg-black/40 border border-cyan-500/30 text-[10px] font-mono">
+                <div className="flex items-center gap-1.5 pl-1.5 pr-2 py-0.5 rounded-full bg-black/40 border border-cyan-500/30 text-[10px] font-mono shrink-0">
                   <button
                     onClick={() => {
                       playSwitchSound();
                       setClippingAxis(clippingAxis === 'x' ? 'y' : 'x');
                     }}
-                    className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold uppercase cursor-pointer"
+                    className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold uppercase cursor-pointer"
                   >
                     {clippingAxis}
                   </button>
@@ -644,7 +644,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                     step="0.02"
                     value={clippingPos}
                     onChange={(e) => setClippingPos(parseFloat(e.target.value))}
-                    className="w-14 accent-cyan-400 h-1 cursor-pointer"
+                    className="w-14 sm:w-16 accent-cyan-400 h-1 cursor-pointer"
                   />
                   <button
                     onClick={() => {
@@ -661,7 +661,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
 
               <button
                 onClick={handleToggle360}
-                className={`px-3 py-1.5 rounded-full border text-[11px] font-mono tracking-wider uppercase transition-all flex items-center gap-1.5 cursor-pointer btn-press ${
+                className={`px-3 py-1.5 rounded-full border text-[11px] font-mono tracking-wider uppercase transition-all flex items-center gap-1.5 cursor-pointer btn-press shrink-0 ${
                   is360Active
                     ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-md shadow-cyan-500/20'
                     : isLight
@@ -670,7 +670,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                 }`}
               >
                 <Rotate3d className="w-3.5 h-3.5 text-[#D4AF37]" />
-                <span className="hidden sm:inline">360°</span>
+                <span>360°</span>
               </button>
             </div>
           </div>

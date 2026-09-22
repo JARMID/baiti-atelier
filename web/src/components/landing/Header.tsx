@@ -450,13 +450,47 @@ export const Header: React.FC<HeaderProps> = ({
             isLight ? 'bg-white/95 border-slate-200' : 'bg-[#0B0D13]/95 border-white/10'
           }`}
         >
+          {/* Mobile Wilaya Selector Card */}
+          <div
+            className={`flex items-center justify-between p-3 rounded-2xl border text-xs ${
+              isLight ? 'bg-slate-100 border-slate-200 text-slate-800' : 'bg-white/5 border-white/10 text-white'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-[#D4AF37]" />
+              <span className="font-mono font-bold">Wilaya :</span>
+            </div>
+            <select
+              value={selectedWilaya}
+              onChange={(e) => {
+                playSwitchSound();
+                setSelectedWilaya(e.target.value);
+              }}
+              className="bg-transparent border-none font-mono text-xs focus:outline-none cursor-pointer pr-1 max-w-[200px] truncate font-bold text-[#D4AF37]"
+            >
+              {ALGERIAN_WILAYAS_58.map((w) => {
+                const label = formatWilayaLabel(w, language);
+                const val = `${w.code} - ${w.nameFr}`;
+                return (
+                  <option
+                    key={w.code}
+                    value={val}
+                    className={isLight ? 'bg-white text-slate-800' : 'bg-[#0E121C] text-white'}
+                  >
+                    {label}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
           <a
             href="#cad-studio"
             onClick={() => {
               playTactileClick();
               setIsMobileMenuOpen(false);
             }}
-            className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-white/10 text-sm font-medium"
+            className="flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl hover:bg-white/10 text-sm font-medium"
           >
             <Grid className="w-4 h-4 text-[#38BDF8]" />
             <span>Studio CAD 2D Paramétrique</span>
@@ -467,7 +501,7 @@ export const Header: React.FC<HeaderProps> = ({
               playTactileClick();
               setIsMobileMenuOpen(false);
             }}
-            className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-white/10 text-sm font-medium"
+            className="flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl hover:bg-white/10 text-sm font-medium"
           >
             <Scissors className="w-4 h-4 text-[#D4AF37]" />
             <span>Optimiseur de Débitage & Scie</span>
@@ -478,7 +512,7 @@ export const Header: React.FC<HeaderProps> = ({
               playTactileClick();
               setIsMobileMenuOpen(false);
             }}
-            className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-white/10 text-sm font-medium"
+            className="flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl hover:bg-white/10 text-sm font-medium"
           >
             <Layers className="w-4 h-4 text-emerald-400" />
             <span>Configurateur 3D Châssis</span>
@@ -490,7 +524,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setIsMobileMenuOpen(false);
                 onOpenMaterialMarket();
               }}
-              className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-white/10 text-sm font-medium text-left cursor-pointer"
+              className="flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl hover:bg-white/10 text-sm font-medium text-left rtl:text-right cursor-pointer"
             >
               <TrendingUp className="w-4 h-4 text-amber-400" />
               <span>Bourse des Matières Premières Algérie</span>
@@ -502,10 +536,40 @@ export const Header: React.FC<HeaderProps> = ({
               playTactileClick();
               setIsMobileMenuOpen(false);
             }}
-            className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-white/10 text-sm font-medium"
+            className="flex items-center gap-2 p-2.5 min-h-[44px] rounded-xl hover:bg-white/10 text-sm font-medium"
           >
             <span>Réseau des Ateliers (58 Wilayas)</span>
           </a>
+
+          {/* Quick Offline Tools & Desktop App */}
+          <div className="pt-2 border-t border-black/5 dark:border-white/10 flex flex-col gap-2">
+            {onOpenOfflineModal && (
+              <button
+                onClick={() => {
+                  playTactileClick();
+                  setIsMobileMenuOpen(false);
+                  onOpenOfflineModal();
+                }}
+                className="flex items-center justify-between p-2.5 min-h-[44px] rounded-xl bg-white/5 hover:bg-white/10 text-xs font-mono cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <HardDrive className="w-4 h-4 text-amber-400" />
+                  <span>Carnet Devis Hors-Ligne</span>
+                </div>
+                <span className="text-[10px] text-zinc-500">Local</span>
+              </button>
+            )}
+
+            <a
+              href="/downloads/baiti-atelier-desktop-setup.exe"
+              download
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center justify-center gap-2 p-2.5 min-h-[44px] rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#D4AF37] text-xs font-mono font-bold"
+            >
+              <Download className="w-4 h-4" />
+              <span>Télécharger Baiti Desktop (.exe)</span>
+            </a>
+          </div>
         </div>
       )}
     </header>

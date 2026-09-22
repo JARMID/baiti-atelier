@@ -248,8 +248,8 @@ export const CuttingStudio: React.FC = () => {
       </div>
 
       {/* Tabs Selector */}
-      <div className="flex justify-center mb-8">
-        <div className={`inline-flex flex-wrap p-1.5 rounded-2xl border ${
+      <div className="flex justify-center mb-8 overflow-x-auto no-scrollbar max-w-full px-2">
+        <div className={`inline-flex p-1.5 rounded-2xl border overflow-x-auto no-scrollbar scroll-smooth whitespace-nowrap ${
           isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0F141C] border-white/10'
         }`}>
           <button
@@ -257,7 +257,7 @@ export const CuttingStudio: React.FC = () => {
               playSwitchSound();
               setActiveTab('1d');
             }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer hover-lift btn-press ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer hover-lift btn-press shrink-0 ${
               activeTab === '1d'
                 ? 'bg-[#D4AF37] text-slate-950 shadow-lg shadow-[#D4AF37]/20 font-bold'
                 : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-zinc-400 hover:text-white'
@@ -271,7 +271,7 @@ export const CuttingStudio: React.FC = () => {
               playSwitchSound();
               setActiveTab('2d');
             }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer hover-lift btn-press ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer hover-lift btn-press shrink-0 ${
               activeTab === '2d'
                 ? 'bg-[#D4AF37] text-slate-950 shadow-lg shadow-[#D4AF37]/20 font-bold'
                 : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-zinc-400 hover:text-white'
@@ -285,7 +285,7 @@ export const CuttingStudio: React.FC = () => {
               playSwitchSound();
               setActiveTab('remnants');
             }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer hover-lift btn-press ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer hover-lift btn-press shrink-0 ${
               activeTab === 'remnants'
                 ? 'bg-[#D4AF37] text-slate-950 shadow-lg shadow-[#D4AF37]/20 font-bold'
                 : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-zinc-400 hover:text-white'
@@ -299,7 +299,7 @@ export const CuttingStudio: React.FC = () => {
               playSwitchSound();
               setActiveTab('shutter');
             }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer hover-lift btn-press ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer hover-lift btn-press shrink-0 ${
               activeTab === 'shutter'
                 ? 'bg-[#D4AF37] text-slate-950 shadow-lg shadow-[#D4AF37]/20 font-bold'
                 : isLight ? 'text-slate-600 hover:text-slate-900' : 'text-zinc-400 hover:text-white'
@@ -456,7 +456,7 @@ export const CuttingStudio: React.FC = () => {
               <h3 className={`text-base font-bold ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>
                 Plans de Découpe par Barre
               </h3>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <span className={`text-xs font-mono ${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'}`}>
                   {linearResult.bars.length} barres calculées
                 </span>
@@ -1100,7 +1100,7 @@ export const CuttingStudio: React.FC = () => {
           <div className={`p-6 rounded-3xl border flex flex-col gap-4 transition-all ${
             isLight ? 'bg-white border-slate-200 text-slate-800 shadow-sm' : 'glass-panel border-white/10 text-zinc-200'
           }`}>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h4 className={`text-base font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   Casiers de Rangement en Atelier ({offcutInventory.length} chutes disponibles)
@@ -1109,7 +1109,7 @@ export const CuttingStudio: React.FC = () => {
                   Ces profilés sont automatiquement pris en compte lors de l'optimisation pour économiser des barres neuves.
                 </p>
               </div>
-              <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+              <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
                 Valeur stockée estimée : ~{(offcutInventory.reduce((acc, c) => acc + (c.lengthMm / 1000) * 850, 0)).toFixed(0)} DZD
               </span>
             </div>

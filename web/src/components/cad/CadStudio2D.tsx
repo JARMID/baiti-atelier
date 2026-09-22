@@ -695,14 +695,14 @@ export const CadStudio2D: React.FC = () => {
 
             {/* In-Place Dimension Quick Editor Modal/Overlay */}
             {editingDim && (
-              <div className="p-3 bg-white/5 border border-[#D4AF37]/40 rounded-xl flex items-center justify-between gap-3 text-xs font-mono">
-                <div className="flex items-center gap-2">
+              <div className="p-3 bg-white/5 border border-[#D4AF37]/40 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-zinc-300 font-bold">
                     Modifier {editingDim === 'width' ? 'Largeur (L)' : 'Hauteur (H)'} :
                   </span>
                   <button
                     onClick={() => adjustDimStep(editingDim, -50)}
-                    className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-zinc-200 cursor-pointer"
+                    className="px-2.5 py-1.5 rounded bg-white/10 hover:bg-white/20 text-zinc-200 cursor-pointer min-h-[32px]"
                   >
                     -50
                   </button>
@@ -711,14 +711,14 @@ export const CadStudio2D: React.FC = () => {
                     value={dimInput}
                     onChange={(e) => setDimInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && saveDim()}
-                    className="w-20 px-2 py-1 rounded bg-black/60 border border-white/20 text-white font-mono text-xs focus:outline-none focus:border-[#D4AF37]"
+                    className="w-20 px-2 py-1.5 rounded bg-black/60 border border-white/20 text-white font-mono text-xs focus:outline-none focus:border-[#D4AF37]"
                     min={400}
                     max={4000}
                     autoFocus
                   />
                   <button
                     onClick={() => adjustDimStep(editingDim, 50)}
-                    className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-zinc-200 cursor-pointer"
+                    className="px-2.5 py-1.5 rounded bg-white/10 hover:bg-white/20 text-zinc-200 cursor-pointer min-h-[32px]"
                   >
                     +50
                   </button>
@@ -727,34 +727,32 @@ export const CadStudio2D: React.FC = () => {
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={saveDim}
-                    className="p-1.5 rounded-lg bg-gradient-to-r from-[#C5A880] to-[#D4AF37] hover:brightness-110 text-slate-950 font-bold cursor-pointer"
+                    className="p-2 rounded-lg bg-gradient-to-r from-[#C5A880] to-[#D4AF37] hover:brightness-110 text-slate-950 font-bold cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center"
                     title="Valider"
                   >
-                    <Check className="w-3.5 h-3.5" />
+                    <Check className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setEditingDim(null)}
-                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-zinc-400 cursor-pointer"
+                    className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-zinc-400 cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center"
                     title="Annuler"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             )}
 
             {/* SVG Interactive Canvas */}
-            <div className={`glass-panel-elevated p-4 rounded-2xl border relative overflow-hidden flex items-center justify-center min-h-[440px] transition-colors duration-300 ${
+            <div className={`glass-panel-elevated p-3 sm:p-4 rounded-2xl border relative overflow-hidden flex items-center justify-center min-h-[340px] sm:min-h-[440px] transition-colors duration-300 ${
               theme === 'light'
                 ? 'bg-slate-50 border-slate-200 shadow-inner'
                 : 'bg-[#07090D] border-white/10'
             }`}>
               <svg
                 id="cad-svg-canvas"
-                width={svgWidth}
-                height={svgHeight}
                 viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                className="select-none"
+                className="select-none w-full h-auto max-w-full max-h-[460px] sm:max-h-[520px]"
               >
                 {/* Blueprint Background Grid */}
                 <defs>
