@@ -18,12 +18,15 @@ import {
   LayoutTemplate,
   Sliders,
   Volume2,
+  PackageCheck,
+  Wrench,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
   generateWorkshopCutSheetPdf,
   generateDtrThermalCertificatePdf,
   generateGlazierCuttingOrderPdf,
+  generateHardwarePickListPdf,
 } from '../../utils/pdfGenerator';
 import { computeCadCells, computeDetailedBOM } from '../../utils/cadEngine';
 import type { CadStructure, CellType } from '../../types/cad';
@@ -53,6 +56,18 @@ const CELL_TYPE_CONFIG: {
   { type: 'sash_right', labelFr: 'Ouvrant D', sub: 'Ferré à droite', color: 'text-amber-400' },
   { type: 'panel_solid', labelFr: 'Panneau Opaque', sub: 'Sandwich alu/pvc', color: 'text-zinc-300' },
 ];
+
+const HARDWARE_CAT_CONFIG: Record<
+  string,
+  { label: string; badgeClass: string }
+> = {
+  assemblage: { label: 'Assemblage', badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+  etancheite: { label: 'Étanchéité', badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+  fermeture: { label: 'Fermeture', badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+  rotation: { label: 'Rotation', badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
+  drainage: { label: 'Drainage', badgeClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
+  fixation: { label: 'Fixation', badgeClass: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20' },
+};
 
 interface CadTemplatePreset {
   id: string;
@@ -184,7 +199,8 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [isGeneratingCutSheet, setIsGeneratingCutSheet] = useState(false);
   const [isGeneratingDtrPdf, setIsGeneratingDtrPdf] = useState(false);
   const [isGeneratingGlazierPdf, setIsGeneratingGlazierPdf] = useState(false);
-  const [activeBomTab, setActiveBomTab] = useState<'cuts' | 'glasses'>('cuts');
+  const [isGeneratingHardwarePdf, setIsGeneratingHardwarePdf] = useState(false);
+  const [activeBomTab, setActiveBomTab] = useState<'cuts' | 'glasses' | 'hardware'>('cuts');
   const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
 
   // Field Survey Modal State
@@ -433,6 +449,52 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
       });
     } finally {
       setIsGeneratingGlazierPdf(false);
+    }
+  };
+
+  // Share Hardware Pick List to Stockroom or Supplier via WhatsApp
+  const handleShareHardwareWhatsApp = () => {
+    playTactileClick();
+    if (!bom.hardwareSummary || bom.hardwareSummary.length === 0) return;
+    const totalDzd = bom.hardwareSummary.reduce((sum, h) => sum + h.totalPriceDzd, 0);
+    const hwListText = bom.hardwareSummary
+      .map(
+        (h, idx) =>
+          `  ${idx + 1}. [${h.referenceCode}] ${h.name} : ${h.quantity} ${h.unit} (${h.stockBin || 'BAC'})`
+      )
+      .join('\n');
+    const msg =
+      `*BON DE SORTIE QUINCAILLERIE & ACCESSOIRES*\n` +
+      `Châssis CAO : ${cadStructure.width} × ${cadStructure.height} mm (${config.profileSystem})\n` +
+      `Finition : ${config.finishColor || 'RAL 7016'}\n` +
+      `Wilaya : ${selectedWilaya}\n` +
+      `Nombre d'articles : ${bom.hardwareSummary.length} références\n` +
+      `Valeur estimée : ${totalDzd.toLocaleString('fr-DZ')} DZD\n\n` +
+      `*Liste des Accessoires à Préparer :*\n` +
+      `${hwListText}\n\n` +
+      `Conçu sur https://web-two-tan-31.vercel.app`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  // Download Official Hardware Pick List PDF
+  const handleDownloadHardwarePdf = async () => {
+    playTactileClick();
+    if (!bom.hardwareSummary || bom.hardwareSummary.length === 0) return;
+    setIsGeneratingHardwarePdf(true);
+    try {
+      await generateHardwarePickListPdf({
+        projectTitle: `Châssis CAO ${cadStructure.width}×${cadStructure.height} mm`,
+        clientName: 'Atelier Menuiserie',
+        clientPhone: '+213 550 00 00 00',
+        wilaya: selectedWilaya,
+        profileSystem: config.profileSystem,
+        finishColor: config.finishColor,
+        widthMm: cadStructure.width,
+        heightMm: cadStructure.height,
+        items: bom.hardwareSummary,
+      });
+    } finally {
+      setIsGeneratingHardwarePdf(false);
     }
   };
 
@@ -1037,7 +1099,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
         }`}
       >
         <div className="flex items-center justify-between pb-1 border-b border-black/5 dark:border-white/10">
-          <div className="flex items-center gap-1.5 p-0.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[11px] font-mono">
+          <div className="flex items-center gap-1 p-0.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-[11px] font-mono">
             <button
               type="button"
               onClick={() => {
@@ -1050,7 +1112,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
                   : 'text-zinc-400 hover:text-white'
               }`}
             >
-              Profilés Scie ({bom.cuts.length})
+              Profilés ({bom.cuts.length})
             </button>
             <button
               type="button"
@@ -1066,10 +1128,28 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               Vitrages ({bom.glasses?.length || 0})
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setActiveBomTab('hardware');
+              }}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer font-bold ${
+                activeBomTab === 'hardware'
+                  ? 'bg-amber-400 text-slate-950 shadow-xs'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              Quincaillerie ({bom.hardwareSummary?.length || 0})
+            </button>
           </div>
 
           <span className="text-[10px] font-mono text-zinc-500">
-            {activeBomTab === 'cuts' ? `${bom.totalProfileMeters.toFixed(1)} m linéaires` : `${bom.totalGlassAreaM2.toFixed(2)} m² verre`}
+            {activeBomTab === 'cuts'
+              ? `${bom.totalProfileMeters.toFixed(1)} m linéaires`
+              : activeBomTab === 'glasses'
+              ? `${bom.totalGlassAreaM2.toFixed(2)} m² verre`
+              : `${bom.hardwareSummary?.length || 0} références`}
           </span>
         </div>
 
@@ -1084,8 +1164,8 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             <span className="font-bold text-cyan-400">{bom.totalGlassAreaM2.toFixed(2)} m²</span>
           </div>
           <div className={`p-2 rounded-xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}>
-            <span className="text-zinc-500 block text-[10px]">Barres 6m</span>
-            <span className="font-bold text-emerald-400">~{bom.estimatedBars6m} barres</span>
+            <span className="text-zinc-500 block text-[10px]">Accessoires</span>
+            <span className="font-bold text-amber-400">{bom.hardwareSummary?.length || 0} réf.</span>
           </div>
         </div>
 
@@ -1256,6 +1336,88 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           </div>
         )}
 
+        {/* TAB 3: HARDWARE & ACCESSORIES LIST */}
+        {activeBomTab === 'hardware' && (
+          <div className="space-y-2">
+            {/* Rack & Bin Quick Banner */}
+            <div
+              className={`p-2.5 rounded-2xl border flex items-center justify-between text-xs font-mono ${
+                isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/40 border-white/10'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <Wrench className="w-3.5 h-3.5 text-amber-400" />
+                <span className={`font-bold ${isLight ? 'text-slate-800' : 'text-zinc-200'}`}>
+                  Accessoires & Quincaillerie Atelier
+                </span>
+              </div>
+              <span className="text-[10px] font-bold text-amber-400">
+                {bom.hardwareSummary?.reduce((sum, it) => sum + it.totalPriceDzd, 0).toLocaleString('fr-DZ')} DZD
+              </span>
+            </div>
+
+            {/* List of hardware items */}
+            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+              {bom.hardwareSummary && bom.hardwareSummary.length > 0 ? (
+                bom.hardwareSummary.map((item) => {
+                  const catConfig = HARDWARE_CAT_CONFIG[item.category] || {
+                    label: item.category,
+                    badgeClass: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
+                  };
+                  return (
+                    <div
+                      key={item.id}
+                      className={`p-2.5 rounded-2xl border text-xs font-mono flex items-center justify-between gap-2 ${
+                        isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'
+                      }`}
+                    >
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-1.5 py-0.5 rounded-md bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/30 text-[10px] font-bold">
+                            {item.referenceCode}
+                          </span>
+                          <span className={`px-1.5 py-0.5 rounded-md border text-[9px] font-semibold ${catConfig.badgeClass}`}>
+                            {catConfig.label}
+                          </span>
+                          {item.stockBin && (
+                            <span className="text-[9px] text-zinc-400 bg-black/20 dark:bg-white/5 px-1 rounded">
+                              {item.stockBin}
+                            </span>
+                          )}
+                        </div>
+                        <div className={`font-bold text-xs truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                          {item.name}
+                        </div>
+                        {item.notes && (
+                          <div className="text-[10px] text-zinc-500 truncate">
+                            {item.notes}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="text-sm font-black text-amber-400 font-mono">
+                          {item.quantity} <span className="text-[10px]">{item.unit}</span>
+                        </span>
+                        <span className="text-[10px] text-zinc-400 block">
+                          {item.unitPriceDzd.toLocaleString('fr-DZ')} DA/{item.unit}
+                        </span>
+                        <span className="text-[11px] font-bold text-slate-300 block">
+                          {item.totalPriceDzd.toLocaleString('fr-DZ')} DA
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-4 text-center text-xs font-mono text-zinc-500">
+                  Aucun accessoire calculé pour cette configuration.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
           {activeBomTab === 'glasses' ? (
@@ -1283,6 +1445,33 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
               >
                 <FileCheck className="w-4 h-4 text-sky-400" />
                 <span>{isGeneratingGlazierPdf ? 'Génération...' : 'Bon Vitrage PDF'}</span>
+              </button>
+            </>
+          ) : activeBomTab === 'hardware' ? (
+            <>
+              <button
+                type="button"
+                onClick={handleShareHardwareWhatsApp}
+                className="py-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] active:scale-98 transition-all"
+                title="Partager le bon de sortie quincaillerie au magasinier par WhatsApp"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>WhatsApp Magasin</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadHardwarePdf}
+                disabled={isGeneratingHardwarePdf || !bom.hardwareSummary || bom.hardwareSummary.length === 0}
+                className={`py-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] active:scale-98 transition-all ${
+                  isLight
+                    ? 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100 shadow-xs'
+                    : 'bg-amber-500/15 border-amber-500/30 text-amber-300 hover:bg-amber-500/25'
+                }`}
+                title="Télécharger le bon de sortie quincaillerie officiel A4 PDF"
+              >
+                <PackageCheck className="w-4 h-4 text-amber-400" />
+                <span>{isGeneratingHardwarePdf ? 'Génération...' : 'Bon Quincaillerie PDF'}</span>
               </button>
             </>
           ) : (

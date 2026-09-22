@@ -118,10 +118,23 @@ export interface GlassCutDetail {
   isCurvedArch?: boolean;
 }
 
+export interface HardwareItemDetail {
+  id: string;
+  name: string;
+  referenceCode: string;
+  category: 'assemblage' | 'etancheite' | 'fermeture' | 'rotation' | 'drainage' | 'fixation';
+  quantity: number;
+  unit: string;
+  unitPriceDzd: number;
+  totalPriceDzd: number;
+  stockBin?: string;
+  notes?: string;
+}
+
 export interface WorkshopBOM {
   cuts: CutPieceDetail[];
   glasses: GlassCutDetail[];
-  hardwareSummary: { name: string; quantity: number; unit: string }[];
+  hardwareSummary: HardwareItemDetail[];
   totalProfileMeters: number;
   totalProfileWeightKg: number;
   totalGlassAreaM2: number;

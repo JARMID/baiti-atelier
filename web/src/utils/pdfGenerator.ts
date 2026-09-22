@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import QRCode from 'qrcode';
 import type { WindowConfig, CostBreakdown, OpeningType, ProfileSystem, GlassType, ShutterType } from '../types/window';
-import type { CadStructure, WorkshopBOM } from '../types/cad';
+import type { CadStructure, WorkshopBOM, HardwareItemDetail } from '../types/cad';
 import { ALGERIAN_WILAYAS_58 } from './algerianWilayas';
 import { DTR_ZONE_THRESHOLDS, getDtrZoneForWilaya } from './dtrThermal';
 
@@ -2590,6 +2590,241 @@ export async function generateSupplierPurchaseOrderPdf(params: SupplierPurchaseO
   );
 
   const safeFilename = `Bon_Commande_${params.orderReference}_${params.supplierName.replace(/\s+/g, '_')}.pdf`;
+  doc.save(safeFilename);
+}
+
+export interface HardwarePickListPdfParams {
+  orderReference?: string;
+  projectTitle: string;
+  clientName?: string;
+  clientPhone?: string;
+  wilaya?: string;
+  profileSystem?: string;
+  finishColor?: string;
+  widthMm: number;
+  heightMm: number;
+  items: HardwareItemDetail[];
+}
+
+export async function generateHardwarePickListPdf(params: HardwarePickListPdfParams) {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryBlue = [0, 51, 102] as const;
+  const accentGold = [212, 175, 55] as const;
+  const orderRef =
+    params.orderReference ||
+    `QC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const dateStr = new Date().toLocaleDateString('fr-DZ', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const totalPieces = params.items.reduce(
+    (sum, it) => sum + (it.unit === 'pcs' ? it.quantity : 0),
+    0
+  );
+  const totalCostDzd = params.items.reduce((sum, it) => sum + it.totalPriceDzd, 0);
+
+  // 1. Header Banner
+  doc.setFillColor(...primaryBlue);
+  doc.rect(0, 0, 210, 36, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.text('BAITI ATELIER', 14, 15);
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(203, 213, 225);
+  doc.text('Magasin Général & Quincaillerie Bâtiment • Aluminium & PVC', 14, 22);
+  doc.text(`Chantier : ${params.projectTitle} • ${params.wilaya || 'Alger'}`, 14, 27);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(...accentGold);
+  doc.text('BON DE SORTIE QUINCAILLERIE', 122, 15);
+
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(226, 232, 240);
+  doc.text(`Réf : ${orderRef}`, 122, 22);
+  doc.text(`Date : ${dateStr}`, 122, 27);
+
+  // 2. Chassis Context Card
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 42, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Caractéristiques Menuiserie à Équiper :', 18, 48);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(51, 65, 85);
+  doc.text(`Dimensions : ${params.widthMm} × ${params.heightMm} mm`, 18, 55);
+  doc.text(`Gamme : ${params.profileSystem || 'Gamme 45 RPT'}`, 80, 55);
+  doc.text(`Finition : ${params.finishColor || 'RAL 7016'}`, 145, 55);
+
+  // 3. KPI Summary Tiles
+  const kpiY = 64;
+  const tileW = 43.5;
+  const tileH = 15;
+  const kpis = [
+    { label: 'Articles Réf.', value: `${params.items.length} références`, color: primaryBlue },
+    { label: 'Quantité Pièces', value: `${totalPieces} pièces`, color: primaryBlue },
+    { label: 'Valeur Matière', value: `${totalCostDzd.toLocaleString('fr-DZ')} DZD`, color: accentGold },
+    { label: 'Statut Magasin', value: 'Prêt à Préparer', color: [16, 185, 129] },
+  ];
+
+  kpis.forEach((kpi, idx) => {
+    const x = 14 + idx * (tileW + 2.6);
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(x, kpiY, tileW, tileH, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(kpi.label, x + 3, kpiY + 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.text(kpi.value, x + 3, kpiY + 10.5);
+  });
+
+  // 4. Hardware Table
+  const tableRows = params.items.map((it, idx) => {
+    return [
+      `Q${idx + 1}`,
+      it.referenceCode,
+      it.name,
+      it.stockBin || `BAC-${idx + 1}`,
+      `${it.quantity} ${it.unit}`,
+      `${it.unitPriceDzd.toLocaleString('fr-DZ')} DA`,
+      `${it.totalPriceDzd.toLocaleString('fr-DZ')} DA`,
+      it.notes || '',
+      '[  ]',
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 83,
+    head: [
+      [
+        'N°',
+        'Code Réf.',
+        'Désignation Quincaillerie / Accessoire',
+        'Bac/Casier',
+        'Qté',
+        'P.U Est.',
+        'Total DZD',
+        'Instructions de Pose',
+        'Pointé',
+      ],
+    ],
+    body: tableRows,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [...primaryBlue],
+      textColor: [255, 255, 255],
+      fontSize: 7,
+      fontStyle: 'bold',
+      halign: 'center',
+    },
+    bodyStyles: {
+      fontSize: 7,
+      textColor: [15, 23, 42],
+      valign: 'middle',
+    },
+    columnStyles: {
+      0: { cellWidth: 8, halign: 'center', fontStyle: 'bold' },
+      1: { cellWidth: 24, fontStyle: 'bold', textColor: [0, 51, 102] },
+      2: { cellWidth: 46 },
+      3: { cellWidth: 16, halign: 'center' },
+      4: { cellWidth: 14, halign: 'right', fontStyle: 'bold' },
+      5: { cellWidth: 16, halign: 'right' },
+      6: { cellWidth: 18, halign: 'right', fontStyle: 'bold' },
+      7: { cellWidth: 30, fontSize: 6.5 },
+      8: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
+    },
+  });
+
+  // 5. Total Row & Instructions
+  const tableEndY = (doc as any).lastAutoTable.finalY + 4;
+  const isOverflow = tableEndY > 230;
+
+  if (isOverflow) {
+    doc.addPage();
+  }
+
+  const specBlockY = isOverflow ? 20 : tableEndY;
+
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, specBlockY, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text("Directives d'Assemblage & Contrôle Quincaillerie :", 18, specBlockY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text('1. Contrôler le serrage et le sertissage des équerres d angle avant montage des vitrages.', 18, specBlockY + 10.5);
+  doc.text('2. Appliquer une noisette de graisse silicone sur les axes de galets et gorges de crémone.', 18, specBlockY + 14.5);
+  doc.text('3. Orienter les clapets anti-retour de drainage fentes vers le bas pour un écoulement optimal.', 18, specBlockY + 18.5);
+
+  // 6. Signatures
+  const signBlockY = specBlockY + 26;
+
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signBlockY, 65, 22, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signBlockY, 65, 22, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Visa Magasinier / Préparateur :', 18, signBlockY + 5.5);
+  doc.text('Visa Chef Atelier / Réception :', 135, signBlockY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Date & Signature :', 18, signBlockY + 16);
+  doc.text('Date & Signature :', 135, signBlockY + 16);
+
+  // QR Code Verification
+  try {
+    const qrPayload = `BAITI|QUINCAILLERIE|${orderRef}|DIM=${params.widthMm}x${params.heightMm}|ART=${params.items.length}|VAL=${totalCostDzd}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signBlockY + 1, 20, 20);
+  } catch {
+    // QR Code fallback
+  }
+
+  // Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Document technique atelier généré par Baiti Atelier • ${orderRef} • www.baitiatelier.dz`,
+    105,
+    288,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Bon_Sortie_Quincaillerie_${orderRef}.pdf`;
   doc.save(safeFilename);
 }
 

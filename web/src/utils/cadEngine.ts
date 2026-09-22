@@ -3,6 +3,7 @@ import type {
   CadStructure,
   CutPieceDetail,
   GlassCutDetail,
+  HardwareItemDetail,
   WorkshopBOM,
   ArchSpecification,
   ArchType,
@@ -362,14 +363,151 @@ export function computeDetailedBOM(structure: CadStructure, config: WindowConfig
   const totalGlassAreaM2 = Number(glasses.reduce((acc, g) => acc + g.areaM2 * g.quantity, 0).toFixed(2));
   const estimatedBars6m = Math.ceil(totalProfileLengthMm / (6000 * 0.9)); // 10% kerf/trim margin
 
-  const hardwareSummary = [
-    { name: "Équerres d'assemblage à sertir / visser", quantity: cuts.filter((c) => c.cutLeftAngle === 45).length * 2, unit: 'pcs' },
-    { name: "Joints d'étanchéité EPDM / brosse", quantity: Math.round(totalProfileMeters * 1.8), unit: 'm' },
-    { name: 'Poignées de manœuvre / Crémones', quantity: handleCount, unit: 'pcs' },
-    { name: 'Paumelles réglables renforcées', quantity: hingeCount, unit: 'pcs' },
-    { name: 'Roulettes doubles à roulement à billes', quantity: rollerCount, unit: 'pcs' },
-    { name: 'Gâches et verrous de fermeture', quantity: lockCount, unit: 'pcs' },
-  ].filter((h) => h.quantity > 0);
+  const miterCount = cuts.filter((c) => c.cutLeftAngle === 45).length;
+  const hardwareSummary: HardwareItemDetail[] = [];
+
+  // 1. Equerres d assemblage
+  if (miterCount > 0) {
+    const qty = miterCount * 2;
+    hardwareSummary.push({
+      id: 'hw-equerre-45',
+      name: "Équerres d'assemblage à sertir 45°",
+      referenceCode: 'EQUER-SERT-45',
+      category: 'assemblage',
+      quantity: qty,
+      unit: 'pcs',
+      unitPriceDzd: 180,
+      totalPriceDzd: qty * 180,
+      stockBin: 'BAC-EQ-01',
+      notes: "Sertissage des angles dormants et ouvrants 45°",
+    });
+  }
+
+  // 2. Joints d etancheite EPDM et brosse
+  const gasketMeters = Math.max(4, Math.round(totalProfileMeters * 1.8));
+  hardwareSummary.push({
+    id: 'hw-joint-epdm',
+    name: "Joint d'étanchéité EPDM à lèvre & brosse",
+    referenceCode: 'JOINT-EPDM-CENT',
+    category: 'etancheite',
+    quantity: gasketMeters,
+    unit: 'm',
+    unitPriceDzd: 120,
+    totalPriceDzd: gasketMeters * 120,
+    stockBin: 'BAC-JT-02',
+    notes: "Garniture périphérique dormant et ouvrant",
+  });
+
+  // 3. Cales de vitrage
+  if (glasses.length > 0) {
+    const qty = glasses.length * 8;
+    hardwareSummary.push({
+      id: 'hw-cale-vitrage',
+      name: "Cales d'assise et de calage vitrage 4mm",
+      referenceCode: 'CALE-VITR-4MM',
+      category: 'assemblage',
+      quantity: qty,
+      unit: 'pcs',
+      unitPriceDzd: 35,
+      totalPriceDzd: qty * 35,
+      stockBin: 'BAC-CAL-03',
+      notes: "Ventilation et calage périphérique vitrage",
+    });
+  }
+
+  // 4. Cremones et Poignees
+  if (handleCount > 0) {
+    hardwareSummary.push({
+      id: 'hw-cremone',
+      name: "Crémone réversible / Poignée aluminium",
+      referenceCode: 'CREM-REV-ALU',
+      category: 'fermeture',
+      quantity: handleCount,
+      unit: 'pcs',
+      unitPriceDzd: 1800,
+      totalPriceDzd: handleCount * 1800,
+      stockBin: 'BAC-CR-05',
+      notes: "Mécanisme de verrouillage vantail ouvrant",
+    });
+  }
+
+  // 5. Paumelles reglables (Battants)
+  if (hingeCount > 0) {
+    hardwareSummary.push({
+      id: 'hw-paumelle',
+      name: "Paumelles réglables renforcées",
+      referenceCode: 'PAUM-REG-ALU',
+      category: 'rotation',
+      quantity: hingeCount,
+      unit: 'pcs',
+      unitPriceDzd: 950,
+      totalPriceDzd: hingeCount * 950,
+      stockBin: 'BAC-PM-06',
+      notes: "Axes inox anti-usure pour châssis battant",
+    });
+  }
+
+  // 6. Roulettes doubles reglables (Coulissants)
+  if (rollerCount > 0) {
+    hardwareSummary.push({
+      id: 'hw-galet',
+      name: "Chariots doubles à roulements aiguilles",
+      referenceCode: 'GALET-DBL-REG',
+      category: 'rotation',
+      quantity: rollerCount,
+      unit: 'pcs',
+      unitPriceDzd: 1450,
+      totalPriceDzd: rollerCount * 1450,
+      stockBin: 'BAC-RL-07',
+      notes: "Galets réglables pour rails coulissants lourds",
+    });
+  }
+
+  // 7. Gaches et verrous
+  if (lockCount > 0) {
+    hardwareSummary.push({
+      id: 'hw-gache',
+      name: "Gâches de fermeture acier zingué",
+      referenceCode: 'GACHE-SECUR-ALU',
+      category: 'fermeture',
+      quantity: lockCount,
+      unit: 'pcs',
+      unitPriceDzd: 420,
+      totalPriceDzd: lockCount * 420,
+      stockBin: 'BAC-GC-08',
+      notes: "Points de verrouillage sur dormant",
+    });
+  }
+
+  // 8. Clapets de drainage
+  const drainValvesCount = Math.max(2, Math.ceil(w / 800));
+  hardwareSummary.push({
+    id: 'hw-clapet-drain',
+    name: "Clapets anti-retour & busettes de drainage",
+    referenceCode: 'CLAPET-DRAIN-PVC',
+    category: 'drainage',
+    quantity: drainValvesCount,
+    unit: 'pcs',
+    unitPriceDzd: 150,
+    totalPriceDzd: drainValvesCount * 150,
+    stockBin: 'BAC-DR-09',
+    notes: "Évacuation des eaux de pluie traverse basse",
+  });
+
+  // 9. Visserie auto-foreuse
+  const screwCount = Math.max(24, Math.round(totalProfileMeters * 3));
+  hardwareSummary.push({
+    id: 'hw-vis-autof',
+    name: "Visserie inox auto-foreuse 4.2×25mm",
+    referenceCode: 'VIS-AUTOF-42',
+    category: 'fixation',
+    quantity: screwCount,
+    unit: 'pcs',
+    unitPriceDzd: 15,
+    totalPriceDzd: screwCount * 15,
+    stockBin: 'BAC-VS-10',
+    notes: "Fixation des traverses, équerres et accessoires",
+  });
 
   return {
     cuts,
