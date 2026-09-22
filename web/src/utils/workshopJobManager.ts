@@ -225,6 +225,21 @@ export function updateJobStage(
   return updatedJob;
 }
 
+export function advanceJobStage(id: string): WorkshopJob[] {
+  const jobs = getWorkshopJobs();
+  const nextJobs = jobs.map((job) => {
+    if (job.id === id) {
+      const curIdx = STAGE_ORDER.indexOf(job.stage);
+      if (curIdx < STAGE_ORDER.length - 1) {
+        return { ...job, stage: STAGE_ORDER[curIdx + 1] };
+      }
+    }
+    return job;
+  });
+  saveWorkshopJobs(nextJobs);
+  return nextJobs;
+}
+
 export function updateJob(
   id: string,
   patch: Partial<WorkshopJob>

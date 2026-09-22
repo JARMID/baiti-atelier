@@ -24,6 +24,7 @@ import { MaterialMarketModal } from './components/materials/MaterialMarketModal'
 import { WorkshopProWorkspace } from './components/workshop/WorkshopProWorkspace';
 import { MobileBottomNavigation } from './components/mobile/MobileBottomNavigation';
 import { MobilePriceStickyBar } from './components/mobile/MobilePriceStickyBar';
+import { DedicatedMobileApp } from './components/mobile/DedicatedMobileApp';
 import { isTauriDesktop } from './services/desktopBridge';
 import { useConfigStore } from './store/configStore';
 import { getTranslation } from './utils/i18n';
@@ -40,6 +41,28 @@ export function App() {
   const [isOfflineModalOpen, setIsOfflineModalOpen] = useState(false);
   const [selectedTrade, setSelectedTrade] = useState<TradeCategory>('aluminum');
   const [view3DMode, setView3DMode] = useState<'single' | 'facade'>('single');
+
+  // Dedicated Mobile & Tablet application suite (auto-detected on phones/tablets or user-toggled)
+  const [isMobileMode, setIsMobileMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('baiti_mobile_mode');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
+
+  const handleToggleMobileMode = (val?: boolean) => {
+    setIsMobileMode((prev) => {
+      const next = typeof val === 'boolean' ? val : !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('baiti_mobile_mode', String(next));
+      }
+      return next;
+    });
+  };
 
   // Workshop owners in desktop app start directly in Workshop Pro Workspace
   const [isWorkshopMode, setIsWorkshopMode] = useState<boolean>(() => {
@@ -61,6 +84,15 @@ export function App() {
       return next;
     });
   };
+
+  // If in dedicated mobile mode, render tailored phone & tablet suite
+  if (isMobileMode) {
+    return (
+      <DedicatedMobileApp
+        onSwitchToDesktopView={() => handleToggleMobileMode(false)}
+      />
+    );
+  }
 
   // If in dedicated workshop mode, render pro workstation
   if (isWorkshopMode) {
@@ -122,6 +154,7 @@ export function App() {
           onOpenMaterialMarket={() => setMaterialMarketOpen(true)}
           onToggleWorkshopMode={handleToggleWorkshopMode}
           isWorkshopMode={isWorkshopMode}
+          onToggleMobileMode={() => handleToggleMobileMode(true)}
         />
 
         {/* Main Content */}
