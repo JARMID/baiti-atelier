@@ -30,6 +30,7 @@ import {
   Lock,
   Box,
   Droplets,
+  Wrench,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -60,6 +61,7 @@ import { SecurityLockingModal } from './SecurityLockingModal';
 import { StructuralGlazingModal } from './StructuralGlazingModal';
 import { IntegratedBlindModal } from './IntegratedBlindModal';
 import { WindowDrainageModal } from './WindowDrainageModal';
+import { CornerCrimpingModal } from './CornerCrimpingModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -180,6 +182,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isStructuralGlazingModalOpen, setIsStructuralGlazingModalOpen] = useState(false);
   const [isIntegratedBlindModalOpen, setIsIntegratedBlindModalOpen] = useState(false);
   const [isDrainageModalOpen, setIsDrainageModalOpen] = useState(false);
+  const [isCornerCrimpingModalOpen, setIsCornerCrimpingModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -854,6 +857,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Droplets className="w-4 h-4" />
           <span>Drainage & Étanchéité à l'Eau (NF DTU 36.5 / NF EN 12208)</span>
+        </button>
+
+        {/* Corner Joint Crimping & Cleat Resistance Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsCornerCrimpingModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Wrench className="w-4 h-4" />
+          <span>Sertissage & Équerres d'Angle (NF P 20-302 / Eurocode 9)</span>
         </button>
       </div>
 
@@ -2016,6 +2032,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           windowReference={`Drainage ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* CORNER JOINT CRIMPING & CLEAT RESISTANCE MODAL */}
+      {isCornerCrimpingModalOpen && (
+        <CornerCrimpingModal
+          isOpen={isCornerCrimpingModalOpen}
+          onClose={() => setIsCornerCrimpingModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          windowReference={`Onglet ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />

@@ -7181,6 +7181,241 @@ export async function generateWindowDrainageNoticePdf(params: WindowDrainagePdfP
   doc.save(safeFilename);
 }
 
+export interface CornerCrimpingPdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName: string;
+  wilayaName: string;
+  workshopName: string;
+  result: import('./cornerCrimpingManager').CornerCrimpingResult;
+}
+
+export async function generateCornerCrimpingNoticePdf(params: CornerCrimpingPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const todayStr = new Date().toLocaleDateString('fr-DZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  const res = params.result;
+  const isOk = res.complianceStatus === 'CONFORME';
+  const isWarning = res.complianceStatus === 'ATTENTION';
+
+  // 1. Header Banner
+  doc.setFillColor(15, 23, 42); // Slate 900
+  doc.rect(0, 0, 210, 26, 'F');
+
+  doc.setFillColor(217, 119, 6); // Amber 600 accent bar
+  doc.rect(0, 26, 210, 2, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER ALGERIE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text('Bureau d Etudes Menuiserie Aluminium • Note de Sertissage & Resistance des Angles', 14, 17);
+  doc.text('Normes : NF P 20-302 • NF EN 12046-1 • NF EN 1191 • Eurocode 9 (NF EN 1999-1-1) • SNFA', 14, 22);
+
+  // Status Badge in Header
+  doc.setFillColor(isOk ? 16 : isWarning ? 217 : 225, isOk ? 185 : isWarning ? 119 : 29, isOk ? 129 : isWarning ? 6 : 72);
+  doc.roundedRect(144, 7, 52, 12, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(isOk ? 'ONGLET CONFORME' : isWarning ? 'AVEC RESERVES' : 'NON CONFORME', 170, 14.5, { align: 'center' });
+
+  // 2. Document Title Box
+  let curY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, curY, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('FICHE D ATELIER & NOTE DE CALCUL : SERTISSAGE DES EQUERRES D ONGLET', 18, curY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Doc N° : ${params.documentId}  |  Chantier : ${params.projectRef}  |  Wilaya : ${params.wilayaName}  |  Date : ${todayStr}`, 18, curY + 13);
+
+  curY += 22;
+
+  // 3. Sash Dimensions & Mechanical Loads Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['PARAMETRE DU VANTAIL', 'VALEUR RETENUE', 'EXIGENCE NORMATIVE']],
+    body: [
+      ['Dimensions du vantail ouvrant', `${res.sashWidthMm} x ${res.sashHeightMm} mm`, `Perimetre profil : ${res.sashPerimeterM.toFixed(2)} m`],
+      ['Poids total du vantail', `${res.totalSashWeightKg} kg`, 'Verre lourd + profilés aluminium + quincaillerie'],
+      ['Charge accidentelle verticale', `${res.accidentalVerticalLoadN} N (80 kg)`, 'Norme NF EN 14608 / NF EN 12046-1'],
+      ['Moment de flexion d angle agissant', `${res.cornerBendingMomentNm} N.m`, 'Sollicitation d affaissement en pointe d ouvrant'],
+      ['Effort d arrachement agissant', `${res.pullOutForceActingN} N`, 'Traction axiale sur l assemblage d onglet'],
+      ['Moment de torsion secondaire', `${res.cornerTorsionalMomentNm} N.m`, 'Gauchissement sous manœuvre brutale'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [217, 119, 6], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 4. Corner Assembly Specifications Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['SPECIFICATION DU JOINT D ANGLE', 'VALEUR ATELIER', 'CONFORMITE TECHNIQUE']],
+    body: [
+      ['Mode d assemblage d onglet', res.assemblySpec.name, res.assemblySpec.setupComplexity],
+      ['Alliage de l equerre d angle', res.materialSpec.name, `Limite elastique : ${res.materialSpec.yieldStrengthMpa} MPa`],
+      ['Profondeur de sertissage couteau', `${res.knifePenetrationMm} mm`, `Plage toleree : 1.2 a 1.8 mm (${res.isPenetrationCompliant ? 'CONFORME' : 'HORS PLAGE'})`],
+      ['Pression de sertissage reglee', `${res.effectivePunchPressureBar} bar`, 'Pression hydraulique sur verins a 45 degres'],
+      ['Adherent d onglet / etancheite', res.adhesiveBondStrengthN > 0 ? 'Colle PU bi-composant injectee' : 'Assemblage a sec', `Apport adhesion : +${res.adhesiveBondStrengthN} N`],
+      ['Equerre d alignement exterieure', res.flushOffsetToleranceMm <= 0.20 ? 'Presente (inox ressort)' : 'Absente', `Desaffleurement : ${res.flushOffsetToleranceMm} mm (max 0.20 mm)`],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 5. Resistance & Deflection Results Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['CRITERE DE RESISTANCE & RIGIDITE', 'VALEUR CALCULEE', 'VERIFICATION EUROCODE 9']],
+    body: [
+      ['Resistance ultime a l arrachement', `${res.ultimatePullOutResistanceN} N`, `Effort agissant : ${res.pullOutForceActingN} N`],
+      ['Facteur de securite global', `${res.safetyFactor.toFixed(2)}`, `Exigence minimale : 1.50 (${res.isResistanceCompliant ? 'CONFORME' : 'INSUFFISANT'})`],
+      ['Fleche diagonale d affaissement', `${res.diagonalRackingDeflectionMm} mm`, `Limite admissible : ${res.maxAllowableDeflectionMm} mm (${res.isDeflectionAcceptable ? 'RIGIDE' : 'EXCESSIF'})`],
+      ['Surface d impact des poinçons', `${res.crimpContactAreaMm2} mm2`, 'Cisaillement des parois du profile'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [15, 118, 110], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 6. Workshop Crimping Guidelines Box
+  doc.setDrawColor(res.safetyFactor >= 1.5 ? 203 : 217, res.safetyFactor >= 1.5 ? 213 : 119, res.safetyFactor >= 1.5 ? 225 : 6);
+  doc.setFillColor(res.safetyFactor >= 1.5 ? 248 : 254, res.safetyFactor >= 1.5 ? 250 : 242, res.safetyFactor >= 1.5 ? 252 : 242);
+  doc.roundedRect(14, curY, 182, 16, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(res.safetyFactor >= 1.5 ? 15 : 185, res.safetyFactor >= 1.5 ? 23 : 28, res.safetyFactor >= 1.5 ? 42 : 28);
+  doc.text('CONSIGNES DE REGLAGE DE LA SERTISSEUSE PNEUMATIQUE / HYDRAULIQUE :', 18, curY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    `Pression manometre : ${res.effectivePunchPressureBar} bar • Penetration couteau : ${res.knifePenetrationMm} mm • Equerre d alignement : ${res.flushOffsetToleranceMm <= 0.2 ? 'Active' : 'A poser'}`,
+    18,
+    curY + 9.5
+  );
+  doc.text(
+    'Encoller abondamment les faces de coupe a 45 degres avec la colle PU bicomposant avant emboitement et sertissage.',
+    18,
+    curY + 13.5
+  );
+
+  curY += 20;
+
+  // 7. Workshop Recommendations
+  if (res.recommendations.length > 0) {
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(255, 255, 255);
+    const boxHeight = Math.min(22, 6 + res.recommendations.length * 3.5);
+    doc.roundedRect(14, curY, 182, boxHeight, 1.5, 1.5, 'D');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(15, 23, 42);
+    doc.text('DIRECTIVES PARTICULIERES D ASSEMBLAGE ATELIER :', 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    res.recommendations.slice(0, 4).forEach((rec, idx) => {
+      doc.text(`• ${rec}`, 20, curY + 8.5 + idx * 3.8);
+    });
+
+    curY += boxHeight + 4;
+  }
+
+  // 8. Signature Block
+  const signY = Math.min(curY, 258);
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 70, 22, 1.5, 1.5, 'D');
+  doc.roundedRect(126, signY, 70, 22, 1.5, 1.5, 'D');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Visa Responsable Assemblage', 18, signY + 5.5);
+  doc.text('Bon pour Montage & Controle Onglet', 130, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Date & Cachet Atelier :', 18, signY + 11);
+  doc.text('Signature Controleur Qualite :', 130, signY + 11);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|CORNER|${params.documentId}|REF=${params.projectRef}|METHOD=${res.assemblySpec.methodId}|RES=${res.ultimatePullOutResistanceN}N|STATUS=${isOk ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 9. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Fiche technique officielle Baiti Atelier • ${params.documentId} • NF P 20-302 • NF EN 12046-1 • Eurocode 9 • SNFA`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Note_Sertissage_Angle_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 

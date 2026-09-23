@@ -57,6 +57,7 @@ import { SecurityLockingModal } from './SecurityLockingModal';
 import { StructuralGlazingModal } from './StructuralGlazingModal';
 import { IntegratedBlindModal } from './IntegratedBlindModal';
 import { WindowDrainageModal } from './WindowDrainageModal';
+import { CornerCrimpingModal } from './CornerCrimpingModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -241,6 +242,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showStructuralGlazingModal, setShowStructuralGlazingModal] = useState(false);
   const [showIntegratedBlindModal, setShowIntegratedBlindModal] = useState(false);
   const [showDrainageModal, setShowDrainageModal] = useState(false);
+  const [showCornerCrimpingModal, setShowCornerCrimpingModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1021,6 +1023,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Droplets className="w-3 h-3" />
               <span>Drainage Eau</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowCornerCrimpingModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-amber-300 font-semibold"
+              title="Audit sertissage d onglet et résistance mécanique d équerre Eurocode 9 / NF P 20-302"
+            >
+              <Wrench className="w-3 h-3" />
+              <span>Sertissage Angle</span>
             </button>
 
             <button
@@ -2182,6 +2197,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           windowReference={`Drainage ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* CORNER JOINT CRIMPING & CLEAT RESISTANCE MODAL */}
+      {showCornerCrimpingModal && (
+        <CornerCrimpingModal
+          isOpen={showCornerCrimpingModal}
+          onClose={() => setShowCornerCrimpingModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          windowReference={`Onglet ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />
