@@ -29,16 +29,26 @@ import { isTauriDesktop } from './services/desktopBridge';
 import { useConfigStore } from './store/configStore';
 import { getTranslation } from './utils/i18n';
 import { Footer } from './components/landing/Footer';
+import { ChuteReductionModal } from './components/optimizer/ChuteReductionModal';
 import { Camera, AppWindow, Building2, CheckCircle2, Layers, Scissors } from 'lucide-react';
 import { playTactileClick, playSwitchSound } from './utils/audioFeedback';
 import './App.css';
 
 export function App() {
-  const { language, theme, isMaterialMarketOpen, setMaterialMarketOpen, setQuoteModalOpen } = useConfigStore();
+  const {
+    language,
+    theme,
+    config,
+    toggleExplodedView,
+    isMaterialMarketOpen,
+    setMaterialMarketOpen,
+    setQuoteModalOpen,
+  } = useConfigStore();
   const t = getTranslation(language);
   const isLight = theme === 'light';
   const [isSketchModalOpen, setIsSketchModalOpen] = useState(false);
   const [isOfflineModalOpen, setIsOfflineModalOpen] = useState(false);
+  const [isChuteModalOpen, setIsChuteModalOpen] = useState(false);
   const [selectedTrade, setSelectedTrade] = useState<TradeCategory>('aluminum');
   const [view3DMode, setView3DMode] = useState<'single' | 'facade'>('single');
 
@@ -292,26 +302,55 @@ export function App() {
                     {/* 3D WebGL Canvas Area (7 cols on lg) */}
                     <div className="lg:col-span-7 flex flex-col gap-3">
                       <WindowCanvas />
-                      {/* Feature Badges */}
+                      {/* Feature Controls */}
                       <div className="grid grid-cols-3 gap-3 text-center">
-                        <div className={`glass-panel py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-mono hover-lift ${
-                          isLight ? 'bg-white border-slate-200 text-slate-700 shadow-xs' : 'border-white/10 text-zinc-300'
-                        }`}>
+                        <div
+                          className={`glass-panel py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-mono transition-all ${
+                            isLight
+                              ? 'bg-white border-slate-200 text-slate-700 shadow-xs'
+                              : 'border-white/10 text-zinc-300'
+                          }`}
+                        >
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                           <span>{t.badgeMillimeter}</span>
                         </div>
-                        <div className={`glass-panel py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-mono hover-lift ${
-                          isLight ? 'bg-white border-slate-200 text-slate-700 shadow-xs' : 'border-white/10 text-zinc-300'
-                        }`}>
+
+                        <button
+                          onClick={() => {
+                            playSwitchSound();
+                            toggleExplodedView();
+                          }}
+                          className={`glass-panel py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-mono hover-lift transition-all cursor-pointer ${
+                            config.explodedView
+                              ? 'bg-[#D4AF37]/20 border-[#D4AF37] text-[#D4AF37] font-bold shadow-md shadow-[#D4AF37]/20'
+                              : isLight
+                              ? 'bg-white border-slate-200 text-slate-700 shadow-xs hover:bg-slate-50'
+                              : 'border-white/10 text-zinc-300 hover:text-white hover:bg-white/5'
+                          }`}
+                          title="Basculer la vue éclatée des profilés et vitrage"
+                        >
                           <Layers className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
                           <span>{t.explodedViewLabel}</span>
-                        </div>
-                        <div className={`glass-panel py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-mono hover-lift ${
-                          isLight ? 'bg-white border-slate-200 text-slate-700 shadow-xs' : 'border-white/10 text-zinc-300'
-                        }`}>
-                          <Scissors className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                          <span>{t.badgeCutLoss}</span>
-                        </div>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            playTactileClick();
+                            setIsChuteModalOpen(true);
+                          }}
+                          className={`glass-panel py-2 px-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-mono hover-lift transition-all cursor-pointer group shadow-sm ${
+                            isLight
+                              ? 'bg-cyan-50/90 hover:bg-cyan-100 border-cyan-300 text-cyan-800'
+                              : 'bg-cyan-500/15 hover:bg-cyan-500/25 border-cyan-500/40 text-cyan-300 shadow-cyan-950/30'
+                          }`}
+                          title="Lancer l'algorithme d'optimisation de débitage et réduction automatique des chutes"
+                        >
+                          <Scissors className="w-3.5 h-3.5 text-cyan-400 group-hover:rotate-12 transition-transform shrink-0" />
+                          <span className="font-bold">{t.badgeCutLoss}</span>
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold font-mono border border-emerald-500/30">
+                            -16%
+                          </span>
+                        </button>
                       </div>
                     </div>
 
@@ -418,6 +457,18 @@ export function App() {
         <MaterialMarketModal
           isOpen={isMaterialMarketOpen}
           onClose={() => setMaterialMarketOpen(false)}
+        />
+
+        {/* Automated Chute Reduction & 1D Nesting Studio Modal */}
+        <ChuteReductionModal
+          isOpen={isChuteModalOpen}
+          onClose={() => setIsChuteModalOpen(false)}
+          onOpenFullStudio={() => {
+            const el = document.getElementById('cutting-studio');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
         />
 
         {/* Footer */}

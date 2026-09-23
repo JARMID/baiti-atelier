@@ -33,6 +33,7 @@ export const WindowCanvas: React.FC = () => {
     playTactileClick();
     if (controlsRef.current) {
       controlsRef.current.reset();
+      controlsRef.current.object.position.set(0.32, 0.18, 2.3);
     }
   };
 
@@ -98,6 +99,20 @@ export const WindowCanvas: React.FC = () => {
           : 'bg-gradient-to-b from-[#13161F] via-[#0E1017] to-[#0A0C10] border-white/10 text-white'
       }`}
     >
+      {/* Ambient Architectural Radial Lighting Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div
+          className={`absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] rounded-full blur-[110px] ${
+            isLight ? 'bg-sky-400/15' : 'bg-[#38BDF8]/12'
+          }`}
+        />
+        <div
+          className={`absolute bottom-6 right-1/4 w-[280px] h-[280px] rounded-full blur-[100px] ${
+            isLight ? 'bg-amber-400/12' : 'bg-[#D4AF37]/10'
+          }`}
+        />
+      </div>
+
       {/* HUD Quick Actions Header */}
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between pointer-events-none">
         <div className="flex items-center gap-2 pointer-events-auto">
@@ -206,18 +221,27 @@ export const WindowCanvas: React.FC = () => {
 
       {/* 3D Canvas */}
       <Canvas
-        camera={{ position: [0, 0, 2.7], fov: 42 }}
+        camera={{ position: [0.32, 0.18, 2.3], fov: 40 }}
         shadows
-        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance', localClippingEnabled: true }}
+        gl={{
+          antialias: true,
+          alpha: true,
+          powerPreference: 'high-performance',
+          localClippingEnabled: true,
+          logarithmicDepthBuffer: true,
+        }}
         onCreated={({ gl }) => {
           gl.localClippingEnabled = true;
         }}
       >
-        {/* Studio Lighting Rig */}
-        <ambientLight intensity={isLight ? 0.95 : 0.7} />
+        {/* Studio Professional Lighting Rig */}
+        <ambientLight intensity={isLight ? 1.15 : 0.9} color="#FFFFFF" />
+
+        {/* Front Key Light with sharp contact shadow */}
         <directionalLight
-          position={[4, 5, 4]}
-          intensity={isLight ? 1.9 : 1.8}
+          position={[0.3, 1.8, 3.8]}
+          intensity={isLight ? 2.2 : 2.4}
+          color="#FFFFFF"
           castShadow
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
@@ -225,12 +249,27 @@ export const WindowCanvas: React.FC = () => {
           shadow-camera-far={15}
           shadow-bias={-0.0001}
         />
+
+        {/* Top-Right High Specular Sunlight */}
         <directionalLight
-          position={[-4, 3, -3]}
-          intensity={isLight ? 0.7 : 0.9}
-          color={isLight ? '#93C5FD' : '#88AAFF'}
+          position={[3.8, 5, 2.2]}
+          intensity={isLight ? 1.4 : 1.6}
+          color="#FFF8EE"
         />
-        <directionalLight position={[0, -3, 3]} intensity={0.4} color="#FFAA88" />
+
+        {/* Left Precision Cyan Fill Beam */}
+        <directionalLight
+          position={[-3.8, 2.2, 2]}
+          intensity={isLight ? 0.9 : 1.3}
+          color="#38BDF8"
+        />
+
+        {/* Warm Golden Floor / Interior Bounce */}
+        <directionalLight
+          position={[0, -2.5, 2]}
+          intensity={0.65}
+          color="#D4AF37"
+        />
 
         <Suspense fallback={null}>
           <Float speed={autoRotate ? 0 : 0.8} rotationIntensity={0.04} floatIntensity={0.08}>

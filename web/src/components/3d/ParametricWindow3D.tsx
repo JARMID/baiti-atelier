@@ -87,7 +87,8 @@ export const ParametricWindow3D: React.FC<Props> = ({
       transparent: true,
       opacity: glassMatProps.opacity,
       ior: glassMatProps.ior,
-      reflectivity: 0.8,
+      reflectivity: 0.9,
+      envMapIntensity: 1.6,
       side: THREE.DoubleSide,
     });
     if (clippingPlane) {
