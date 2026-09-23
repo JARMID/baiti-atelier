@@ -25,6 +25,7 @@ import {
   Disc,
   Waves,
   Building2,
+  Activity,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -48,6 +49,7 @@ import { RollerShutterMotorModal } from './RollerShutterMotorModal';
 import { RollerShutterWindingModal } from './RollerShutterWindingModal';
 import { AcousticInsulationModal } from './AcousticInsulationModal';
 import { CurtainWallStructuralModal } from './CurtainWallStructuralModal';
+import { SeismicJoineryModal } from './SeismicJoineryModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -161,6 +163,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isWindingModalOpen, setIsWindingModalOpen] = useState(false);
   const [isAcousticModalOpen, setIsAcousticModalOpen] = useState(false);
   const [isCurtainWallModalOpen, setIsCurtainWallModalOpen] = useState(false);
+  const [isSeismicModalOpen, setIsSeismicModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -984,6 +987,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Waves className="w-4 h-4" />
           <span>Étude Acoustique & Bruits de Voirie (DTR C3-3 / ISO 717-1)</span>
+        </button>
+
+        {/* Seismic RPA 99 / Drift Safety Quick Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsSeismicModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Activity className="w-4 h-4" />
+          <span>Sécurité Parasismique & Déplacement Inter-Étage (RPA 99 / EC8)</span>
         </button>
 
         {/* Intercalaire / Spacer Selection */}
@@ -1815,6 +1831,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialFloorHeight={Math.max(config.height, 2800)}
           initialMullionSpacing={Math.max(Math.round(config.width / 2), 1200)}
           facadeReference={`Façade ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* SEISMIC JOINERY & INTER-STORY DRIFT SAFETY MODAL */}
+      {isSeismicModalOpen && (
+        <SeismicJoineryModal
+          isOpen={isSeismicModalOpen}
+          onClose={() => setIsSeismicModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          windowReference={`Baie ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />

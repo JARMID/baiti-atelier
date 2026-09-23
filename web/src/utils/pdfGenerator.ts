@@ -5213,6 +5213,237 @@ export async function generateCurtainWallCalculationPdf(params: CurtainWallPdfPa
   doc.save(safeFilename);
 }
 
+export interface SeismicNoticePdfParams {
+  documentId: string;
+  projectOrClientName: string;
+  locationWilaya: string;
+  windowReference: string;
+  glassSecurityLabelFr: string;
+  result: import('./seismicJoineryManager').SeismicCalculationResult;
+  workshopName?: string;
+}
+
+/**
+ * Generates an official A4 seismic calculation note for window and glazing movement under inter-story drift (RPA 99 / Eurocode 8 / DTU 36.5).
+ */
+export async function generateSeismicCalculationPdf(params: SeismicNoticePdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryNavy: [number, number, number] = [15, 23, 42]; // slate-900
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const amberOrange: [number, number, number] = [245, 158, 11];
+  const roseRed: [number, number, number] = [239, 68, 68];
+
+  const isOk = params.result.isGlassClearanceCompliant && params.result.isStoryDriftCompliant;
+  const statusColor = isOk
+    ? emeraldGreen
+    : params.result.seismicSafetyFactor >= 0.85
+      ? amberOrange
+      : roseRed;
+
+  // 1. Header Banner
+  doc.setFillColor(...primaryNavy);
+  doc.rect(0, 0, 210, 28, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(255, 255, 255);
+  doc.text(params.workshopName || 'BAITI ATELIER ALGERIE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text('Note de Calcul de Securite Parasismique & Derive d Etage (RPA 99)', 14, 17);
+  doc.text('Normes : RPA 99 v2003 (DTR BC 2-48), NF EN 1998-1 Eurocode 8 & NF DTU 36.5 Annexe B', 14, 22);
+
+  // Document Badge
+  doc.setFillColor(30, 41, 59);
+  doc.roundedRect(145, 6, 51, 16, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`SEISME : ${params.documentId}`, 148, 12);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 148, 18);
+
+  // 2. Identification Block
+  const infoY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, infoY, 182, 24, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Projet / Chantier :', 18, infoY + 6);
+  doc.text('Wilaya / Zone Sismique :', 18, infoY + 12);
+  doc.text('Groupe d Usage & Structure :', 18, infoY + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(params.projectOrClientName || 'Projet Collectif / Tertiaire', 55, infoY + 6);
+  doc.text(`${params.locationWilaya} • ${params.result.selectedZone.nameFr} (A = ${params.result.designAccelerationA}g)`, 55, infoY + 12);
+  doc.text(`${params.result.selectedUsage.titleFr} • ${params.result.selectedStructure.nameFr}`, 55, infoY + 18);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...primaryNavy);
+  doc.text('Repere Ouvrage :', 125, infoY + 6);
+  doc.text('Dimensions Menuiserie :', 125, infoY + 12);
+  doc.text('Hauteur d Etage :', 125, infoY + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text(params.windowReference, 158, infoY + 6);
+  doc.text(`${params.result.windowWidthMm} x ${params.result.windowHeightMm} mm`, 158, infoY + 12);
+  doc.text(`${params.result.storyHeightMm} mm entre dalles`, 158, infoY + 18);
+
+  // 3. Structural Calculation Table
+  const tableY = infoY + 28;
+  autoTable(doc, {
+    startY: tableY,
+    margin: { left: 14, right: 14 },
+    head: [['Grandeur Parasismique / Critere de Securite', 'Valeur Calculee', 'Exigence RPA 99 / DTU 36.5']],
+    body: [
+      ['Acceleration de Calcul (A_eff = A * I)', `${params.result.designAccelerationA} g`, `Zone RPA ${params.result.selectedZone.nameFr.split(':')[0]} x I=${params.result.selectedUsage.importanceFactorI}`],
+      ['Deplacement Elastique d Etage (de)', `${params.result.calculatedElasticDriftMm} mm`, 'Deformation horizontale sous seisme de calcul'],
+      ['Derive Relative de Calcul (dr = q * de)', `${params.result.calculatedDesignDriftDrMm} mm`, `Taux de derive : ${params.result.storyDriftRatioPercent}% de la hauteur d etage`],
+      ['Limite Admissible Derive RPA 99', `${params.result.allowableStoryDriftRpaMm} mm`, 'Delta_adm = 0.010 * h (Article 5.10 du RPA 99 v2003)'],
+      ['Jeu Fond de Feuillure Initial', `${params.result.glassEdgeClearanceMm} mm`, 'Espace net peripherique entre verre et profile'],
+      ['Capacite de Jeu Avant Choc d Angle', `${params.result.glassFalloutClearanceDriftMm} mm`, 'Formule AAMA 501.4 / FEMA 451 de distorsion angulaire'],
+      ['Facteur de Securite Sismique Vitrage', `${params.result.seismicSafetyFactor}`, 'Rapport capacite / derive (minimum requis >= 1.00)'],
+      ['Joint Sismique Peripherique Requis', `${params.result.requiredPeripheralSeismicJointMm} mm`, 'Desolidarisation gros œuvre garnie de mastic elastique'],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, textColor: [30, 41, 59] },
+    headStyles: { fillColor: primaryNavy, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 60 },
+      1: { cellWidth: 50, fontStyle: 'bold' },
+      2: { cellWidth: 72 },
+    },
+  });
+
+  // 4. Fasteners & Glazing Directives Table
+  const anchorTableY = (doc as any).lastAutoTable.finalY + 4;
+  autoTable(doc, {
+    startY: anchorTableY,
+    margin: { left: 14, right: 14 },
+    head: [['Dispositif de Pose / Securite Verre', 'Specification Atelier', 'Observation Chantier']],
+    body: [
+      ['Trous Oblongs sur Pattes de Fixation', `${params.result.recommendedSlottedHoleLengthMm} mm`, 'Permettant la distorsion du portique sans cisailler les chevilles'],
+      ['Type de Vitrage Recommande', `${params.glassSecurityLabelFr}`, params.result.requiresLaminatedSafetyGlass ? 'Feuilleté de sécurité OBLIGATOIRE (Zone IIb/III)' : 'Standard admissible'],
+      ['Cales d Assise & Calage Lateral', 'Cales elastomeres Shore A 60-70', 'Calage biseaute empechant le blocage diagonal sous distorsion'],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, textColor: [30, 41, 59] },
+    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 60 },
+      1: { cellWidth: 50, fontStyle: 'bold' },
+      2: { cellWidth: 72 },
+    },
+  });
+
+  // 5. Verdict Banner
+  const verdictY = (doc as any).lastAutoTable.finalY + 5;
+  doc.setDrawColor(...statusColor);
+  doc.setFillColor(isOk ? 240 : 254, isOk ? 253 : 242, isOk ? 244 : 242);
+  doc.roundedRect(14, verdictY, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...statusColor);
+  const verdictTitle = isOk
+    ? 'SECURITE PARASISMIQUE VALIDEE : JEU DE FEUILLURE CONFORME'
+    : 'ALERTE PARASISMIQUE : RISQUE DE CASSE DU VITRAGE';
+  doc.text(verdictTitle, 20, verdictY + 7);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(30, 41, 59);
+  doc.text(
+    `Derive calculee dr = ${params.result.calculatedDesignDriftDrMm} mm • Capacite feuillure = ${params.result.glassFalloutClearanceDriftMm} mm • Facteur securite = ${params.result.seismicSafetyFactor}.`,
+    20,
+    verdictY + 13
+  );
+  const recLine = isOk
+    ? 'Le vitrage dispose d une marge suffisante pour osciller sans choc contre les angles du dormant aluminium.'
+    : 'Preconisation imperative : Augmenter le jeu de fond de feuillure a 8 ou 10 mm avec parcloses profondes.';
+  doc.text(recLine, 20, verdictY + 18);
+
+  // 6. Directives and Recommendations
+  const directY = verdictY + 25;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, directY, 182, 24, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Prescriptions et Recommandations Parasismiques Atelier :', 18, directY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(71, 85, 105);
+  let curDirY = directY + 9.5;
+  for (const note of params.result.engineeringDirectivesFr.slice(0, 3)) {
+    doc.text(`• ${note}`, 18, curDirY);
+    curDirY += 4.5;
+  }
+
+  // 7. Signatures & QR Code
+  const signY = directY + 27;
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 22, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 22, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Pour le Concepteur Menuiserie :', 18, signY + 5.5);
+  doc.text('Visa Controle Technique CTC :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Ingenieur structure Baiti Atelier', 18, signY + 11);
+  doc.text('Signature & Date :', 18, signY + 17);
+  doc.text('Organisme national de controle', 135, signY + 11);
+  doc.text('Signature & Date :', 135, signY + 17);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|SEISMIC|${params.documentId}|REF=${params.windowReference}|ZONE=${params.result.selectedZone.id}|DRIFT=${params.result.calculatedDesignDriftDrMm}MM|CLEARANCE=${params.result.glassFalloutClearanceDriftMm}MM|SF=${params.result.seismicSafetyFactor}|STATUS=${isOk ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Note technique officielle Baiti Atelier • ${params.documentId} • RPA 99 v2003 • NF EN 1998-1 • NF DTU 36.5 Annexe B`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Note_Calcul_Parasismique_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 

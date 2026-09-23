@@ -26,6 +26,7 @@ import {
   Disc,
   Waves,
   Building2,
+  Activity,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -45,6 +46,7 @@ import { FastenerSafetyModal } from './FastenerSafetyModal';
 import { RollerShutterWindingModal } from './RollerShutterWindingModal';
 import { AcousticInsulationModal } from './AcousticInsulationModal';
 import { CurtainWallStructuralModal } from './CurtainWallStructuralModal';
+import { SeismicJoineryModal } from './SeismicJoineryModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -222,6 +224,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showWindingModal, setShowWindingModal] = useState(false);
   const [showAcousticModal, setShowAcousticModal] = useState(false);
   const [showCurtainWallModal, setShowCurtainWallModal] = useState(false);
+  const [showSeismicModal, setShowSeismicModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -911,6 +914,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Building2 className="w-3 h-3" />
               <span>Façade Rideau</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowSeismicModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-amber-300 font-semibold"
+              title="Vérification de la dérive d étage et sécurité parasismique RPA 99 v2003"
+            >
+              <Activity className="w-3 h-3" />
+              <span>Séisme RPA</span>
             </button>
 
             <button
@@ -1981,6 +1997,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialFloorHeight={Math.max(cadStructure.height, 2800)}
           initialMullionSpacing={Math.max(Math.round(cadStructure.width / 2), 1200)}
           facadeReference={`Façade ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* SEISMIC JOINERY MOVEMENT & DRIFT MODAL */}
+      {showSeismicModal && (
+        <SeismicJoineryModal
+          isOpen={showSeismicModal}
+          onClose={() => setShowSeismicModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          windowReference={`Baie ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />
