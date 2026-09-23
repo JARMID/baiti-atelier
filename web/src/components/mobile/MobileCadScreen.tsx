@@ -74,6 +74,7 @@ import { SolarSunshadeModal } from './SolarSunshadeModal';
 import { SlidingCarriageModal } from './SlidingCarriageModal';
 import { TransomDeadLoadModal } from './TransomDeadLoadModal';
 import { SillFlashingModal } from './SillFlashingModal';
+import { GasketVulcanizationModal } from './GasketVulcanizationModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -271,6 +272,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showSlidingCarriageModal, setShowSlidingCarriageModal] = useState(false);
   const [showTransomDeadLoadModal, setShowTransomDeadLoadModal] = useState(false);
   const [showSillFlashingModal, setShowSillFlashingModal] = useState(false);
+  const [showGasketModal, setShowGasketModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1220,6 +1222,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Droplets className="w-3 h-3" />
               <span>Bavette Appui</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowGasketModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/15 border border-cyan-500/30 hover:bg-cyan-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-cyan-300 font-semibold min-h-[44px]"
+              title="Audit vulcanisation des angles de joints EPDM et perméabilité à l air AEV (NF EN 12365 / NF DTU 36.5)"
+            >
+              <ShieldCheck className="w-3 h-3" />
+              <span>Joints AEV</span>
             </button>
 
             <button
@@ -2548,6 +2563,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           onClose={() => setShowSillFlashingModal(false)}
           initialWidth={cadStructure.width}
           projectReference={`Bavette Appui ${cadStructure.width}mm ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* GASKET VULCANIZATION & AEV TIGHTNESS AUDITOR MODAL */}
+      {showGasketModal && (
+        <GasketVulcanizationModal
+          isOpen={showGasketModal}
+          onClose={() => setShowGasketModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          projectReference={`Joints EPDM ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

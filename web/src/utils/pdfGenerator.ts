@@ -15,6 +15,8 @@ import type { TransomDeadLoadInput, TransomDeadLoadAuditResult } from './transom
 import { TRANSOM_PROFILE_SPECS, SETTING_BLOCK_SPECS } from './transomDeadLoadManager';
 import type { SillFlashingInput, SillFlashingAuditResult } from './sillFlashingManager';
 import { SILL_PROFILE_SPECS, ACOUSTIC_DAMPENER_SPECS } from './sillFlashingManager';
+import type { GasketAuditInput, GasketAuditResult } from './gasketVulcanizationManager';
+import { GASKET_MATERIAL_SPECS, CORNER_TECHNOLOGY_SPECS, GASKET_PROFILE_SPECS } from './gasketVulcanizationManager';
 
 export interface DevisOpeningItem {
   id: string;
@@ -10901,6 +10903,308 @@ export async function generateSillFlashingNoticePdf(params: SillFlashingNoticePd
   const safeFilename = `Attestation_Bavette_Appui_${params.documentId}.pdf`;
   doc.save(safeFilename);
 }
+
+export interface GasketVulcanizationNoticePdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName?: string;
+  wilaya?: string;
+  auditInput: GasketAuditInput;
+  auditResult: GasketAuditResult;
+}
+
+export async function generateGasketVulcanizationNoticePdf(params: GasketVulcanizationNoticePdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const bluePrimary: [number, number, number] = [15, 76, 129];
+  const slateDark: [number, number, number] = [30, 41, 59];
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const amberWarning: [number, number, number] = [245, 158, 11];
+  const roseRed: [number, number, number] = [225, 29, 72];
+
+  const input = params.auditInput;
+  const audit = params.auditResult;
+  const matSpec = GASKET_MATERIAL_SPECS[input.materialType];
+  const cornerSpec = CORNER_TECHNOLOGY_SPECS[input.cornerTechnology];
+  const profileSpec = GASKET_PROFILE_SPECS[input.profileRole];
+
+  // 1. Header Banner
+  doc.setFillColor(...bluePrimary);
+  doc.rect(0, 0, 210, 32, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text('BAITI ATELIER • AUDIT ÉTANCHÉITÉ AEV & JOINTS ÉLASTOMÈRE', 14, 13);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(226, 232, 240);
+  doc.text('Conforme NF EN 12365 • NF DTU 36.5 P1-1 • CSTB e-Cahier 3698 • NF EN 12207 / 12208', 14, 19);
+  doc.text(`Réf Dossier : ${params.projectRef} • Wilaya : ${params.wilaya || 'Alger'} • Réf Doc : ${params.documentId}`, 14, 25);
+
+  // Status Badge
+  const isApproved = audit.dtuComplianceStatus === 'Conforme Certifie' || audit.dtuComplianceStatus === 'Conforme Standard';
+  const isTolerated = audit.dtuComplianceStatus === 'Tolere avec Reserve';
+  const badgeColor = isApproved ? emeraldGreen : isTolerated ? amberWarning : roseRed;
+  const badgeText = isApproved ? 'CONFORME DTU 36.5' : isTolerated ? 'TOLÉRÉ AVEC RÉSERVE' : 'NON CONFORME INTERDIT';
+
+  doc.setFillColor(badgeColor[0], badgeColor[1], badgeColor[2]);
+  doc.roundedRect(144, 8, 52, 16, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(badgeText, 170, 18, { align: 'center' });
+
+  // 2. Project Metadata Card
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, 36, 182, 20, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('1. CONTEXTE OUVRAGE & GÉOMÉTRIE DU CHÂSSIS', 18, 42);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Largeur : ${input.windowWidthMm} mm`, 18, 48);
+  doc.text(`Hauteur : ${input.windowHeightMm} mm`, 62, 48);
+  doc.text(`Périmètre unitaire : ${audit.windowPerimeterM} m`, 108, 48);
+  doc.text(`Nombre de vantaux : ${input.sashCount}`, 154, 48);
+
+  const solarText = input.darkProfileExposureSummer ? 'Exposition forte (Profilé sombre 75°C)' : 'Exposition standard (Profilé clair 45°C)';
+  doc.text(`Système : ${input.openingSystem}`, 18, 53);
+  doc.text(`Rôle du joint : ${profileSpec.labelFr.slice(0, 34)}`, 62, 53);
+  doc.text(`Ensoleillement : ${solarText}`, 126, 53);
+
+  // 3. Technical Specifications Card
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, 59, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('2. SPÉCIFICATIONS ÉLASTOMÈRE & TECHNOLOGIE D ANGLE', 18, 65);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...slateDark);
+  doc.text(`Matériau : ${matSpec.labelFr}`, 18, 70);
+  doc.text(`Dureté : ${matSpec.hardnessShoreA} Shore A`, 112, 70);
+  doc.text(`Déformation rémanente (CS 70°C) : ${matSpec.compressionSetPercentage}%`, 146, 70);
+
+  doc.text(`Assemblage d angle : ${cornerSpec.labelFr}`, 18, 75);
+  doc.text(`Intégrité d angle : ${cornerSpec.cornerIntegrityRating}`, 112, 75);
+  doc.text(`Retrait thermique estival : ${audit.summerCornerThermalShrinkageMm} mm`, 146, 75);
+
+  // 4. Performance KPI Cards
+  const kpiY = 84;
+  const tileW = 43.5;
+  const tileH = 22;
+
+  interface KpiItem {
+    title: string;
+    val: string;
+    sub: string;
+    status: string;
+    color: [number, number, number];
+  }
+
+  const kpis: KpiItem[] = [
+    {
+      title: 'Taux de Compression',
+      val: `${audit.compressionRatioPercent}%`,
+      sub: `Cible : ${profileSpec.idealCompressionRange.minPercent}-${profileSpec.idealCompressionRange.maxPercent}%`,
+      status: audit.compressionStatus === 'optimal' ? 'Optimal' : audit.compressionStatus,
+      color: audit.compressionStatus === 'optimal' ? emeraldGreen : amberWarning,
+    },
+    {
+      title: 'Perméabilité Air (100 Pa)',
+      val: `Classe ${audit.airTightnessClass}`,
+      sub: `${audit.resultingAirInfiltrationRateM3Hm} m3/(h*m)`,
+      status: audit.airTightnessClass === 'A*4' ? 'Excellence' : 'Standard',
+      color: audit.airTightnessClass === 'A*4' ? emeraldGreen : bluePrimary,
+    },
+    {
+      title: 'Étanchéité Eau NF EN 12208',
+      val: `Classe ${audit.watertightnessClass}`,
+      sub: audit.watertightnessClass === 'E1200' ? '1200 Pa Cyclonique' : 'Pression d essai',
+      status: audit.watertightnessClass !== 'Echec (Fuite)' ? 'Certifié' : 'Echec',
+      color: audit.watertightnessClass !== 'Echec (Fuite)' ? emeraldGreen : roseRed,
+    },
+    {
+      title: 'Couple Poignée Crémone',
+      val: `${audit.handleOperatingTorqueNm} N*m`,
+      sub: audit.pmrForceCompliant ? 'Conforme PMR <= 5.0 N*m' : 'Attention effort élevé',
+      status: audit.pmrForceCompliant ? 'PMR Conforme' : 'Non PMR',
+      color: audit.pmrForceCompliant ? emeraldGreen : amberWarning,
+    },
+  ];
+
+  kpis.forEach((kpi, idx) => {
+    const x = 14 + idx * (tileW + 2.6);
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(x, kpiY, tileW, tileH, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(100, 116, 139);
+    doc.text(kpi.title, x + 3, kpiY + 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.text(kpi.val, x + 3, kpiY + 11);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.8);
+    doc.setTextColor(...slateDark);
+    doc.text(kpi.sub, x + 3, kpiY + 16);
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(5.5);
+    doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.text(kpi.status, x + 3, kpiY + 19.5);
+  });
+
+  // 5. Hardware Bill of Materials Table
+  const tableData = [
+    [
+      'Joint d étanchéité linéaire',
+      matSpec.labelFr,
+      `${audit.totalGasketLengthM} m`,
+      `H0: ${audit.nominalHeightMm} mm • Jeu: ${audit.actualGapMm} mm`,
+      'Pose continue sans étirement axial (tolérance +2%)',
+      'Élastomère extrusion',
+    ],
+    [
+      'Pièces d angle préfabriquées',
+      cornerSpec.labelFr,
+      `${audit.billOfMaterials.moldedCornersCount} pièces`,
+      'Angles 90° vulcanisés d usine',
+      'Interdiction de coupe simple vive sans renfort selon DTU 36.5',
+      'Moulage injection',
+    ],
+    [
+      'Colle de soudure / vulcanisation',
+      'Cyanoacrylate spécifique élastomère EPDM',
+      `${audit.billOfMaterials.adhesiveTubesRequired} tube(s)`,
+      'Polymérisation ultra-rapide 5-10 s',
+      'Application en cordon fin régulier sur les deux faces dégraissées',
+      'Colle technique',
+    ],
+    [
+      'Temps de montage & contrôle',
+      'Main d œuvre qualifiée atelier',
+      `${audit.billOfMaterials.assemblyTimeMinutes} minutes`,
+      'Calibrage crémone et test feuillure',
+      'Vérification de l écrasement nominal sur les 4 côtés',
+      'Contrôle qualité',
+    ],
+  ];
+
+  autoTable(doc, {
+    startY: kpiY + 26,
+    head: [['Composant', 'Désignation Technique', 'Quantité', 'Spécifications Atelier', 'Prescription Normative', 'Catégorie']],
+    body: tableData,
+    theme: 'grid',
+    styles: {
+      fontSize: 6.5,
+      cellPadding: 1.8,
+      textColor: [15, 23, 42],
+    },
+    headStyles: {
+      fillColor: [15, 76, 129],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'left',
+    },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 32 },
+      1: { cellWidth: 46 },
+      2: { cellWidth: 18 },
+      3: { fontStyle: 'bold', cellWidth: 26 },
+      4: { cellWidth: 44 },
+      5: { halign: 'right', cellWidth: 16 },
+    },
+  });
+
+  // 6. Synthesis Recommendations Card
+  const finalTable = (doc as any).lastAutoTable;
+  const synthY = finalTable.finalY + 4;
+
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, synthY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('5. PRESCRIPTIONS DE POSE & GARANTIE D ÉTANCHÉITÉ', 18, synthY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...slateDark);
+
+  let recoLineY = synthY + 10;
+  audit.auditRecommendations.slice(0, 3).forEach((reco) => {
+    doc.text(`• ${reco}`, 18, recoLineY);
+    recoLineY += 4.2;
+  });
+
+  // 7. Signature & QR Code Block
+  const signY = synthY + 28;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, signY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('VISA TECHNIQUE QUALITÉ ATELIER', 18, signY + 6);
+  doc.text('RÉCEPTION & CONTRÔLE CHANTIER', 128, signY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.2);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Atelier de Menuiserie Aluminium Baiti', 18, signY + 11);
+  doc.text('Signature & Cachet :', 18, signY + 16);
+
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 128, signY + 11);
+  doc.text('Date & Signature :', 128, signY + 16);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|GASKET|${params.documentId}|REF=${params.projectRef}|AIR=${audit.airTightnessClass}|WATER=${audit.watertightnessClass}|CR=${audit.compressionRatioPercent}%|STATUS=${audit.dtuComplianceStatus}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer Legal Line
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.2);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Attestation officielle Baiti Atelier • ${params.documentId} • NF EN 12365 • NF DTU 36.5 • CSTB e-Cahier 3698 • ISO 815-1`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Attestation_Joints_Etancheite_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
 
 
 
