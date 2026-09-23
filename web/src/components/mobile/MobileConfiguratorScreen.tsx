@@ -27,6 +27,7 @@ import {
   Building2,
   Activity,
   Wind,
+  Lock,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -53,6 +54,7 @@ import { CurtainWallStructuralModal } from './CurtainWallStructuralModal';
 import { SeismicJoineryModal } from './SeismicJoineryModal';
 import { BifoldDoorModal } from './BifoldDoorModal';
 import { LouverAerodynamicsModal } from './LouverAerodynamicsModal';
+import { SecurityLockingModal } from './SecurityLockingModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -169,6 +171,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isSeismicModalOpen, setIsSeismicModalOpen] = useState(false);
   const [isBifoldModalOpen, setIsBifoldModalOpen] = useState(false);
   const [isLouverModalOpen, setIsLouverModalOpen] = useState(false);
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -791,6 +794,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Wind className="w-4 h-4" />
           <span>Dimensionnement Grille à Ventelles & Aéraulique (NF EN 13030)</span>
+        </button>
+
+        {/* Security Locking & Burglary Resistance Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsSecurityModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Lock className="w-4 h-4" />
+          <span>Audit Sécurité Anti-Effraction & Quincaillerie RC (NF EN 1627)</span>
         </button>
       </div>
 
@@ -1901,6 +1917,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           windowReference={`Grille ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* MULTI-POINT ESPAGNOLETTE LOCKING & BURGLARY RESISTANCE MODAL */}
+      {isSecurityModalOpen && (
+        <SecurityLockingModal
+          isOpen={isSecurityModalOpen}
+          onClose={() => setIsSecurityModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          windowReference={`Châssis ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />

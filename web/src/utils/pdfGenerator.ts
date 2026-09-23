@@ -6078,6 +6078,329 @@ export async function generateLouverAerodynamicPdf(params: LouverAerodynamicPdfP
   doc.save(safeFilename);
 }
 
+export interface SecurityLockingPdfParams {
+  documentId: string;
+  clientName: string;
+  wilayaName: string;
+  projectRef: string;
+  widthMm: number;
+  heightMm: number;
+  result: import('./securityLockingManager').SecurityAuditorResult;
+  workshopName?: string;
+}
+
+/**
+ * Generates an official A4 technical specification note for burglary resistance and locking hardware.
+ * References: NF EN 1627 a 1630 / NF EN 356 / A2P / NF P20-302.
+ * Humanizer invariant: exactly 0 em dashes, 0 en dashes.
+ */
+export async function generateSecurityLockingPdf(params: SecurityLockingPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryNavy: [number, number, number] = [15, 23, 42]; // slate-900
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const amberOrange: [number, number, number] = [245, 158, 11];
+  const roseRed: [number, number, number] = [239, 68, 68];
+
+  const isOk = params.result.overallVerdict === 'favorable';
+  const isWarn = params.result.overallVerdict === 'warning';
+  const statusColor = isOk ? emeraldGreen : isWarn ? amberOrange : roseRed;
+
+  // 1. Header & Title Block
+  doc.setFillColor(...primaryNavy);
+  doc.rect(14, 12, 182, 22, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER : AUDIT SECURITE ANTI-EFFRACTION', 20, 21);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text('Quincaillerie Multipoints, Galets Champignon & Vitrage (NF EN 1627 a 1630 / EN 356)', 20, 27);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(212, 175, 55);
+  doc.text(`Doc N: ${params.documentId}`, 150, 21);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 150, 27);
+
+  // 2. Project Metadata Card
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 38, 182, 20, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Reference Ouvrage :', 18, 44);
+  doc.text('Maitre d Ouvrage / Client :', 18, 50);
+  doc.text('Localisation / Wilaya :', 18, 55);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(51, 65, 85);
+  doc.text(`${params.projectRef} (${params.widthMm} x ${params.heightMm} mm)`, 60, 44);
+  doc.text(`${params.clientName || 'Client Projet'}`, 60, 50);
+  doc.text(`${params.wilayaName || 'Alger (16)'}`, 60, 55);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...primaryNavy);
+  doc.text('Classe Ciblee :', 115, 44);
+  doc.text('Type de Condamnation :', 115, 50);
+  doc.text('Vitrage Specifie :', 115, 55);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(51, 65, 85);
+  doc.text(`${params.result.classSpec.label}`, 150, 44);
+  doc.text(`${params.result.camSpec.nameFr.split('(')[0].trim()}`, 150, 50, { maxWidth: 44 });
+  doc.text(`${params.result.input.currentGlazingType}`, 150, 55, { maxWidth: 44 });
+
+  // 3. Technical Parameters Grid
+  const gridY = 62;
+  const colWidth = 43.5;
+  const colGap = 2.6;
+
+  // Box 1: Classe & Resistance
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(14, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('1. Classe de Securite', 17, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Classe : ${params.result.classSpec.label}`, 17, gridY + 12);
+  doc.text(`Temps contact : ${params.result.classSpec.resistanceTimeMinutes} min d attaque`, 17, gridY + 18);
+  doc.text(`Charge verin : ${params.result.classSpec.staticLoadPerPointDaN} daN/pt`, 17, gridY + 24);
+  doc.text(`Espacement max : ${params.result.classSpec.maxLockingSpacingMm} mm`, 17, gridY + 30);
+  doc.text(`Poignee a cle : ${params.result.classSpec.handleLockTorqueNm} Nm min`, 17, gridY + 36);
+
+  // Box 2: Points de Condamnation
+  const b2X = 14 + colWidth + colGap;
+  doc.roundedRect(b2X, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(b2X, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('2. Points de Condamnation', b2X + 3, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Points installes : ${params.result.effectiveLockingPoints}`, b2X + 3, gridY + 12);
+  doc.text(`Minimum requis : ${params.result.recommendedMinLockingPoints} points`, b2X + 3, gridY + 18);
+  doc.text(`Espacement reel : ${params.result.actualSpacingMm} mm`, b2X + 3, gridY + 24);
+  doc.text(`Renvois d angle : ${params.result.cornerDrivesCount} compas/angles`, b2X + 3, gridY + 30);
+  doc.text(`Perimetre ouvrant : ${params.result.perimeterMm} mm`, b2X + 3, gridY + 36);
+
+  // Box 3: Quincaillerie & Force
+  const b3X = b2X + colWidth + colGap;
+  doc.roundedRect(b3X, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(b3X, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('3. Resistance Mecanique', b3X + 3, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Type galet : ${params.result.camSpec.nameFr.split('(')[0].trim()}`, b3X + 3, gridY + 12, { maxWidth: 39 });
+  doc.text(`Cisaillement : ${params.result.camSpec.shearStrengthDaN} daN/pt`, b3X + 3, gridY + 18);
+  doc.text(`Force globale : ${params.result.totalResistingForceDaN} daN`, b3X + 3, gridY + 24);
+  doc.text(`Force requise : ${params.result.requiredClassForceDaN} daN`, b3X + 3, gridY + 30);
+  doc.text(`Poignee a cle : ${params.result.input.hasLockingHandleKey ? 'Conforme 100Nm' : 'Absente'}`, b3X + 3, gridY + 36);
+
+  // Box 4: Vitrage de Securite
+  const b4X = b3X + colWidth + colGap;
+  doc.roundedRect(b4X, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(b4X, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('4. Vitrage NF EN 356', b4X + 3, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Exigence : ${params.result.classSpec.mandatoryGlazingEn356.split('(')[0].trim()}`, b4X + 3, gridY + 12, { maxWidth: 39 });
+  doc.text(`Verre actuel : ${params.result.input.currentGlazingType}`, b4X + 3, gridY + 18, { maxWidth: 39 });
+  doc.text(`Harmonisation : ${params.result.isGlazingAligned ? 'Conforme' : 'Non Conforme'}`, b4X + 3, gridY + 24);
+  doc.text(`Plaque percage : ${params.result.input.hasAntiDrillPlate ? 'Installee' : 'Non installee'}`, b4X + 3, gridY + 30);
+  doc.text(`Calage feuillure : Incompressible`, b4X + 3, gridY + 36);
+
+  // 4. Detailed Security Table
+  const tableY = 109;
+  doc.setFillColor(...primaryNavy);
+  doc.rect(14, tableY, 182, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('PARAMETRE DE SECURITE / NORME', 18, tableY + 5);
+  doc.text('CONFIGURATION REELLE', 90, tableY + 5);
+  doc.text('PRESCRIPTION CLASSE ' + params.result.classSpec.label, 140, tableY + 5);
+
+  const rows = [
+    {
+      label: 'Nombre et espacement des pênes / galets',
+      val: `${params.result.effectiveLockingPoints} points (espacement ${params.result.actualSpacingMm} mm)`,
+      crit: `Espacement max ${params.result.classSpec.maxLockingSpacingMm} mm sur 4 cotes`,
+    },
+    {
+      label: 'Geometrie des gaches et galets de fermeture',
+      val: `${params.result.camSpec.nameFr}`,
+      crit: 'Galets champignon ou pênes crochets anti-degondage',
+    },
+    {
+      label: 'Effort statique de poussee admissible',
+      val: `${params.result.totalResistingForceDaN} daN resistance calculee`,
+      crit: `Minimum requis : ${params.result.requiredClassForceDaN} daN sous verin d essai`,
+    },
+    {
+      label: 'Poignee de manoeuvre a cle ou bouton secable',
+      val: params.result.input.hasLockingHandleKey ? 'Poignee a cle certifiee 100 Nm' : 'Poignee standard non verrouillable',
+      crit: 'Obligatoire en RC2/RC3 pour eviter manipulation externe',
+    },
+    {
+      label: 'Vitrage de protection a l attaque manuelle',
+      val: `${params.result.input.currentGlazingType}`,
+      crit: `${params.result.classSpec.mandatoryGlazingEn356}`,
+    },
+  ];
+
+  let curY = tableY + 7;
+  rows.forEach((r, idx) => {
+    doc.setFillColor(idx % 2 === 0 ? 255 : 248, idx % 2 === 0 ? 255 : 250, idx % 2 === 0 ? 255 : 252);
+    doc.rect(14, curY, 182, 6.5, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.line(14, curY + 6.5, 196, curY + 6.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(30, 41, 59);
+    doc.text(r.label, 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(r.val, 90, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    doc.text(r.crit, 140, curY + 4.5);
+
+    curY += 6.5;
+  });
+
+  // 5. Compliance Banner & Verdict Card
+  const verdictY = curY + 4;
+  doc.setDrawColor(...statusColor);
+  doc.setFillColor(isOk ? 240 : isWarn ? 254 : 254, isOk ? 253 : isWarn ? 243 : 242, isOk ? 244 : isWarn ? 199 : 242);
+  doc.roundedRect(14, verdictY, 182, 34, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...statusColor);
+  doc.text(`VERDICT TECHNIQUE : ${params.result.verdictTitleFr.toUpperCase()}`, 18, verdictY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(30, 41, 59);
+  let vY = verdictY + 12;
+  if (params.result.complianceDefectsFr.length > 0) {
+    for (const def of params.result.complianceDefectsFr) {
+      doc.text(`• ${def}`, 18, vY);
+      vY += 4.5;
+    }
+  } else {
+    doc.text('• Tous les criteres d espacement, de resistance mecanique et d equipement de securite sont satisfaits.', 18, vY);
+    vY += 4.5;
+    doc.text('• Menuiserie apte a resister a une tentative d effraction selon les conditions d essai NF EN 1627.', 18, vY);
+    vY += 4.5;
+  }
+  doc.text(`• Vitrage : ${params.result.glazingMatchVerdictFr}`, 18, vY);
+
+  // 6. Workshop Directives & Installation Rules
+  const directY = verdictY + 37;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, directY, 182, 30, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Directives d Assemblage et Pose Anti-Effraction (NF DTU 36.5 / A2P) :', 18, directY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(71, 85, 105);
+  let dY = directY + 10;
+  for (const rec of params.result.recommendationsFr) {
+    doc.text(`• ${rec}`, 18, dY, { maxWidth: 174 });
+    dY += 4.5;
+  }
+
+  // 7. Signatures & QR Code
+  const signY = directY + 33;
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 21, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 21, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Pour le Fabricant Menuisier :', 18, signY + 5.5);
+  doc.text('Visa Client / Assureur :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Atelier de fabrication Baiti Atelier', 18, signY + 10.5);
+  doc.text('Signature & Date :', 18, signY + 16);
+  doc.text('Bon pour accord quincaillerie securite', 135, signY + 10.5);
+  doc.text('Signature & Date :', 135, signY + 16);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|SECURITY|${params.documentId}|REF=${params.projectRef}|CLASS=${params.result.classSpec.label}|POINTS=${params.result.effectiveLockingPoints}|FORCE=${params.result.totalResistingForceDaN}DAN|STATUS=${isOk ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 0.5, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Note technique officielle Baiti Atelier • ${params.documentId} • NF EN 1627 a 1630 • NF EN 356 • NF DTU 36.5 • Certification A2P`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Note_Securite_Effraction_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 

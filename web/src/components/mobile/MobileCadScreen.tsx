@@ -27,6 +27,7 @@ import {
   Waves,
   Building2,
   Activity,
+  Lock,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -49,6 +50,7 @@ import { CurtainWallStructuralModal } from './CurtainWallStructuralModal';
 import { SeismicJoineryModal } from './SeismicJoineryModal';
 import { BifoldDoorModal } from './BifoldDoorModal';
 import { LouverAerodynamicsModal } from './LouverAerodynamicsModal';
+import { SecurityLockingModal } from './SecurityLockingModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -229,6 +231,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showSeismicModal, setShowSeismicModal] = useState(false);
   const [showBifoldModal, setShowBifoldModal] = useState(false);
   const [showLouverModal, setShowLouverModal] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -957,6 +960,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Wind className="w-3 h-3" />
               <span>Ventelles</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowSecurityModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/30 hover:bg-rose-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-rose-300 font-semibold"
+              title="Audit quincaillerie anti-effraction et classes RC1 a RC4 NF EN 1627"
+            >
+              <Lock className="w-3 h-3" />
+              <span>Sécurité RC</span>
             </button>
 
             <button
@@ -2066,6 +2082,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           windowReference={`Grille ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* MULTI-POINT ESPAGNOLETTE LOCKING & BURGLARY RESISTANCE MODAL */}
+      {showSecurityModal && (
+        <SecurityLockingModal
+          isOpen={showSecurityModal}
+          onClose={() => setShowSecurityModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          windowReference={`Châssis ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />
