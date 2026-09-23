@@ -79,6 +79,7 @@ import { BioclimaticPergolaModal } from './BioclimaticPergolaModal';
 import { SolarSunshadeModal } from './SolarSunshadeModal';
 import { SlidingCarriageModal } from './SlidingCarriageModal';
 import { TransomDeadLoadModal } from './TransomDeadLoadModal';
+import { SillFlashingModal } from './SillFlashingModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -211,6 +212,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isSolarSunshadeModalOpen, setIsSolarSunshadeModalOpen] = useState(false);
   const [isSlidingCarriageModalOpen, setIsSlidingCarriageModalOpen] = useState(false);
   const [isTransomDeadLoadModalOpen, setIsTransomDeadLoadModalOpen] = useState(false);
+  const [isSillFlashingModalOpen, setIsSillFlashingModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -1041,6 +1043,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <SplitSquareVertical className="w-4 h-4" />
           <span>Calage d Assise & Flèche Traverse (NF DTU 39 / NF EN 13830)</span>
+        </button>
+
+        {/* Window Sill Flashing & Drainage Runoff Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsSillFlashingModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Droplets className="w-4 h-4" />
+          <span>Bavette d Appui & Rejet d Eau (NF DTU 36.5 / CSTB 3529)</span>
         </button>
       </div>
 
@@ -2358,6 +2373,18 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           projectReference={`Traverse ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* WINDOW SILL FLASHING & DRAINAGE RUNOFF AUDITOR MODAL */}
+      {isSillFlashingModalOpen && (
+        <SillFlashingModal
+          isOpen={isSillFlashingModalOpen}
+          onClose={() => setIsSillFlashingModalOpen(false)}
+          initialWidth={config.width}
+          projectReference={`Bavette Appui ${config.width}mm ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />

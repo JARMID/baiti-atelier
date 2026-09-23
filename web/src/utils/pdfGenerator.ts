@@ -13,6 +13,8 @@ import type { SlidingCarriageInput, SlidingCarriageAuditResult } from './sliding
 import { CARRIAGE_SPECS, TRACK_SPECS } from './slidingCarriageManager';
 import type { TransomDeadLoadInput, TransomDeadLoadAuditResult } from './transomDeadLoadManager';
 import { TRANSOM_PROFILE_SPECS, SETTING_BLOCK_SPECS } from './transomDeadLoadManager';
+import type { SillFlashingInput, SillFlashingAuditResult } from './sillFlashingManager';
+import { SILL_PROFILE_SPECS, ACOUSTIC_DAMPENER_SPECS } from './sillFlashingManager';
 
 export interface DevisOpeningItem {
   id: string;
@@ -10588,6 +10590,318 @@ export async function generateTransomDeadLoadNoticePdf(params: TransomDeadLoadNo
   const safeFilename = `Attestation_Traverse_Calage_${params.documentId}.pdf`;
   doc.save(safeFilename);
 }
+
+export interface SillFlashingNoticePdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName?: string;
+  wilayaName: string;
+  input: SillFlashingInput;
+  audit: SillFlashingAuditResult;
+}
+
+export async function generateSillFlashingNoticePdf(params: SillFlashingNoticePdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const audit = params.audit;
+  const input = params.input;
+  const profile = SILL_PROFILE_SPECS[input.sillProfile];
+  const dampener = ACOUSTIC_DAMPENER_SPECS[input.acousticDampener];
+
+  // Palette: Deep Teal #0F4C81, Gold #D4AF37, Slate #0F172A, Background #F8FAFC
+  const bluePrimary: [number, number, number] = [15, 76, 129];
+  const slateDark: [number, number, number] = [15, 23, 42];
+  const goldAccent: [number, number, number] = [212, 175, 55];
+  const bgLight: [number, number, number] = [248, 250, 252];
+  const borderLight: [number, number, number] = [226, 232, 240];
+
+  // 1. Header Banner
+  doc.setFillColor(...bluePrimary);
+  doc.rect(0, 0, 210, 26, 'F');
+  doc.setFillColor(...goldAccent);
+  doc.rect(0, 26, 210, 1.5, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('ATTESTATION TECHNIQUE D APPUI & BAVETTE DE DRAINAGE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(224, 231, 255);
+  doc.text('Rejet d Eau • Pente DTU 36.5 • CSTB 3529 • Larmier Protecteur • Isolation Acoustique', 14, 17);
+
+  const todayStr = new Date().toLocaleDateString('fr-DZ');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Réf : ${params.projectRef}`, 196, 11, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(`Date : ${todayStr} • Doc ID : ${params.documentId}`, 196, 17, { align: 'right' });
+
+  // 2. Metadata Card
+  doc.setFillColor(...bgLight);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, 32, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...bluePrimary);
+  doc.text('CARACTÉRISTIQUES DE LA BAIE & GÉOMÉTRIE DE L APPUI', 18, 38);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...slateDark);
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 18, 44);
+  doc.text(`Wilaya : ${params.wilayaName}`, 18, 49);
+
+  doc.text(`Largeur tableau baie : ${input.openingWidthMm} mm (Profondeur gorge : ${input.wallThroatDepthMm} mm)`, 78, 44);
+  doc.text(`Bavette façonnée : L = ${audit.totalLengthMm} mm • Développé ${audit.developedWidthMm} mm (${audit.totalFlashingWeightKg} kg)`, 78, 49);
+
+  doc.text(`Type d appui : ${profile.labelFr.split('(')[0].trim()}`, 148, 44);
+  doc.text(`Pente d écoulement : ${input.sillSlopePercent}% (${audit.sillSlopeDegrees}°)`, 148, 49);
+
+  // 3. Technical Summary Blocks (3 Columns)
+  const boxY = 58;
+  const boxW = 58;
+  const boxH = 34;
+
+  // Box 1: Runoff Slope
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(15, 76, 129, 0.08);
+  doc.rect(14, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('1. PENTE & RUISSELLEMENT', 17, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Pente appliquée : ${input.sillSlopePercent}% (${audit.sillSlopeDegrees}°)`, 17, boxY + 10);
+  doc.text(`Pente minimale DTU 36.5 : 5.0%`, 17, boxY + 14);
+  doc.text(`Débit d orage : ${audit.runoffFlowRateLitersPerMin} L/min`, 17, boxY + 18);
+  doc.text(`Vitesse de chasse : ${audit.waterSpeedMetersPerSec} m/s`, 17, boxY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(audit.isSlopeCompliant ? 16 : 225, audit.isSlopeCompliant ? 185 : 29, audit.isSlopeCompliant ? 129 : 72);
+  doc.text(audit.isSlopeCompliant ? 'Pente Conforme DTU' : 'Pente Insuffisante (Risque)', 17, boxY + 28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text('Écoulement gravitaire sans flaque', 17, boxY + 32);
+
+  // Box 2: Drip Edge & Lateral End Dams
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(76, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(15, 76, 129, 0.08);
+  doc.rect(76, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('2. LARMIER & OREILLES', 79, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Saillie larmier : ${input.dripOverhangMm} mm (Min : 30 mm)`, 79, boxY + 10);
+  doc.text(`Relevé latéral joues : ${audit.endDamHeightMm} mm (Min : 20 mm)`, 79, boxY + 14);
+  doc.text(`Type d embouts : ${input.endDamType.replace(/_/g, ' ')}`, 79, boxY + 18);
+  doc.text(`Protection façade : Goutte d eau pliée`, 79, boxY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(audit.isDripOverhangCompliant ? 16 : 225, audit.isDripOverhangCompliant ? 185 : 29, audit.isDripOverhangCompliant ? 129 : 72);
+  doc.text(audit.isDripOverhangCompliant ? 'Larmier Conforme (>=30mm)' : 'Saillie Trop Courte', 79, boxY + 28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text('Rupture de capillarité assurée', 79, boxY + 32);
+
+  // Box 3: Acoustic Rain Dampening
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(138, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(15, 76, 129, 0.08);
+  doc.rect(138, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('3. ACOUSTIQUE IMPACT PLUIE', 141, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Amortisseur : ${dampener.labelFr.split('(')[0].trim()}`, 141, boxY + 10);
+  doc.text(`Atténuation bruit : -${dampener.noiseAttenuationDbA} dBA`, 141, boxY + 14);
+  doc.text(`Niveau sonore perçu : ${audit.rainImpactNoiseDbA} dBA`, 141, boxY + 18);
+  doc.text(`Pression vent pluie : ${input.drivingRainPressurePa} Pa`, 141, boxY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(audit.isAcousticallyComfortable ? 16 : 217, audit.isAcousticallyComfortable ? 185 : 119, audit.isAcousticallyComfortable ? 129 : 6);
+  doc.text(audit.isAcousticallyComfortable ? 'Confort Acoustique Silencieux' : 'Tambourinage Bruyant', 141, boxY + 28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text(audit.isAcousticallyComfortable ? 'Seuil confort <= 48 dBA respecté' : 'Bande résiliente conseillée', 141, boxY + 32);
+
+  // 4. Prescriptions & Drainage Chamber
+  const kinY = boxY + boxH + 5;
+  doc.setFillColor(...bgLight);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, kinY, 182, 36, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...bluePrimary);
+  doc.text('4. RECOMMANDATIONS TECHNIQUES DE MISE EN ŒUVRE (NF DTU 36.5)', 18, kinY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...slateDark);
+  doc.text(`Relevé sous dormant : Emboîtement d au moins 18 mm dans la gorge d appui avec joint mousse imprégnée classe 1`, 18, kinY + 13);
+  doc.text(`Liberté de dilatation : Trous oblongs de fixation pour absorber les variations thermiques (delta T = 60°C)`, 18, kinY + 18);
+  doc.text(`Calfeutrement latéral : Garniture de fond de joint et mastic élastomère 25LM entre joues et maçonnerie`, 18, kinY + 23);
+  doc.text(`Chambre de décompression : Espace d air drainé évitant les refoulements d eau sous pression de vent orageux`, 18, kinY + 28);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...bluePrimary);
+  doc.text('Contrôle à la pose : Vérifier l horizontalité parfaite du larmier et le débord franc de 30 mm hors crépi', 18, kinY + 33);
+
+  // 5. Bill of Materials & Hardware Specs
+  const tableData = [
+    [
+      'Bavette d appui façonnée',
+      profile.labelFr,
+      '1 unité',
+      `${audit.totalLengthMm} x ${audit.developedWidthMm} mm`,
+      `Épaisseur ${profile.nominalThicknessMm} mm • Thermolaquage 60 microns`,
+      profile.material,
+    ],
+    [
+      'Joues d étanchéité latérales',
+      'Oreilles étanches ou embouts relevés',
+      '1 paire',
+      `Hauteur ${audit.endDamHeightMm} mm`,
+      'Relevé latéral soudé ou plié étanche empêchant l infiltration dans l isolant',
+      'Alu 5754 / ABS traité UV',
+    ],
+    [
+      'Amortisseur anti-tambourinage',
+      dampener.labelFr,
+      '1 bande',
+      `${input.openingWidthMm} x ${Math.round(input.wallThroatDepthMm * 0.7)} mm`,
+      `Atténuation phonique ${dampener.noiseAttenuationDbA} dBA collée en sous-face`,
+      'Mousse EPDM / Bitume',
+    ],
+    [
+      'Visserie & fixations sous dormant',
+      'Vis autoperceuses inox avec rondelles EPDM',
+      `${Math.max(4, Math.ceil(input.openingWidthMm / 400))} pièces`,
+      'Diamètre 4.2 x 19 mm',
+      'Fixation dans gorge avec cavalier sans perforation de la zone d écoulement',
+      'Inox A2 étanche',
+    ],
+  ];
+
+  autoTable(doc, {
+    startY: kinY + 40,
+    head: [['Composant', 'Désignation Quincaillerie', 'Quantité', 'Dimensions / Spécifications', 'Prescription Normative', 'Matériau / Finition']],
+    body: tableData,
+    theme: 'grid',
+    styles: {
+      fontSize: 6.5,
+      cellPadding: 1.8,
+      textColor: [15, 23, 42],
+    },
+    headStyles: {
+      fillColor: [15, 76, 129],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'left',
+    },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 32 },
+      1: { cellWidth: 46 },
+      2: { cellWidth: 18 },
+      3: { fontStyle: 'bold', cellWidth: 26 },
+      4: { cellWidth: 44 },
+      5: { halign: 'right', cellWidth: 16 },
+    },
+  });
+
+  // 6. Synthesis Recommendations Card
+  const finalTable = (doc as any).lastAutoTable;
+  const synthY = finalTable.finalY + 4;
+
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, synthY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('5. PRESCRIPTIONS DE CHANTIER & GARANTIE D ÉTANCHÉITÉ', 18, synthY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...slateDark);
+
+  let recoLineY = synthY + 10;
+  audit.recommendationsFr.slice(0, 3).forEach((reco) => {
+    doc.text(`• ${reco}`, 18, recoLineY);
+    recoLineY += 4.2;
+  });
+
+  // 7. Signature & QR Code Block
+  const signY = synthY + 28;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, signY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('VISA TECHNIQUE FABRICANT', 18, signY + 6);
+  doc.text('BON POUR ACCORD & POSE CLIENT', 128, signY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.2);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Atelier de Menuiserie Aluminium Baiti', 18, signY + 11);
+  doc.text('Signature & Cachet :', 18, signY + 16);
+
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 128, signY + 11);
+  doc.text('Date & Signature :', 128, signY + 16);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|SILL|${params.documentId}|REF=${params.projectRef}|WIDTH=${input.openingWidthMm}MM|SLOPE=${input.sillSlopePercent}%|NOISE=${audit.rainImpactNoiseDbA}DBA|STATUS=${audit.overallStatus}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer Legal Line
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.2);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Attestation officielle Baiti Atelier • ${params.documentId} • NF DTU 36.5 • CSTB 3529 • NF P 20-302 • NF EN 12208`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Attestation_Bavette_Appui_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
 
 
 

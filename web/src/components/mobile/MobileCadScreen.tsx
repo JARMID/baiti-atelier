@@ -73,6 +73,7 @@ import { BioclimaticPergolaModal } from './BioclimaticPergolaModal';
 import { SolarSunshadeModal } from './SolarSunshadeModal';
 import { SlidingCarriageModal } from './SlidingCarriageModal';
 import { TransomDeadLoadModal } from './TransomDeadLoadModal';
+import { SillFlashingModal } from './SillFlashingModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -269,6 +270,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showSolarSunshadeModal, setShowSolarSunshadeModal] = useState(false);
   const [showSlidingCarriageModal, setShowSlidingCarriageModal] = useState(false);
   const [showTransomDeadLoadModal, setShowTransomDeadLoadModal] = useState(false);
+  const [showSillFlashingModal, setShowSillFlashingModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1205,6 +1207,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <SplitSquareVertical className="w-3 h-3" />
               <span>Traverse DTU</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowSillFlashingModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-teal-500/10 dark:bg-teal-500/15 border border-teal-500/30 hover:bg-teal-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-teal-300 font-semibold min-h-[44px]"
+              title="Audit bavette d appui, rejet d eau, pente et larmier protecteur (NF DTU 36.5 / CSTB 3529)"
+            >
+              <Droplets className="w-3 h-3" />
+              <span>Bavette Appui</span>
             </button>
 
             <button
@@ -2521,6 +2536,18 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           projectReference={`Traverse ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* WINDOW SILL FLASHING & DRAINAGE RUNOFF AUDITOR MODAL */}
+      {showSillFlashingModal && (
+        <SillFlashingModal
+          isOpen={showSillFlashingModal}
+          onClose={() => setShowSillFlashingModal(false)}
+          initialWidth={cadStructure.width}
+          projectReference={`Bavette Appui ${cadStructure.width}mm ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />
