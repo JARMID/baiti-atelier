@@ -41,21 +41,23 @@ const CameraRig: React.FC<CameraRigProps> = ({ scrollProgress, mouseOffset, is36
     if (is360Active) return;
 
     const baseZ = isMobile ? 4.4 : 3.6;
+    const stage1TargetX = isMobile ? 0 : -0.55;
+    const stage1LookX = isMobile ? 0 : -0.1;
 
-    // Stage 1 (0.0 - 0.35): Overview perspective
-    let targetX = 0;
-    let targetY = isMobile ? 0.08 : 0.05;
+    // Stage 1 (0.0 - 0.35): Overview perspective (3D model gracefully shifted to right on desktop)
+    let targetX = stage1TargetX;
+    let targetY = isMobile ? 0.08 : 0.04;
     let targetZ = baseZ;
-    let lookX = 0;
+    let lookX = stage1LookX;
     let lookY = 0;
 
     if (scrollProgress >= 0.35 && scrollProgress < 0.7) {
       // Stage 2: Technical zoom on profile & interior assembly
       const t = (scrollProgress - 0.35) / 0.35;
-      targetX = isMobile ? 0 : THREE.MathUtils.lerp(0, 0.45, t);
+      targetX = isMobile ? 0 : THREE.MathUtils.lerp(stage1TargetX, 0.45, t);
       targetY = THREE.MathUtils.lerp(targetY, 0.2, t);
       targetZ = THREE.MathUtils.lerp(baseZ, isMobile ? 2.9 : 2.2, t);
-      lookX = isMobile ? 0 : THREE.MathUtils.lerp(0, 0.25, t);
+      lookX = isMobile ? 0 : THREE.MathUtils.lerp(stage1LookX, 0.25, t);
       lookY = THREE.MathUtils.lerp(0, 0.1, t);
     } else if (scrollProgress >= 0.7) {
       // Stage 3: Dynamic cinematic multi-angle inspection view
@@ -180,13 +182,14 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
     { id: 'aluminum', label: 'Aluminium 45 RPT', arabic: 'ألمنيوم RPT' },
     { id: 'woodworking', label: 'Ébénisterie Bois', arabic: 'نجارة الخشب' },
     { id: 'metalwork', label: 'Ferronnerie d’Art', arabic: 'الحدادة الفنية' },
-    { id: 'tapestry', label: 'Tapisserie & Draperie', arabic: 'الستائر والأثاث' },
+    { id: 'tapestry', label: 'Volets Roulants', arabic: 'الستائر الدوارة' },
   ];
 
   const windowModelPills: { id: WindowModelType; label: string; arabic: string }[] = [
     { id: 'sliding', label: 'Coulissant 2V', arabic: 'سحاب 2 درف' },
     { id: 'tilt_and_turn', label: 'Oscillo-Battant', arabic: 'قلاب متحرك' },
     { id: 'french_casement', label: 'Battant 2V', arabic: 'مفصلي 2 درف' },
+    { id: 'curtain_wall', label: 'Mur Rideau', arabic: 'واجهة زجاجية' },
   ];
 
   return (
@@ -291,7 +294,11 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
         </div>
 
         {/* DYNAMIC SCROLLYTELLING OVERLAY CONTENT */}
-        <div className="relative z-20 flex-1 flex flex-col justify-center px-4 sm:px-12 lg:px-20 pointer-events-none">
+        <div
+          className={`relative z-20 flex-1 flex flex-col px-4 sm:px-12 lg:px-20 pointer-events-none transition-all duration-500 ${
+            isStage1 ? 'justify-start pt-16 sm:pt-20 lg:pt-24' : 'justify-center'
+          }`}
+        >
           {/* STAGE 1: HERO OVERVIEW (0.0 to 0.35) */}
           <div
             className={`max-w-xl transition-all duration-700 ${
@@ -462,15 +469,26 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
             isLight ? 'text-slate-500' : 'text-zinc-500'
           }`}
         >
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-            <span className="truncate max-w-[200px] sm:max-w-none">
-              {isStage1
-                ? 'VUE D\'ENSEMBLE DU CHÂSSIS'
-                : isStage2
-                ? 'VUE ÉCLATÉE & QUINCAILLERIE'
-                : 'INSPECTION 360° ACTIVE'}
-            </span>
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <button
+              onClick={handleToggle360}
+              className={`flex items-center gap-2 px-3 py-1 rounded-full border text-[11px] font-mono transition-all cursor-pointer ${
+                is360Active || isStage3
+                  ? 'bg-[#D4AF37]/20 border-[#D4AF37] text-[#D4AF37] font-bold shadow-md shadow-[#D4AF37]/20'
+                  : isLight
+                  ? 'bg-white/80 border-slate-200 text-slate-600 hover:text-slate-900'
+                  : 'bg-black/60 border-white/10 text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Rotate3d className={`w-3.5 h-3.5 ${is360Active || isStage3 ? 'text-[#D4AF37]' : ''}`} />
+              <span>
+                {is360Active || isStage3
+                  ? 'MODE 360° ACTIF · GLISSER POUR PIVOTER'
+                  : isStage1
+                  ? 'VUE D’ENSEMBLE · CLIQUER POUR 360°'
+                  : 'COUPE TECHNIQUE · CLIQUER POUR 360°'}
+              </span>
+            </button>
           </div>
           <div className="hidden sm:block">
             <span>ALGER · ORAN · CONSTANTINE · 58 WILAYAS</span>

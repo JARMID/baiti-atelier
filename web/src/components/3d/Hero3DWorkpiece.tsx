@@ -6,7 +6,7 @@ import type { FinishColor } from '../../types/window';
 import type { TradeCategory } from '../../types/trades';
 import { FINISH_PALETTES } from '../../utils/finishSpecifications';
 
-export type WindowModelType = 'sliding' | 'tilt_and_turn' | 'french_casement';
+export type WindowModelType = 'sliding' | 'tilt_and_turn' | 'french_casement' | 'curtain_wall';
 
 interface Hero3DWorkpieceProps {
   trade: TradeCategory;
@@ -150,22 +150,10 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
     return mat;
   }, [finishColor, clippingPlane]);
 
-  const fabricMaterial = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
-      color: finishColor === 'ral_9016' ? '#F8FAFC' : finishColor === 'ral_7016' ? '#475569' : '#8B5CF6',
-      roughness: 0.85,
-      metalness: 0.05,
-      side: THREE.DoubleSide,
-    });
-    if (clippingPlane) {
-      mat.clippingPlanes = [clippingPlane];
-      mat.clipShadows = true;
-    }
-    return mat;
-  }, [finishColor, clippingPlane]);
 
   // Interpolation calculations based on scrollProgress
   const openProgress = Math.min(1, Math.max(0, (scrollProgress - 0.35) / 0.3));
+  const effectiveOpen = isOpen ? 1 : openProgress;
   const explodeFactor = isExploded ? 1 : Math.min(1, Math.max(0, (scrollProgress - 0.5) / 0.25));
 
   const explodeZ = explodeFactor * 0.32;
@@ -187,9 +175,6 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
       rootRef.current.rotation.y = THREE.MathUtils.lerp(rootRef.current.rotation.y, targetY, delta * 4);
       rootRef.current.rotation.x = THREE.MathUtils.lerp(rootRef.current.rotation.x, targetX, delta * 4);
     }
-
-    // Kinematic motion on scroll
-    const effectiveOpen = isOpen ? 1 : openProgress;
 
     // Aluminum kinematics based on window model
     if (trade === 'aluminum') {
@@ -239,34 +224,34 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
       {/* ============================================================ */}
       {trade === 'aluminum' && (
         <group>
-          {/* Top Roller Shutter Caisson Monobloc (2mm expansion clearance to eliminate seam z-fighting) */}
+          {/* Top Roller Shutter Caisson Monobloc (clean elevation to eliminate contact z-fighting) */}
           <mesh
-            position={[0, 0.852 + explodeDilation, 0]}
+            position={[0, 0.865 + explodeDilation, 0]}
             material={shutterMaterial}
           >
-            <boxGeometry args={[1.44 + explodeDilation * 2, 0.178, 0.11]} />
+            <boxGeometry args={[1.44 + explodeDilation * 2, 0.19, 0.12]} />
           </mesh>
 
-          {/* Outer Frame (Dormant 45/52 RPT) */}
+          {/* Outer Frame (Dormant Bi-Rail 45/52 RPT avec profondeur 110mm) */}
           <group position={[0, 0, 0]}>
-            {/* Top Dormant */}
+            {/* Top Dormant Track */}
             <mesh position={[0, 0.72 + explodeDilation, 0]} material={frameMaterial}>
-              <boxGeometry args={[1.44 + explodeDilation * 2, 0.08, 0.09]} />
+              <boxGeometry args={[1.44 + explodeDilation * 2, 0.08, 0.11]} />
             </mesh>
-            {/* Bottom Dormant */}
+            {/* Bottom Dormant Track */}
             <mesh position={[0, -0.72 - explodeDilation, 0]} material={frameMaterial}>
-              <boxGeometry args={[1.44 + explodeDilation * 2, 0.08, 0.09]} />
+              <boxGeometry args={[1.44 + explodeDilation * 2, 0.08, 0.11]} />
             </mesh>
-            {/* Left Upright */}
+            {/* Left Upright Jamb */}
             <mesh position={[-0.68 - explodeDilation, 0, 0]} material={frameMaterial}>
-              <boxGeometry args={[0.08, 1.36, 0.09]} />
+              <boxGeometry args={[0.08, 1.36, 0.11]} />
             </mesh>
-            {/* Right Upright */}
+            {/* Right Upright Jamb */}
             <mesh position={[0.68 + explodeDilation, 0, 0]} material={frameMaterial}>
-              <boxGeometry args={[0.08, 1.36, 0.09]} />
+              <boxGeometry args={[0.08, 1.36, 0.11]} />
             </mesh>
 
-            {/* Polyamide Thermal Break Bars (displayed cleanly during technical clipping/explosion without coplanar fighting) */}
+            {/* Polyamide Thermal Break Bars (clearance-isolated during technical clipping) */}
             {(clippingPlane || isExploded) && (
               <>
                 <mesh position={[0, 0.72 + explodeDilation, 0]} material={thermalBreakMaterial} renderOrder={2}>
@@ -279,50 +264,62 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
             )}
           </group>
 
-          {/* ============================================== */}
-          {/* WINDOW MODEL: SLIDING (COULISSANT 2 VANTAUX)  */}
-          {/* ============================================== */}
+          {/* ========================================================================= */}
+          {/* WINDOW MODEL: SLIDING (COULISSANT 2 VANTAUX AVEC RAILS SÉPARÉS SANS Z-FIGHT) */}
+          {/* ========================================================================= */}
           {windowModel === 'sliding' && (
             <>
-              {/* Left Movable Sash */}
-              <group ref={leftSashRef} position={[-0.32, 0, 0.02 + explodeZ]}>
+              {/* Left Movable Sash (Front Track: Z = +0.034, bounds: [+0.012, +0.056]) */}
+              <group ref={leftSashRef} position={[-0.32, 0, 0.034 + explodeZ]}>
                 <mesh position={[0, 0.63, 0]} material={frameMaterial}>
-                  <boxGeometry args={[0.74, 0.08, 0.06]} />
+                  <boxGeometry args={[0.72, 0.075, 0.044]} />
                 </mesh>
                 <mesh position={[0, -0.63, 0]} material={frameMaterial}>
-                  <boxGeometry args={[0.74, 0.08, 0.06]} />
+                  <boxGeometry args={[0.72, 0.075, 0.044]} />
                 </mesh>
-                <mesh position={[-0.33, 0, 0]} material={frameMaterial}>
-                  <boxGeometry args={[0.08, 1.18, 0.06]} />
+                <mesh position={[-0.32, 0, 0]} material={frameMaterial}>
+                  <boxGeometry args={[0.075, 1.18, 0.044]} />
                 </mesh>
-                <mesh position={[0.33, 0, 0]} material={frameMaterial}>
-                  <boxGeometry args={[0.08, 1.18, 0.06]} />
+                {/* Meeting Stile (Chicane avant) */}
+                <mesh position={[0.32, 0, 0]} material={frameMaterial}>
+                  <boxGeometry args={[0.07, 1.18, 0.044]} />
                 </mesh>
+                {/* Interlocking Labyrinth Weatherstrip Hook */}
+                <mesh position={[0.35, 0, -0.012]} material={hardwareSteelMaterial}>
+                  <boxGeometry args={[0.012, 1.18, 0.014]} />
+                </mesh>
+                {/* Double Glazing Panel */}
                 <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial}>
-                  <boxGeometry args={[0.6, 1.18, 0.02]} />
+                  <boxGeometry args={[0.58, 1.18, 0.018]} />
                 </mesh>
                 {/* Modern Cremone Grip */}
-                <mesh position={[0.28, 0, 0.045]} material={goldAccentMaterial}>
-                  <boxGeometry args={[0.028, 0.16, 0.025]} />
+                <mesh position={[0.26, 0, 0.032]} material={goldAccentMaterial}>
+                  <boxGeometry args={[0.026, 0.16, 0.022]} />
                 </mesh>
               </group>
 
-              {/* Right Fixed Sash */}
-              <group position={[0.32, 0, -0.02 + explodeZ]}>
+              {/* Right Fixed Sash (Rear Track: Z = -0.034, bounds: [-0.056, -0.012]) */}
+              <group position={[0.32, 0, -0.034 + explodeZ]}>
                 <mesh position={[0, 0.63, 0]} material={frameMaterial}>
-                  <boxGeometry args={[0.74, 0.08, 0.06]} />
+                  <boxGeometry args={[0.72, 0.075, 0.044]} />
                 </mesh>
                 <mesh position={[0, -0.63, 0]} material={frameMaterial}>
-                  <boxGeometry args={[0.74, 0.08, 0.06]} />
+                  <boxGeometry args={[0.72, 0.075, 0.044]} />
                 </mesh>
-                <mesh position={[-0.33, 0, 0]} material={frameMaterial}>
-                  <boxGeometry args={[0.08, 1.18, 0.06]} />
+                {/* Meeting Stile (Chicane arrière) */}
+                <mesh position={[-0.32, 0, 0]} material={frameMaterial}>
+                  <boxGeometry args={[0.07, 1.18, 0.044]} />
                 </mesh>
-                <mesh position={[0.33, 0, 0]} material={frameMaterial}>
-                  <boxGeometry args={[0.08, 1.18, 0.06]} />
+                {/* Interlocking Counter Labyrinth Hook */}
+                <mesh position={[-0.35, 0, 0.012]} material={hardwareSteelMaterial}>
+                  <boxGeometry args={[0.012, 1.18, 0.014]} />
                 </mesh>
+                <mesh position={[0.32, 0, 0]} material={frameMaterial}>
+                  <boxGeometry args={[0.075, 1.18, 0.044]} />
+                </mesh>
+                {/* Double Glazing Panel */}
                 <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial}>
-                  <boxGeometry args={[0.6, 1.18, 0.02]} />
+                  <boxGeometry args={[0.58, 1.18, 0.018]} />
                 </mesh>
               </group>
             </>
@@ -464,6 +461,54 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
               </group>
             </group>
           )}
+ 
+          {/* ==================================================== */}
+          {/* WINDOW MODEL: MUR RIDEAU / FAÇADE VITRÉE (CURTAIN)  */}
+          {/* ==================================================== */}
+          {windowModel === 'curtain_wall' && (
+            <group position={[0, 0, 0.02 + explodeZ]}>
+              {/* Vertical Structural Mullions (Montants 50x120mm) */}
+              {[-0.48, 0, 0.48].map((mx, idx) => (
+                <group key={`mullion-${idx}`} position={[mx, 0, 0]}>
+                  <mesh material={frameMaterial}>
+                    <boxGeometry args={[0.06, 1.48, 0.12]} />
+                  </mesh>
+                  {/* Exterior Architectural Pressure Cap (Capot serre-joint) */}
+                  <mesh position={[0, 0, 0.065]} material={goldAccentMaterial}>
+                    <boxGeometry args={[0.05, 1.48, 0.015]} />
+                  </mesh>
+                </group>
+              ))}
+
+              {/* Horizontal Structural Transoms (Traverses 50x80mm) */}
+              {[-0.38, 0.38].map((ty, idx) => (
+                <group key={`transom-${idx}`} position={[0, ty, 0]}>
+                  <mesh material={frameMaterial}>
+                    <boxGeometry args={[1.44, 0.05, 0.08]} />
+                  </mesh>
+                  <mesh position={[0, 0, 0.045]} material={goldAccentMaterial}>
+                    <boxGeometry args={[1.44, 0.04, 0.015]} />
+                  </mesh>
+                </group>
+              ))}
+
+              {/* 4 Large Structural Double Glazing Stop-Sol Panes */}
+              {[
+                { x: -0.24, y: 0.38 },
+                { x: 0.24, y: 0.38 },
+                { x: -0.24, y: -0.38 },
+                { x: 0.24, y: -0.38 },
+              ].map((pos, idx) => (
+                <mesh
+                  key={`curtain-glass-${idx}`}
+                  position={[pos.x, pos.y, 0.02 + explodeGlassZ]}
+                  material={glassMaterial}
+                >
+                  <boxGeometry args={[0.44, 0.72, 0.024]} />
+                </mesh>
+              ))}
+            </group>
+          )}
         </group>
       )}
 
@@ -540,7 +585,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
       )}
 
       {/* ============================================================ */}
-      {/* TRADE 3: FERRONNERIE D'ART & SÉCURITÉ MÉTALLIQUE             */}
+      {/* TRADE 3: FERRONNERIE D'ART & GRILLE DE SÉCURITÉ ARCHITECTURALE */}
       {/* ============================================================ */}
       {trade === 'metalwork' && (
         <group>
@@ -569,7 +614,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
           {/* Vertical Square 14mm Iron Bars with Forged Spearheads */}
           {[-0.55, -0.44, -0.33, -0.22, -0.11, 0, 0.11, 0.22, 0.33, 0.44, 0.55].map((bx, idx) => (
             <group key={idx} position={[bx, 0, 0]}>
-              {/* Bar */}
+              {/* Main Bar */}
               <mesh material={frameMaterial}>
                 <boxGeometry args={[0.022, 1.5, 0.022]} />
               </mesh>
@@ -583,43 +628,72 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
               </mesh>
             </group>
           ))}
+
+          {/* Wrought Iron Volutes (Volutes forgées centrales) */}
+          {[-0.38, -0.16, 0.16, 0.38].map((vx, vidx) => (
+            <mesh key={`volute-${vidx}`} position={[vx, -0.12, 0.015]} material={goldAccentMaterial}>
+              <torusGeometry args={[0.08, 0.009, 12, 32, Math.PI * 1.6]} />
+            </mesh>
+          ))}
         </group>
       )}
 
       {/* ============================================================ */}
-      {/* TRADE 4: TAPISSERIE & DRAPERIE ONDE ARCHITECTURALE           */}
+      {/* TRADE 4: FERMETURES & VOLET ROULANT MOTORISÉ ARCHITECTURAL    */}
       {/* ============================================================ */}
       {trade === 'tapestry' && (
         <group>
-          {/* Architectural Ceiling Track Rail */}
-          <mesh position={[0, 0.85, 0]} material={frameMaterial}>
-            <boxGeometry args={[1.6, 0.04, 0.06]} />
+          {/* Top Extruded Aluminum Caisson Box 180x180mm */}
+          <mesh position={[0, 0.84, 0]} material={shutterMaterial}>
+            <boxGeometry args={[1.5, 0.2, 0.16]} />
           </mesh>
-          {/* Gold Brackets */}
-          <mesh position={[-0.72, 0.88, 0]} material={goldAccentMaterial}>
-            <boxGeometry args={[0.05, 0.08, 0.08]} />
+          {/* Motorized Cable Gland / End Caps */}
+          <mesh position={[-0.76, 0.84, 0]} material={goldAccentMaterial}>
+            <boxGeometry args={[0.025, 0.18, 0.14]} />
           </mesh>
-          <mesh position={[0.72, 0.88, 0]} material={goldAccentMaterial}>
-            <boxGeometry args={[0.05, 0.08, 0.08]} />
+          <mesh position={[0.76, 0.84, 0]} material={goldAccentMaterial}>
+            <boxGeometry args={[0.025, 0.18, 0.14]} />
           </mesh>
 
-          {/* 3D Wave Folds Fabric Mesh */}
+          {/* Lateral Guide Rails (Coulisses avec brosses) */}
+          <mesh position={[-0.72, -0.02, 0]} material={frameMaterial}>
+            <boxGeometry args={[0.06, 1.54, 0.06]} />
+          </mesh>
+          <mesh position={[0.72, -0.02, 0]} material={frameMaterial}>
+            <boxGeometry args={[0.06, 1.54, 0.06]} />
+          </mesh>
+
+          {/* Articulated Roller Curtain Slats (Tablier de lames aluminium) */}
           <group position={[0, 0, 0]}>
-            {[-0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6].map((fx, idx) => {
-              const isFront = idx % 2 === 0;
-              const foldZ = isFront ? 0.08 : -0.08;
+            {Array.from({ length: 16 }).map((_, idx) => {
+              // Calculate vertical offset and motorized roll-up on scroll
+              const slatBaseY = 0.68 - idx * 0.085;
+              const rollupThreshold = 1 - (idx / 16);
+              const isRetracted = effectiveOpen > rollupThreshold;
+              const slatY = isRetracted ? THREE.MathUtils.lerp(slatBaseY, 0.82, (effectiveOpen - rollupThreshold) * 4) : slatBaseY;
+              const slatScaleZ = isRetracted ? 0.3 : 1;
+
               return (
-                <group key={idx} position={[fx, 0, foldZ]}>
-                  <mesh material={fabricMaterial}>
-                    <cylinderGeometry args={[0.09, 0.11, 1.65, 32, 1, true]} />
+                <group key={`slat-${idx}`} position={[0, Math.min(0.84, slatY), 0]} scale={[1, 1, slatScaleZ]}>
+                  {/* Extruded Thermal Aluminum Slat */}
+                  <mesh material={frameMaterial}>
+                    <boxGeometry args={[1.38, 0.076, 0.022]} />
                   </mesh>
-                  {/* Lead weight bar at the bottom */}
-                  <mesh position={[0, -0.82, 0]} material={goldAccentMaterial}>
-                    <cylinderGeometry args={[0.015, 0.015, 0.18, 16]} />
+                  {/* Subtle Beveled Joint Line */}
+                  <mesh position={[0, -0.038, 0.012]} material={goldAccentMaterial}>
+                    <boxGeometry args={[1.36, 0.004, 0.003]} />
                   </mesh>
                 </group>
               );
             })}
+
+            {/* Heavy Extruded Final Slat with Weatherstrip (Lame finale renforcée) */}
+            <mesh
+              position={[0, Math.min(0.82, 0.68 - 16 * 0.085 + (effectiveOpen * 0.9)), 0.005]}
+              material={goldAccentMaterial}
+            >
+              <boxGeometry args={[1.4, 0.06, 0.028]} />
+            </mesh>
           </group>
         </group>
       )}

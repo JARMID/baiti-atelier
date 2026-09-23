@@ -139,34 +139,32 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/30 to-transparent pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4 relative z-10">
-        {/* LEFT: BRAND MARK & REGIONAL WILAYA CHIP */}
+        {/* LEFT: BRAND MONOGRAM & REFINED WILAYA SELECTOR */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
           <a
             href="#"
             onClick={() => playTactileClick()}
-            className="flex items-center group cursor-pointer"
+            className="flex items-center group cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
           >
-            <BaitiLogoMark size={42} showText={true} isLight={isLight} />
+            <BaitiLogoMark size={40} showText={true} isLight={isLight} />
           </a>
 
-          {/* Clean Wilaya Selector Chip */}
+          {/* Regional Wilaya Selector Capsule */}
           <div
-            className={`hidden md:flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs border transition-colors ${
+            className={`hidden md:flex items-center gap-1.5 rounded-full px-3 py-1 text-xs border backdrop-blur-md transition-all ${
               isLight
-                ? 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
-                : 'bg-white/5 border-white/10 text-zinc-300 hover:border-white/20'
+                ? 'bg-slate-100/80 border-slate-200 text-slate-700 hover:border-slate-300'
+                : 'bg-white/[0.04] border-white/10 text-zinc-300 hover:border-[#D4AF37]/40'
             }`}
           >
-            <MapPin className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <MapPin className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
             <select
               value={selectedWilaya}
               onChange={(e) => {
                 playSwitchSound();
                 setSelectedWilaya(e.target.value);
               }}
-              className={`bg-transparent border-none text-xs font-mono focus:outline-none cursor-pointer pr-1 max-w-[130px] truncate ${
-                isLight ? 'text-slate-800' : 'text-zinc-200'
-              }`}
+              className="bg-transparent border-none text-xs font-mono focus:outline-none cursor-pointer pr-1 max-w-[125px] truncate font-medium"
               title="Sélectionnez votre Wilaya pour les tarifs et le transport"
             >
               {ALGERIAN_WILAYAS_58.map((w) => {
@@ -183,19 +181,22 @@ export const Header: React.FC<HeaderProps> = ({
                 );
               })}
             </select>
+            <ChevronDown className="w-3 h-3 opacity-50 shrink-0 pointer-events-none -ml-1" />
           </div>
         </div>
 
-        {/* CENTER: STREAMLINED LUXURY NAVIGATION LINKS */}
+        {/* CENTER: FLOATING LIQUID GLASS NAVIGATION LINKS */}
         <nav
-          className={`hidden xl:flex items-center gap-1 p-1 rounded-2xl border text-xs font-medium backdrop-blur-md ${
-            isLight ? 'bg-slate-50/80 border-slate-200 text-slate-700' : 'bg-[#081b38]/70 border-sky-400/25 text-zinc-200 shadow-inner'
+          className={`hidden lg:flex items-center gap-1 px-3 py-1.5 rounded-full border text-xs font-medium backdrop-blur-xl transition-all shadow-xs ${
+            isLight
+              ? 'bg-slate-100/70 border-slate-200/80 text-slate-700'
+              : 'bg-white/[0.04] border-white/10 text-zinc-200 shadow-inner'
           }`}
         >
           <a
             href="#cad-studio"
             onClick={() => playTactileClick()}
-            className="px-3 py-1.5 rounded-xl hover:text-white transition-colors hover:bg-white/10 flex items-center gap-1.5"
+            className="px-3.5 py-1.5 rounded-full hover:text-white dark:hover:text-white transition-all hover:bg-[#D4AF37]/20 flex items-center gap-1.5 cursor-pointer"
           >
             <Grid className="w-3.5 h-3.5 text-[#38BDF8]" />
             <span>{t.navCadStudio}</span>
@@ -203,7 +204,7 @@ export const Header: React.FC<HeaderProps> = ({
           <a
             href="#debitage-optimizer"
             onClick={() => playTactileClick()}
-            className="px-3 py-1.5 rounded-xl hover:text-white transition-colors hover:bg-white/10 flex items-center gap-1.5"
+            className="px-3.5 py-1.5 rounded-full hover:text-white dark:hover:text-white transition-all hover:bg-[#D4AF37]/20 flex items-center gap-1.5 cursor-pointer"
           >
             <Scissors className="w-3.5 h-3.5 text-[#D4AF37]" />
             <span>{t.navCutting}</span>
@@ -211,7 +212,7 @@ export const Header: React.FC<HeaderProps> = ({
           <a
             href="#configurator"
             onClick={() => playTactileClick()}
-            className="px-3 py-1.5 rounded-xl hover:text-white transition-colors hover:bg-white/10 flex items-center gap-1.5"
+            className="px-3.5 py-1.5 rounded-full hover:text-white dark:hover:text-white transition-all hover:bg-[#D4AF37]/20 flex items-center gap-1.5 cursor-pointer"
           >
             <Layers className="w-3.5 h-3.5 text-emerald-400" />
             <span>Châssis 3D</span>
@@ -222,7 +223,7 @@ export const Header: React.FC<HeaderProps> = ({
                 playTactileClick();
                 onOpenMaterialMarket();
               }}
-              className="px-3 py-1.5 rounded-xl hover:text-white transition-colors hover:bg-white/10 flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-full hover:text-white dark:hover:text-white transition-all hover:bg-[#D4AF37]/20 flex items-center gap-1.5 cursor-pointer"
             >
               <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
               <span>{language === 'ar' ? 'بورصة المواد' : 'Bourse Matières'}</span>
@@ -231,199 +232,206 @@ export const Header: React.FC<HeaderProps> = ({
           <a
             href="#workshops"
             onClick={() => playTactileClick()}
-            className="px-3 py-1.5 rounded-xl hover:text-white transition-colors hover:bg-white/10 flex items-center gap-1.5"
+            className="px-3.5 py-1.5 rounded-full hover:text-white dark:hover:text-white transition-all hover:bg-[#D4AF37]/20 flex items-center gap-1.5 cursor-pointer"
           >
             <span>{t.navWorkshops}</span>
           </a>
         </nav>
 
-        {/* RIGHT: NAVBAR CONTROLS, THEME TOGGLE & PRIMARY WORKSHOP ACTION */}
-        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-          {/* Trilingual Toggle */}
+        {/* RIGHT: CONSOLIDATED UTILITIES CAPSULE & PRIMARY ACTION */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* Unified Utilities Capsule */}
           <div
-            className={`flex items-center rounded-xl p-0.5 text-[11px] font-mono border ${
-              isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/5 border-white/10'
-            }`}
-          >
-            {(['fr', 'ar', 'en'] as const).map((lang) => (
-              <button
-                key={lang}
-                onClick={() => handleSelectLanguage(lang)}
-                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer font-bold ${
-                  language === lang
-                    ? 'bg-[#D4AF37] text-slate-950 shadow-sm'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900'
-                    : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                {lang === 'ar' ? 'عربي' : lang.toUpperCase()}
-              </button>
-            ))}
-          </div>
-
-          {/* Direct 1-Click Sun / Moon Theme Switcher in Navbar */}
-          <button
-            onClick={handleToggleTheme}
-            className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
+            className={`flex items-center rounded-full p-1 border backdrop-blur-xl ${
               isLight
-                ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
-                : 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300'
+                ? 'bg-slate-100/80 border-slate-200 shadow-xs'
+                : 'bg-white/[0.04] border-white/10'
             }`}
-            title={theme === 'dark' ? 'Passer au mode clair' : 'Passer au mode sombre'}
-            aria-label="Changer le thème"
           >
-            {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-amber-400" />
-            ) : (
-              <Moon className="w-4 h-4 text-indigo-500" />
-            )}
-          </button>
+            {/* Trilingual Segmented Control */}
+            <div className="flex items-center">
+              {(['fr', 'ar', 'en'] as const).map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => handleSelectLanguage(lang)}
+                  className={`px-2 py-0.5 rounded-full transition-all cursor-pointer font-bold text-[10px] font-mono ${
+                    language === lang
+                      ? 'bg-[#D4AF37] text-slate-950 shadow-xs'
+                      : isLight
+                      ? 'text-slate-600 hover:text-slate-900'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  {lang === 'ar' ? 'عربي' : lang.toUpperCase()}
+                </button>
+              ))}
+            </div>
 
-          {/* Sound Toggle Button */}
-          <button
-            onClick={handleToggleSound}
-            className={`hidden sm:flex p-2 rounded-xl border transition-all cursor-pointer items-center justify-center ${
-              isLight
-                ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
-                : 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300'
-            }`}
-            title={soundOn ? 'Désactiver les effets sonores' : 'Activer les effets sonores'}
-          >
-            {soundOn ? (
-              <Volume2 className="w-4 h-4 text-[#D4AF37]" />
-            ) : (
-              <VolumeX className="w-4 h-4 text-zinc-400" />
-            )}
-          </button>
+            <div className={`w-px h-3.5 mx-1 ${isLight ? 'bg-slate-200' : 'bg-white/10'}`} />
 
-          {/* Desktop Setup Download Button */}
-          <a
-            href="/downloads/baiti-atelier-desktop-setup.exe"
-            download
-            className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono transition-all hover-lift ${
-              isLight
-                ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 hover:border-[#D4AF37]'
-                : 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300 hover:border-white/20'
-            }`}
-            title="Télécharger Baiti Atelier pour Windows (.exe)"
-          >
-            <Download className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>App Desktop</span>
-          </a>
-
-
-
-          {/* PWA Install Button (Promptable) */}
-          {deferredPrompt && (
+            {/* Direct Theme Toggle */}
             <button
-              onClick={handleInstallPwa}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-mono font-bold hover:brightness-110 cursor-pointer btn-press"
-              title="Installer Baiti Atelier sur cet appareil (PWA hors-ligne)"
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>Installer PWA</span>
-            </button>
-          )}
-
-          {/* Artisan Toolbox Dropdown (Local Quotes & AI Scanner) */}
-          <div className="relative" ref={toolboxRef}>
-            <button
-              onClick={() => {
-                playTactileClick();
-                setIsToolboxOpen(!isToolboxOpen);
-              }}
-              className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
-                isToolboxOpen
-                  ? 'bg-[#D4AF37]/20 border-[#D4AF37] text-[#D4AF37]'
-                  : isLight
-                  ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
-                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300'
+              onClick={handleToggleTheme}
+              className={`p-1.5 rounded-full transition-all cursor-pointer flex items-center justify-center ${
+                isLight ? 'hover:bg-slate-200 text-slate-700' : 'hover:bg-white/10 text-zinc-300'
               }`}
-              title="Outils spécialisés d'atelier"
+              title={theme === 'dark' ? 'Passer au mode clair' : 'Passer au mode sombre'}
+              aria-label="Changer le thème"
             >
-              <Wrench className="w-4 h-4 text-[#D4AF37]" />
-              <ChevronDown className={`w-3 h-3 transition-transform ${isToolboxOpen ? 'rotate-180' : ''}`} />
+              {theme === 'dark' ? (
+                <Sun className="w-3.5 h-3.5 text-amber-400" />
+              ) : (
+                <Moon className="w-3.5 h-3.5 text-indigo-500" />
+              )}
             </button>
 
-            {/* Toolbox Popover Menu */}
-            {isToolboxOpen && (
-              <div
-                className={`absolute ${isRtl ? 'left-0' : 'right-0'} mt-2 w-72 p-3 rounded-2xl border backdrop-blur-2xl shadow-2xl z-50 transition-all ${
-                  isLight
-                    ? 'bg-white/95 border-slate-200 text-slate-800 shadow-slate-300/60'
-                    : 'bg-[#041124]/98 border-sky-500/30 text-white shadow-2xl shadow-[#010814]'
+            {/* Sound Toggle */}
+            <button
+              onClick={handleToggleSound}
+              className={`hidden sm:flex p-1.5 rounded-full transition-all cursor-pointer items-center justify-center ${
+                isLight ? 'hover:bg-slate-200 text-slate-700' : 'hover:bg-white/10 text-zinc-300'
+              }`}
+              title={soundOn ? 'Désactiver les effets sonores' : 'Activer les effets sonores'}
+            >
+              {soundOn ? (
+                <Volume2 className="w-3.5 h-3.5 text-[#D4AF37]" />
+              ) : (
+                <VolumeX className="w-3.5 h-3.5 text-zinc-400" />
+              )}
+            </button>
+
+            <div className={`w-px h-3.5 mx-1 ${isLight ? 'bg-slate-200' : 'bg-white/10'}`} />
+
+            {/* Consolidated Toolbox & Downloads Popover */}
+            <div className="relative" ref={toolboxRef}>
+              <button
+                onClick={() => {
+                  playTactileClick();
+                  setIsToolboxOpen(!isToolboxOpen);
+                }}
+                className={`p-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1 ${
+                  isToolboxOpen
+                    ? 'bg-[#D4AF37]/20 text-[#D4AF37]'
+                    : isLight
+                    ? 'hover:bg-slate-200 text-slate-700'
+                    : 'hover:bg-white/10 text-zinc-300'
                 }`}
+                title="Outils & Téléchargements"
               >
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-black/5 dark:border-white/10">
-                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#D4AF37]">
-                    Outils Atelier
-                  </span>
-                  <div
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono ${
-                      isOnline
-                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                    <span>{isOnline ? 'En Ligne' : 'Hors-Ligne'}</span>
+                <Wrench className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <ChevronDown className={`w-2.5 h-2.5 transition-transform ${isToolboxOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Toolbox Popover Menu */}
+              {isToolboxOpen && (
+                <div
+                  className={`absolute ${isRtl ? 'left-0' : 'right-0'} mt-2 w-72 p-3 rounded-2xl border backdrop-blur-2xl shadow-2xl z-50 transition-all ${
+                    isLight
+                      ? 'bg-white/95 border-slate-200 text-slate-800 shadow-slate-300/60'
+                      : 'bg-[#041124]/98 border-sky-500/30 text-white shadow-2xl shadow-[#010814]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-black/5 dark:border-white/10">
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#D4AF37]">
+                      Outils & Téléchargements
+                    </span>
+                    <div
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono ${
+                        isOnline
+                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                      <span>{isOnline ? 'En Ligne' : 'Hors-Ligne'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1 text-xs">
+                    {/* Desktop App Windows .exe */}
+                    <a
+                      href="/downloads/baiti-atelier-desktop-setup.exe"
+                      download
+                      onClick={() => setIsToolboxOpen(false)}
+                      className="flex items-center justify-between p-2 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left rtl:text-right"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Download className="w-4 h-4 text-[#D4AF37]" />
+                        <span>Application Windows (.exe)</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-zinc-500">64-bit</span>
+                    </a>
+
+                    {/* PWA Install Button */}
+                    {deferredPrompt && (
+                      <button
+                        onClick={() => {
+                          setIsToolboxOpen(false);
+                          handleInstallPwa();
+                        }}
+                        className="flex items-center justify-between p-2 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left rtl:text-right"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Smartphone className="w-4 h-4 text-emerald-400" />
+                          <span>Installer PWA Web</span>
+                        </div>
+                        <span className="text-[10px] font-mono text-emerald-400">Prêt</span>
+                      </button>
+                    )}
+
+                    {onOpenOfflineModal && (
+                      <button
+                        onClick={() => {
+                          playTactileClick();
+                          setIsToolboxOpen(false);
+                          onOpenOfflineModal();
+                        }}
+                        className="flex items-center justify-between p-2 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left rtl:text-right"
+                      >
+                        <div className="flex items-center gap-2">
+                          <HardDrive className="w-4 h-4 text-amber-400" />
+                          <span>Carnet Devis Hors-Ligne</span>
+                        </div>
+                        <span className="text-[10px] font-mono text-zinc-500">Local</span>
+                      </button>
+                    )}
+
+                    {onOpenSketchModal && (
+                      <button
+                        onClick={() => {
+                          playTactileClick();
+                          setIsToolboxOpen(false);
+                          onOpenSketchModal();
+                        }}
+                        className="flex items-center justify-between p-2 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left rtl:text-right"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Camera className="w-4 h-4 text-[#D4AF37]" />
+                          <span>Scanner Croquis & Cotes</span>
+                        </div>
+                        <span className="text-[10px] font-mono text-zinc-500">Photo</span>
+                      </button>
+                    )}
+
+                    {/* 2FA TOTP Authenticator Configuration */}
+                    <button
+                      onClick={() => {
+                        playTactileClick();
+                        setIsToolboxOpen(false);
+                        setIs2FaOpen(true);
+                      }}
+                      className="flex items-center justify-between p-2 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left rtl:text-right"
+                    >
+                      <div className="flex items-center gap-2">
+                        <KeyRound className="w-4 h-4 text-emerald-400" />
+                        <span>{language === 'ar' ? 'المصادقة الثنائية 2FA' : 'Sécurité & 2FA TOTP'}</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-emerald-400">TOTP</span>
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex flex-col gap-1 text-xs">
-                  {onOpenOfflineModal && (
-                    <button
-                      onClick={() => {
-                        playTactileClick();
-                        setIsToolboxOpen(false);
-                        onOpenOfflineModal();
-                      }}
-                      className="flex items-center justify-between p-2 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left"
-                    >
-                      <div className="flex items-center gap-2">
-                        <HardDrive className="w-4 h-4 text-amber-400" />
-                        <span>Carnet Devis Hors-Ligne</span>
-                      </div>
-                      <span className="text-[10px] font-mono text-zinc-500">Disque Local</span>
-                    </button>
-                  )}
-
-                  {onOpenSketchModal && (
-                    <button
-                      onClick={() => {
-                        playTactileClick();
-                        setIsToolboxOpen(false);
-                        onOpenSketchModal();
-                      }}
-                      className="flex items-center justify-between p-2 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Camera className="w-4 h-4 text-[#D4AF37]" />
-                        <span>Scanner Croquis & Cotes</span>
-                      </div>
-                      <span className="text-[10px] font-mono text-zinc-500">Relevé Photo</span>
-                    </button>
-                  )}
-
-                  {/* 2FA TOTP Authenticator Configuration */}
-                  <button
-                    onClick={() => {
-                      playTactileClick();
-                      setIsToolboxOpen(false);
-                      setIs2FaOpen(true);
-                    }}
-                    className="flex items-center justify-between p-2 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left rtl:text-right"
-                  >
-                    <div className="flex items-center gap-2">
-                      <KeyRound className="w-4 h-4 text-emerald-400" />
-                      <span>{language === 'ar' ? 'المصادقة الثنائية 2FA' : 'Sécurité & 2FA TOTP'}</span>
-                    </div>
-                    <span className="text-[10px] font-mono text-emerald-400">TOTP</span>
-                  </button>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Primary Action Button / Toggle Mode Atelier Pro */}
@@ -433,10 +441,10 @@ export const Header: React.FC<HeaderProps> = ({
                 playTactileClick();
                 onToggleWorkshopMode();
               }}
-              className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer hover-lift btn-press ${
+              className={`px-4 sm:px-5 py-2 rounded-full font-bold text-xs font-mono flex items-center gap-1.5 transition-all shadow-md cursor-pointer hover:brightness-105 active:scale-95 ${
                 isWorkshopMode
-                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                  : 'bg-gradient-to-r from-[#C5A880] to-[#D4AF37] hover:brightness-110 text-slate-950 shadow-[#D4AF37]/20'
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20'
+                  : 'bg-gradient-to-r from-[#D4AF37] to-[#C5A880] text-slate-950 shadow-[#D4AF37]/25'
               }`}
               title={isWorkshopMode ? 'Revenir à la vitrine publique' : "Ouvrir l'Espace Atelier Pro"}
             >
@@ -447,11 +455,10 @@ export const Header: React.FC<HeaderProps> = ({
             <a
               href="#cad-studio"
               onClick={() => playTactileClick()}
-              className="px-3.5 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#C5A880] to-[#D4AF37] hover:brightness-110 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-[#D4AF37]/20 cursor-pointer hover-lift btn-press"
+              className="px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#C5A880] hover:brightness-105 active:scale-95 text-slate-950 font-bold text-xs font-mono flex items-center gap-1.5 transition-all shadow-md shadow-[#D4AF37]/25 cursor-pointer"
             >
               <Grid className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Ouvrir l'Atelier</span>
-              <span className="sm:hidden">Atelier</span>
+              <span>Studio CAO</span>
             </a>
           )}
 
@@ -461,12 +468,12 @@ export const Header: React.FC<HeaderProps> = ({
               playTactileClick();
               setIsMobileMenuOpen(!isMobileMenuOpen);
             }}
-            className={`xl:hidden p-2 rounded-xl border transition-colors cursor-pointer ${
+            className={`lg:hidden p-2 rounded-full border transition-colors cursor-pointer ${
               isLight ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-zinc-300'
             }`}
             title="Menu de navigation mobile"
           >
-            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </div>
       </div>
@@ -474,7 +481,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* MOBILE EXPANDED MENU DRAWER */}
       {isMobileMenuOpen && (
         <div
-          className={`xl:hidden border-t px-4 py-4 flex flex-col gap-3 backdrop-blur-2xl transition-all ${
+          className={`lg:hidden border-t px-4 py-4 flex flex-col gap-3 backdrop-blur-2xl transition-all ${
             isLight ? 'bg-white/95 border-slate-200' : 'bg-gradient-to-b from-[#030e20]/98 to-[#020b18]/98 border-sky-500/25 text-white'
           }`}
         >
