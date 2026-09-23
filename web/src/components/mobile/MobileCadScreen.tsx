@@ -62,6 +62,7 @@ import { WindowDrainageModal } from './WindowDrainageModal';
 import { CornerCrimpingModal } from './CornerCrimpingModal';
 import { HandleErgonomicsModal } from './HandleErgonomicsModal';
 import { FrictionStayModal } from './FrictionStayModal';
+import { BriseSoleilModal } from './BriseSoleilModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -249,6 +250,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showCornerCrimpingModal, setShowCornerCrimpingModal] = useState(false);
   const [showHandleErgonomicsModal, setShowHandleErgonomicsModal] = useState(false);
   const [showFrictionStayModal, setShowFrictionStayModal] = useState(false);
+  const [showBriseSoleilModal, setShowBriseSoleilModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1068,6 +1070,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Anchor className="w-3 h-3" />
               <span>Compas Friction</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowBriseSoleilModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-orange-500/10 dark:bg-orange-500/15 border border-orange-500/30 hover:bg-orange-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-orange-300 font-semibold"
+              title="Audit brise-soleil architectural, consoles en porte-à-faux et vent RNV 2013 / Eurocode 9"
+            >
+              <Sun className="w-3 h-3" />
+              <span>Brise-Soleil</span>
             </button>
 
             <button
@@ -2268,6 +2283,18 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           windowReference={`Compas ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* ARCHITECTURAL BRISE-SOLEIL & CANTILEVER BRACKET STRUCTURAL MODAL */}
+      {showBriseSoleilModal && (
+        <BriseSoleilModal
+          isOpen={showBriseSoleilModal}
+          onClose={() => setShowBriseSoleilModal(false)}
+          initialWidth={cadStructure.width}
+          projectReference={`Brise-Soleil ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

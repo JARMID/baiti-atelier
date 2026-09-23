@@ -7899,6 +7899,249 @@ export async function generateFrictionStayNoticePdf(params: FrictionStayPdfParam
   doc.save(safeFilename);
 }
 
+export interface BriseSoleilPdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName: string;
+  wilayaName: string;
+  workshopName: string;
+  result: import('./briseSoleilManager').BriseSoleilResult;
+}
+
+export async function generateBriseSoleilNoticePdf(params: BriseSoleilPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const todayStr = new Date().toLocaleDateString('fr-DZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  const res = params.result;
+  const isOk = res.complianceStatus === 'CONFORME';
+  const isWarning = res.complianceStatus === 'ATTENTION';
+
+  // 1. Header Banner
+  doc.setFillColor(15, 23, 42); // Slate 900
+  doc.rect(0, 0, 210, 26, 'F');
+
+  doc.setFillColor(234, 88, 12); // Orange 600 accent bar
+  doc.rect(0, 26, 210, 2, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER ALGERIE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text('Bureau d Etudes Menuiserie Aluminium • Brise-Soleil Architectural & Consoles Saillantes', 14, 17);
+  doc.text('Normes : Eurocode 9 (NF EN 1999) • CSTB Cahier 3712 • CNERIB DTR BC 2-47 (RNV 2013) • NF EN 1991-1-4', 14, 22);
+
+  // Status Badge in Header
+  doc.setFillColor(
+    isOk ? 16 : isWarning ? 217 : 225,
+    isOk ? 185 : isWarning ? 119 : 29,
+    isOk ? 129 : isWarning ? 6 : 72
+  );
+  doc.roundedRect(142, 7, 54, 12, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(
+    isOk ? 'STRUCTURE CONFORME' : isWarning ? 'AVEC RESERVES' : 'NON CONFORME',
+    169,
+    14.5,
+    { align: 'center' }
+  );
+
+  // 2. Document Title Box
+  let curY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, curY, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('NOTE DE CALCUL STRUCTURALE : BRISE-SOLEIL & CONSOLES EN PORTE-À-FAUX', 18, curY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Doc N° : ${params.documentId}  |  Chantier : ${params.projectRef}  |  Wilaya : ${params.wilayaName}  |  Date : ${todayStr}`, 18, curY + 13);
+
+  curY += 22;
+
+  // 3. Geometry & Louver Specifications Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['PARAMETRE DU BRISE-SOLEIL', 'VALEUR RETENUE', 'EXIGENCE NORMATIVE / CSTB 3712']],
+    body: [
+      ['Saillie en porte-a-faux (L_arm)', `${res.cantileverArmLengthMm} mm (${(res.cantileverArmLengthMm / 1000).toFixed(2)} m)`, 'Avancee de la casquette solaire'],
+      ['Portee entre consoles (Entraxe)', `${res.bladeSpanMm} mm (${(res.bladeSpanMm / 1000).toFixed(2)} m)`, 'Portee maximale profil selon inertie'],
+      ['Type de profil de lame', res.bladeSpec.nameFr, `Corde : ${res.bladeSpec.chordWidthMm} mm (Poids: ${res.bladeSpec.linearWeightKgPerM} kg/m)`],
+      ['Nombre de lames par console', `${res.bladeCountPerBracket} lames (Pas : ${res.bladePitchMm} mm)`, `Surface captee par console : ${res.totalCanopyAreaM2.toFixed(2)} m²`],
+      ['Poids propre total repris', `${res.bladesDeadLoadKgPerBracket + res.bracketSelfWeightKg} kg / console`, `Charge permanente G = ${res.totalDeadLoadN} N`],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [234, 88, 12], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 4. Wind Actions & Aerodynamic Loads Table (RNV 2013)
+  autoTable(doc, {
+    startY: curY,
+    head: [['ACTIONS DU VENT & CHARGES RNV 2013', 'VALEUR CALCULEE', 'COMBINAISON REGISSANTE (ELU)']],
+    body: [
+      ['Pression dynamique vent (q_p)', `${res.windDynamicPressurePa} Pa (${params.wilayaName})`, 'Calcul CNERIB DTR BC 2-47'],
+      ['Succion ascendante (Uplift)', `${res.upwardWindSuctionLiftN} N (rafale vers le haut)`, 'Risque d arrachement inverse des consoles'],
+      ['Pression descendante (Down)', `${res.downwardWindPressureN} N (pression vers le bas)`, 'Cumul avec le poids propre G'],
+      ['Charge verticale ELU regissante', `${res.governingVerticalLoadN} N`, 'Combinaison 1.35G + 1.50Q ou 1.50Q - 0.9G'],
+      ['Moment flechissant au scellement', `${res.cantileverBendingMomentNm} N.m`, 'Couple d encastrement en pied de console'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 5. Eurocode 9 Bracket Resistance & Anchoring Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['VERIFICATION EUROCODE 9 & FIXATION', 'VALEUR CALCULEE', 'CRITERE D ADMISSIBILITE']],
+    body: [
+      ['Contrainte de flexion en pied', `${res.bracketBendingStressMpa} MPa (taux ${res.stressUtilizationPercent}%)`, `Limite admissible : ${res.allowableBendingStressMpa} MPa (${res.isBracketStressOk ? 'CONFORME' : 'SURCONTRAINTE'})`],
+      ['Fleche en bout de console (ELS)', `${res.tipDeflectionMm} mm`, `Seuil limite L/200 : ${res.allowableDeflectionMm} mm (${res.isTipDeflectionOk ? 'RIGIDE' : 'EXCESSIVE'})`],
+      ['Traction sur chevilles hautes', `${res.anchorPlateTensionN} N / cheville`, `Facteur de securite ancrage : ${res.anchorSafetyFactor}x (requis >= 1.5x)`],
+      ['Cisaillement par boulon', `${res.anchorBoltShearN} N`, 'Repris par contact et frottement platine'],
+      ['Jeu de dilatation thermique', `${res.thermalExpansionGapMm} mm pour DT=55K`, 'Manchon coulissant avec jeu oblong requis'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [15, 118, 110], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 6. Workshop Fabrication Guidelines Box
+  doc.setDrawColor(isOk ? 16 : 203, isOk ? 185 : 213, isOk ? 129 : 225);
+  doc.setFillColor(isOk ? 240 : 248, isOk ? 253 : 250, isOk ? 244 : 252);
+  doc.roundedRect(14, curY, 182, 16, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(isOk ? 22 : 15, isOk ? 101 : 23, isOk ? 52 : 42);
+  doc.text('DIRECTIVES D ANCRAGE & POSE DES CONSOLES BRISE-SOLEIL :', 18, curY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    `Console saillie : ${res.cantileverArmLengthMm} mm • Effort arrachement : ${res.anchorPlateTensionN} N • Fixation : Chevilles chimiques M10/M12 classe 8.8 avec platine epaisse.`,
+    18,
+    curY + 9.5
+  );
+  doc.text(
+    'Prevoir des trous oblongs de dilatation aux extremites des lames et un rupteur thermique sous la platine de fixation.',
+    18,
+    curY + 13.5
+  );
+
+  curY += 20;
+
+  // 7. Workshop Recommendations
+  if (res.recommendations.length > 0) {
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(255, 255, 255);
+    const boxHeight = Math.min(22, 6 + res.recommendations.length * 3.5);
+    doc.roundedRect(14, curY, 182, boxHeight, 1.5, 1.5, 'D');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(15, 23, 42);
+    doc.text('RECOMMANDATIONS ET PRESCRIPTIONS CHANTIER :', 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    res.recommendations.slice(0, 4).forEach((rec, idx) => {
+      doc.text(`• ${rec}`, 20, curY + 8.5 + idx * 3.8);
+    });
+
+    curY += boxHeight + 4;
+  }
+
+  // 8. Signature Block
+  const signY = Math.min(curY, 258);
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 70, 22, 1.5, 1.5, 'D');
+  doc.roundedRect(126, signY, 70, 22, 1.5, 1.5, 'D');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Visa Ingenieur Bureau d Etudes', 18, signY + 5.5);
+  doc.text('Bon pour Fabrication & Pose', 130, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Date & Cachet Atelier :', 18, signY + 11);
+  doc.text('Signature Controleur Technique :', 130, signY + 11);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|LOUVER|${params.documentId}|REF=${params.projectRef}|PROJ=${res.cantileverArmLengthMm}MM|MOMENT=${res.cantileverBendingMomentNm}NM|STRESS=${res.bracketBendingStressMpa}MPA|STATUS=${isOk ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 9. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Fiche technique officielle Baiti Atelier • ${params.documentId} • Eurocode 9 • CSTB 3712 • DTR BC 2-47 (RNV 2013)`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Note_Calcul_Brise_Soleil_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 

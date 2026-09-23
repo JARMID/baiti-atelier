@@ -66,6 +66,7 @@ import { WindowDrainageModal } from './WindowDrainageModal';
 import { CornerCrimpingModal } from './CornerCrimpingModal';
 import { HandleErgonomicsModal } from './HandleErgonomicsModal';
 import { FrictionStayModal } from './FrictionStayModal';
+import { BriseSoleilModal } from './BriseSoleilModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -189,6 +190,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isCornerCrimpingModalOpen, setIsCornerCrimpingModalOpen] = useState(false);
   const [isHandleErgonomicsModalOpen, setIsHandleErgonomicsModalOpen] = useState(false);
   const [isFrictionStayModalOpen, setIsFrictionStayModalOpen] = useState(false);
+  const [isBriseSoleilModalOpen, setIsBriseSoleilModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -902,6 +904,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Anchor className="w-4 h-4" />
           <span>Compas à Friction & Sécurité Anti-Chute (NF EN 13126-5 / RNV 2013)</span>
+        </button>
+
+        {/* Architectural Louver Sunshade & Brise-Soleil Structural Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsBriseSoleilModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Sun className="w-4 h-4" />
+          <span>Brise-Soleil Architectural & Consoles (Eurocode 9 / RNV 2013)</span>
         </button>
       </div>
 
@@ -2103,6 +2118,18 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           windowReference={`Compas ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* ARCHITECTURAL BRISE-SOLEIL & CANTILEVER BRACKET STRUCTURAL MODAL */}
+      {isBriseSoleilModalOpen && (
+        <BriseSoleilModal
+          isOpen={isBriseSoleilModalOpen}
+          onClose={() => setIsBriseSoleilModalOpen(false)}
+          initialWidth={config.width}
+          projectReference={`Brise-Soleil ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />
