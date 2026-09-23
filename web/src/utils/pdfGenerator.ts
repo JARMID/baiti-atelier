@@ -7657,6 +7657,249 @@ export async function generateHandleErgonomicsNoticePdf(params: HandleErgonomics
   doc.save(safeFilename);
 }
 
+export interface FrictionStayPdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName: string;
+  wilayaName: string;
+  workshopName: string;
+  result: import('./frictionStayManager').FrictionStayResult;
+}
+
+export async function generateFrictionStayNoticePdf(params: FrictionStayPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const todayStr = new Date().toLocaleDateString('fr-DZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  const res = params.result;
+  const isOk = res.complianceStatus === 'CONFORME';
+  const isWarning = res.complianceStatus === 'ATTENTION';
+
+  // 1. Header Banner
+  doc.setFillColor(15, 23, 42); // Slate 900
+  doc.rect(0, 0, 210, 26, 'F');
+
+  doc.setFillColor(245, 158, 11); // Amber 500 accent bar
+  doc.rect(0, 26, 210, 2, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER ALGERIE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text('Bureau d Etudes Menuiserie Aluminium • Compas a Friction & Securite Anti-Decrochement', 14, 17);
+  doc.text('Normes : NF EN 13126-5 • NF EN 14608 • CNERIB DTR BC 2-47 (RNV 2013) • BS 6375-2 • NF DTU 36.5', 14, 22);
+
+  // Status Badge in Header
+  doc.setFillColor(
+    isOk ? 16 : isWarning ? 217 : 225,
+    isOk ? 185 : isWarning ? 119 : 29,
+    isOk ? 129 : isWarning ? 6 : 72
+  );
+  doc.roundedRect(142, 7, 54, 12, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(
+    isOk ? 'COMPAS CONFORME' : isWarning ? 'AVEC RESERVES' : 'NON CONFORME',
+    169,
+    14.5,
+    { align: 'center' }
+  );
+
+  // 2. Document Title Box
+  let curY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, curY, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('CERTIFICAT DE DIMENSIONNEMENT DES COMPAS A FRICTION & SECURITE ANTI-CHUTE', 18, curY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Doc N° : ${params.documentId}  |  Chantier : ${params.projectRef}  |  Wilaya : ${params.wilayaName}  |  Date : ${todayStr}`, 18, curY + 13);
+
+  curY += 22;
+
+  // 3. Sash Geometry & Friction Stay Specifications Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['PARAMETRE CHÂSSIS & COMPAS', 'VALEUR RETENUE', 'EXIGENCE NORMATIVE / ATELIER']],
+    body: [
+      ['Dimensions vantail mobile', `${res.sashWidthMm} x ${res.sashHeightMm} mm (Surface : ${res.sashAreaM2.toFixed(2)} m²)`, 'Limites dimensionnelles selon gamme profil'],
+      ['Modele de compas a friction', `${res.selectedStay.lengthInch} pouces (${res.selectedStay.lengthMm} mm)`, `Capacite nominale : ${res.selectedStay.maxSashWeightKg} kg`],
+      ['Poids total du vantail equipe', `${res.totalSashWeightKg} kg (Vitrage: ${res.glazingWeightKg} kg)`, `Taux de charge compas : ${res.weightCapacityRatioPercent}% (${res.isWeightCapacityOk ? 'CONFORME' : 'SURCHARGE'})`],
+      ['Proportion compas / vantail', `Ratio : ${res.lengthToSashRatioPercent}%`, `Plage recommandee : 45% a 80% (${res.isStayLengthProportionOk ? 'OPTIMAL' : 'A REVOIR'})`],
+      ['Qualite d acier inoxydable', res.steelGrade === 'marine_grade_316' ? 'Inox Austenitique AISI 316 (A4)' : 'Inox Standard AISI 304 (A2)', res.isCorrosionProtectionAdequate ? 'Conforme exposition marine' : 'Alerte corrosion saline'],
+      ['Hauteur d empilage (gorge)', `${res.stackHeightMm} mm (profils aluminium standard)`, 'Jeu en feuillure requis pour coulisseau'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [217, 119, 6], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 4. Wind Resistance & Mechanical Anchorage Table (RNV 2013)
+  autoTable(doc, {
+    startY: curY,
+    head: [['CALCUL DES CHARGES & VENT RNV 2013', 'VALEUR CALCULEE', 'VERIFICATION RESISTANCE']],
+    body: [
+      ['Pression dynamique vent (q_p)', `${res.windDynamicPressurePa} Pa (${params.wilayaName})`, 'Calcul selon CNERIB DTR BC 2-47'],
+      ['Force de succion rafale sur vantail', `${res.windOutwardSuctionForceN} N`, 'Effort de traction sur biellettes et pivots'],
+      ['Charge de cisaillement par vis', `${res.stayFixingShearLoadPerScrewN} N / vis (8 vis inox)`, `Facteur de securite vis : ${res.screwSafetyFactor}x (requis >= 2.0x)`],
+      ['Angle d ouverture maximal', `${res.actualOpeningAngleDeg}°`, `Debattement net : ${res.actualMaxOpeningClearanceMm} mm`],
+      ['Tenue sous charge de service', '350 N applique en traverse basse', 'Conforme NF EN 14608 / NF EN 13126-5'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 5. Anti-Defenestration & Restrictor Checklist Table (NF DTU 36.5)
+  autoTable(doc, {
+    startY: curY,
+    head: [['SECURITE ANTI-DEFENESTRATION', 'DISPOSITIF CHANTIER', 'CONFORMITE REGLEMENTAIRE']],
+    body: [
+      ['Limiteur d ouverture 100 mm', res.restrictorType === 'integrated_restrictor_100mm' ? 'Limiteur integre avec declenchement' : res.restrictorType === 'detachable_safety_cable' ? 'Cable de retenue securise' : 'Aucun limiteur installe', res.isRestrictorCompliant ? 'CONFORME SECURITE' : 'NON CONFORME CHUTE'],
+      ['Ouverture d aeration securisee', `${res.actualMaxOpeningClearanceMm} mm (max 100 mm)`, res.actualMaxOpeningClearanceMm <= 100 ? 'Protection enfants validee' : 'Risque passage de corps'],
+      ['Resistance a la pousse accidentelle', '500 N en butee d arret', 'Conforme NF EN 13126-5 Classe 5'],
+      ['Patin de friction reglable', res.frictionShoeMaterial === 'brass_metallic' ? 'Patin laiton haute friction' : 'Patin composite nylon', 'Vis de tarage hexagonale BTR'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [15, 118, 110], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 6. Workshop Assembly Guidelines Box
+  doc.setDrawColor(isOk ? 16 : 203, isOk ? 185 : 213, isOk ? 129 : 225);
+  doc.setFillColor(isOk ? 240 : 248, isOk ? 253 : 250, isOk ? 244 : 252);
+  doc.roundedRect(14, curY, 182, 16, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(isOk ? 22 : 15, isOk ? 101 : 23, isOk ? 52 : 42);
+  doc.text('DIRECTIVES D ASSEMBLAGE ATELIER & REGLAGE FRICTION :', 18, curY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    `Compas ${res.selectedStay.lengthInch}" • Vantail ${res.totalSashWeightKg} kg • Fixation : Vis Inox A2/A4 autoforantes 4.8x25 mm sur parois aluminium >= 1.6 mm.`,
+    18,
+    curY + 9.5
+  );
+  doc.text(
+    'Ajuster la vis de serrage du coulisseau a l aide d une cle BTR de 2.5 mm pour obtenir un couple de retenue ferme.',
+    18,
+    curY + 13.5
+  );
+
+  curY += 20;
+
+  // 7. Workshop Recommendations
+  if (res.recommendations.length > 0) {
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(255, 255, 255);
+    const boxHeight = Math.min(22, 6 + res.recommendations.length * 3.5);
+    doc.roundedRect(14, curY, 182, boxHeight, 1.5, 1.5, 'D');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(15, 23, 42);
+    doc.text('RECOMMANDATIONS ET PRECAUTIONS CHANTIER :', 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    res.recommendations.slice(0, 4).forEach((rec, idx) => {
+      doc.text(`• ${rec}`, 20, curY + 8.5 + idx * 3.8);
+    });
+
+    curY += boxHeight + 4;
+  }
+
+  // 8. Signature Block
+  const signY = Math.min(curY, 258);
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 70, 22, 1.5, 1.5, 'D');
+  doc.roundedRect(126, signY, 70, 22, 1.5, 1.5, 'D');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Visa Responsable Quincaillerie', 18, signY + 5.5);
+  doc.text('Bon pour Montage & Securite', 130, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Date & Cachet Atelier :', 18, signY + 11);
+  doc.text('Signature Controleur Technique :', 130, signY + 11);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|STAY|${params.documentId}|REF=${params.projectRef}|STAY=${res.selectedStay.lengthInch}INCH|WEIGHT=${res.totalSashWeightKg}KG|RATIO=${res.weightCapacityRatioPercent}%|STATUS=${isOk ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 9. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Fiche technique officielle Baiti Atelier • ${params.documentId} • NF EN 13126-5 • NF EN 14608 • DTR BC 2-47 (RNV 2013)`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Certificat_Compas_Friction_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 

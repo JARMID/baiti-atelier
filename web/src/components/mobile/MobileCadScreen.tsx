@@ -32,6 +32,7 @@ import {
   Sun,
   Droplets,
   Hand,
+  Anchor,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -60,6 +61,7 @@ import { IntegratedBlindModal } from './IntegratedBlindModal';
 import { WindowDrainageModal } from './WindowDrainageModal';
 import { CornerCrimpingModal } from './CornerCrimpingModal';
 import { HandleErgonomicsModal } from './HandleErgonomicsModal';
+import { FrictionStayModal } from './FrictionStayModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -246,6 +248,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showDrainageModal, setShowDrainageModal] = useState(false);
   const [showCornerCrimpingModal, setShowCornerCrimpingModal] = useState(false);
   const [showHandleErgonomicsModal, setShowHandleErgonomicsModal] = useState(false);
+  const [showFrictionStayModal, setShowFrictionStayModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1052,6 +1055,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Hand className="w-3 h-3" />
               <span>Efforts Poignée (PMR)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowFrictionStayModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-amber-300 font-semibold"
+              title="Audit compas à friction, débattement et sécurité anti-décrochement NF EN 13126-5 / RNV 2013"
+            >
+              <Anchor className="w-3 h-3" />
+              <span>Compas Friction</span>
             </button>
 
             <button
@@ -2239,6 +2255,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           windowReference={`Poignée ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* FRICTION STAY & PROJECTING WINDOW SASH SAFETY MODAL */}
+      {showFrictionStayModal && (
+        <FrictionStayModal
+          isOpen={showFrictionStayModal}
+          onClose={() => setShowFrictionStayModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          windowReference={`Compas ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

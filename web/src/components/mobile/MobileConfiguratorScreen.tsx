@@ -32,6 +32,7 @@ import {
   Droplets,
   Wrench,
   Hand,
+  Anchor,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -64,6 +65,7 @@ import { IntegratedBlindModal } from './IntegratedBlindModal';
 import { WindowDrainageModal } from './WindowDrainageModal';
 import { CornerCrimpingModal } from './CornerCrimpingModal';
 import { HandleErgonomicsModal } from './HandleErgonomicsModal';
+import { FrictionStayModal } from './FrictionStayModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -186,6 +188,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isDrainageModalOpen, setIsDrainageModalOpen] = useState(false);
   const [isCornerCrimpingModalOpen, setIsCornerCrimpingModalOpen] = useState(false);
   const [isHandleErgonomicsModalOpen, setIsHandleErgonomicsModalOpen] = useState(false);
+  const [isFrictionStayModalOpen, setIsFrictionStayModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -886,6 +889,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Hand className="w-4 h-4" />
           <span>Forces de Manœuvre & Ergonomie PMR (NF EN 12046-1 / Décret 06-455)</span>
+        </button>
+
+        {/* Friction Stay & Projecting Window Sash Safety Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsFrictionStayModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Anchor className="w-4 h-4" />
+          <span>Compas à Friction & Sécurité Anti-Chute (NF EN 13126-5 / RNV 2013)</span>
         </button>
       </div>
 
@@ -2074,6 +2090,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           windowReference={`Poignée ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* FRICTION STAY & PROJECTING WINDOW SASH SAFETY MODAL */}
+      {isFrictionStayModalOpen && (
+        <FrictionStayModal
+          isOpen={isFrictionStayModalOpen}
+          onClose={() => setIsFrictionStayModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          windowReference={`Compas ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />
