@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "supabase-mcp-baiti": {
+      "command": "npx.cmd",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref",
+        "baiti-atelier"
+      ],
+      "env": {
+        "SUPABASE_URL": "https://baiti-atelier.supabase.co"
+      },
+      "description": "Dedicated Supabase MCP server for Baiti Atelier fabrication platform. Isolated from all external projects."
+    }
+  }
+}

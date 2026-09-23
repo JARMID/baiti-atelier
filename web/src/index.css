@@ -312,3 +312,20 @@
 .wave-bar-2 { animation: sound-wave 0.8s ease-in-out 0.2s infinite; }
 .wave-bar-3 { animation: sound-wave 0.8s ease-in-out 0.4s infinite; }
 
+/* Continuous Marquee Ticker Animation */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 35s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+

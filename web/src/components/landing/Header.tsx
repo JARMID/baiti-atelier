@@ -126,14 +126,18 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-300 ${
+      className={`sticky top-0 z-50 w-full border-b backdrop-blur-2xl transition-all duration-300 relative ${
         isLight
           ? 'bg-white/95 border-slate-200/80 shadow-xs text-slate-800'
-          : 'bg-[#06080C]/90 border-white/10 text-zinc-100 shadow-2xl shadow-black/40'
+          : 'bg-gradient-to-r from-[#020d1f]/95 via-[#061e3d]/95 to-[#02132a]/95 border-b border-sky-500/20 text-zinc-100 shadow-2xl shadow-[#020d1f]/90'
       }`}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
+      {/* Ambient Top Light Beam */}
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-sky-400/60 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/30 to-transparent pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4 relative z-10">
         {/* LEFT: BRAND MARK & REGIONAL WILAYA CHIP */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
           <a
@@ -212,8 +216,8 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* CENTER: STREAMLINED LUXURY NAVIGATION LINKS */}
         <nav
-          className={`hidden xl:flex items-center gap-1 p-1 rounded-2xl border text-xs font-medium ${
-            isLight ? 'bg-slate-50/80 border-slate-200 text-slate-700' : 'bg-white/[0.04] border-white/10 text-zinc-300'
+          className={`hidden xl:flex items-center gap-1 p-1 rounded-2xl border text-xs font-medium backdrop-blur-md ${
+            isLight ? 'bg-slate-50/80 border-slate-200 text-slate-700' : 'bg-[#081b38]/70 border-sky-400/25 text-zinc-200 shadow-inner'
           }`}
         >
           <a
@@ -393,7 +397,7 @@ export const Header: React.FC<HeaderProps> = ({
                 className={`absolute ${isRtl ? 'left-0' : 'right-0'} mt-2 w-72 p-3 rounded-2xl border backdrop-blur-2xl shadow-2xl z-50 transition-all ${
                   isLight
                     ? 'bg-white/95 border-slate-200 text-slate-800 shadow-slate-300/60'
-                    : 'bg-[#0E121C]/95 border-white/15 text-white shadow-black/80'
+                    : 'bg-[#041124]/98 border-sky-500/30 text-white shadow-2xl shadow-[#010814]'
                 }`}
               >
                 <div className="flex items-center justify-between pb-2 mb-2 border-b border-black/5 dark:border-white/10">
@@ -500,7 +504,7 @@ export const Header: React.FC<HeaderProps> = ({
       {isMobileMenuOpen && (
         <div
           className={`xl:hidden border-t px-4 py-4 flex flex-col gap-3 backdrop-blur-2xl transition-all ${
-            isLight ? 'bg-white/95 border-slate-200' : 'bg-[#0B0D13]/95 border-white/10'
+            isLight ? 'bg-white/95 border-slate-200' : 'bg-gradient-to-b from-[#030e20]/98 to-[#020b18]/98 border-sky-500/25 text-white'
           }`}
         >
           {/* Mobile Wilaya Selector Card */}

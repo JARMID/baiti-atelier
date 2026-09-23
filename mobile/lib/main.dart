@@ -20,12 +20,12 @@ class BaitiMobileApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0B0F17),
+        scaffoldBackgroundColor: const Color(0xFF040B16),
         primaryColor: const Color(0xFFD4AF37),
         colorScheme: const ColorScheme.dark(
           primary: Color(0xFFD4AF37),
-          secondary: Color(0xFF059669),
-          surface: Color(0xFF121826),
+          secondary: Color(0xFF38BDF8),
+          surface: Color(0xFF08182E),
         ),
         textTheme: GoogleFonts.interTextTheme(
           ThemeData.dark().textTheme,
@@ -114,14 +114,14 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF0B0F17),
+          color: Color(0xFF030812),
           border: Border(
-            top: BorderSide(color: Color(0xFF1E293B), width: 1),
+            top: BorderSide(color: Color(0xFF0F2547), width: 1),
           ),
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          backgroundColor: const Color(0xFF0B0F17),
+          backgroundColor: const Color(0xFF030812),
           selectedItemColor: const Color(0xFFD4AF37),
           unselectedItemColor: const Color(0xFF64748B),
           selectedFontSize: 11,
