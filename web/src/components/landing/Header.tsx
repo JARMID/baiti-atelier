@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useConfigStore } from '../../store/configStore';
 import { getTranslation } from '../../utils/i18n';
 import {
-  Hammer,
   MapPin,
   Camera,
   HardDrive,
@@ -148,23 +147,23 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => playTactileClick()}
             className="flex items-center gap-3 group"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#C5A880] to-[#D4AF37] p-0.5 shadow-lg shadow-[#D4AF37]/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0F355E] to-[#D4AF37] p-0.5 shadow-lg shadow-[#D4AF37]/20 flex items-center justify-center group-hover:scale-105 transition-transform">
               <div
                 className={`w-full h-full rounded-[10px] flex items-center justify-center ${
-                  isLight ? 'bg-white' : 'bg-[#0A0D14]'
+                  isLight ? 'bg-white' : 'bg-[#060D18]'
                 }`}
               >
-                <Hammer className="w-5 h-5 text-[#D4AF37]" />
+                <Grid className="w-5 h-5 text-[#D4AF37]" />
               </div>
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span
-                  className={`text-lg font-bold tracking-tight ${
+                  className={`text-lg font-serif font-bold tracking-tight ${
                     isLight ? 'text-slate-900' : 'text-white'
                   }`}
                 >
-                  Baiti
+                  Baiti Atelier
                 </span>
                 <span
                   dir="rtl"
@@ -175,7 +174,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </div>
               <span className={`text-[10px] font-mono -mt-1 hidden sm:block ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>
-                Atelier 58 Wilayas
+                Menuiserie & Débitage · 58 Wilayas
               </span>
             </div>
           </a>

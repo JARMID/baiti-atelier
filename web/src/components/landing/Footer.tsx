@@ -1,35 +1,17 @@
 import React from 'react';
 import {
-  Hammer,
-  ShieldCheck,
-  TrendingUp,
   Grid,
   Scissors,
-  HardDrive,
-  CheckCircle2,
-  ArrowRight,
   Download,
+  Smartphone,
+  ShieldCheck,
+  TrendingUp,
   MapPin,
   Lock,
-  Layers,
-  Sparkles,
-  Smartphone,
+  ArrowRight,
 } from 'lucide-react';
 import { useConfigStore } from '../../store/configStore';
 import { playTactileClick } from '../../utils/audioFeedback';
-
-const MARQUEE_ITEMS = [
-  'Menuiserie Alu & PVC Gamme 40/45',
-  'Optimisation Débitage Linéaire 1D & 2D',
-  'Conformité DTR C3-2 / CNERIB',
-  '100% Fonctionnel Hors-Ligne',
-  'Réseau National 58 Wilayas',
-  'NF DTU 36.5 & CSTB 3529',
-  'Châssis Façades & Double Vitrage Isolant',
-  'Chiffrement AES Local des Tarifs Atelier',
-  'Génération Instantanée Devis en DZD',
-  'Étiquetage Scie Thermique & G-Code CNC',
-];
 
 export const Footer: React.FC = () => {
   const { language, theme, setMaterialMarketOpen } = useConfigStore();
@@ -40,215 +22,164 @@ export const Footer: React.FC = () => {
     <footer
       className={`border-t transition-colors duration-500 relative overflow-hidden ${
         isLight
-          ? 'bg-slate-100/90 border-slate-200 text-slate-700'
-          : 'bg-[#030914] border-sky-500/20 text-zinc-400'
+          ? 'bg-slate-50 border-slate-200 text-slate-700'
+          : 'bg-[#020713] border-white/10 text-zinc-400'
       }`}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
-      {/* AMBIENT AURORA & GRID BACKGROUND */}
+      {/* AMBIENT LIGHTING BACKGROUND */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Subtle grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, #38BDF8 1px, transparent 1px), linear-gradient(to bottom, #38BDF8 1px, transparent 1px)',
-            backgroundSize: '48px 48px',
-          }}
-        />
-        {/* Glowing Oceanic and Gold Ambient Orbs */}
-        <div className="absolute -top-32 left-1/4 w-[600px] h-[350px] bg-sky-600/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute -bottom-24 right-1/4 w-[500px] h-[300px] bg-[#D4AF37]/10 rounded-full blur-[130px] pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[#003366]/15 rounded-full blur-[150px] pointer-events-none" />
+        <div className="absolute top-0 left-1/3 w-[600px] h-[300px] bg-sky-600/5 rounded-full blur-[140px]" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[280px] bg-[#D4AF37]/5 rounded-full blur-[130px]" />
       </div>
 
-      {/* GIANT ARCHITECTURAL WATERMARK TEXT */}
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-[14vw] font-black tracking-tighter text-transparent select-none pointer-events-none opacity-[0.02] dark:opacity-[0.035] uppercase font-mono">
-        BAITI ATELIER
-      </div>
-
-      {/* 1. CINEMATIC CONTINUOUS MARQUEE TICKER */}
-      <div className="relative border-b border-black/5 dark:border-sky-500/15 bg-black/[0.02] dark:bg-[#020b18]/80 backdrop-blur-md py-3 overflow-hidden z-10">
-        <div className="flex w-max animate-marquee space-x-8 text-xs font-mono tracking-wider uppercase text-zinc-500 dark:text-zinc-400">
-          {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, idx) => (
-            <div key={idx} className="flex items-center gap-4 px-2">
-              <span className="font-semibold">{item}</span>
-              <span className="text-[#D4AF37] opacity-80 text-sm">✦</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 2. PRE-FOOTER ARCHITECTURAL CTA BANNER */}
+      {/* 1. PRE-FOOTER ARCHITECTURAL CTA CALLOUT */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 relative z-10">
         <div
           className={`p-8 sm:p-12 rounded-3xl border relative overflow-hidden transition-all duration-300 shadow-2xl backdrop-blur-xl ${
             isLight
-              ? 'bg-gradient-to-br from-white via-slate-50 to-amber-50/30 border-slate-300/80 shadow-slate-200/60'
-              : 'bg-gradient-to-br from-[#05162e] via-[#041124] to-[#020a16] border-sky-400/25 shadow-2xl shadow-[#020b18]/90'
+              ? 'bg-white border-slate-200 shadow-slate-200/50'
+              : 'bg-gradient-to-b from-[#051329]/90 to-[#030a17]/95 border-sky-500/20 shadow-2xl shadow-[#010610]'
           }`}
         >
-          {/* Subtle Ambient Gold Radiance inside card */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#38BDF8]/15 rounded-full blur-3xl pointer-events-none" />
-
           <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/35 text-xs font-mono text-[#D4AF37] font-semibold mb-3 shadow-xs">
-                <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-xs font-mono text-[#D4AF37] font-semibold mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
                 <span>
                   {language === 'ar'
-                    ? 'المنصة الوطنية للورشات والتفصيل الدقيق'
+                    ? 'المنصة الوطنية لمهن وحرفيي البناء والتشييد'
                     : 'Suite Industrielle de Fabrication & Débitage'}
                 </span>
               </div>
               <h3
-                className={`text-2xl sm:text-4xl font-extrabold tracking-tight ${
+                className={`text-2xl sm:text-3xl lg:text-4xl font-serif tracking-tight ${
                   isLight ? 'text-slate-900' : 'text-white'
                 }`}
               >
                 {language === 'ar'
-                  ? 'طوّر إنتاج ورشتك وتحكّم في هوامش أرباحك'
-                  : 'Modernisez la Production de Votre Atelier de Menuiserie'}
+                  ? 'الدقة الهندسية في خدمة ورشات الألمنيوم والـ PVC'
+                  : 'L’Excellence du Débitage & de la Menuiserie Industrielle'}
               </h3>
               <p
-                className={`text-sm sm:text-base mt-2 leading-relaxed ${
+                className={`text-sm mt-2.5 leading-relaxed font-light ${
                   isLight ? 'text-slate-600' : 'text-zinc-300'
                 }`}
               >
                 {language === 'ar'
-                  ? 'حسابات دقيقة للمتر المربع وسماكات الزجاج، تقطيع المقاطع الألومنيوم والخشبية مع تقليل نسبة الفواقد، وإصدار كشوف حساب فورية بالدينار الجزائري.'
-                  : 'Calculs millimétriques de débit de barres, optimisation de vitrage et de panneaux, fiches de fabrication pour scies à double tête et devis proforma en DZD.'}
+                  ? 'حسابات دقيقة لقص المقاطع، تقليل فواقد الورشة إلى أقل من 3.5%، وإصدار فوري لمخططات التصنيع وكشوف الأسعار بالدينار الجزائري.'
+                  : 'Chiffrage instantané en Dinars Algériens (DZD), optimisation de coupe millimétrique avec gestion des chutes et conformité DTR C3-2 pour les ateliers des 58 Wilayas.'}
               </p>
-
-              {/* Ticker Badges */}
-              <div className="flex flex-wrap items-center gap-3 pt-4 text-xs font-mono">
-                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/5 dark:bg-sky-500/10 border border-black/10 dark:border-sky-500/20 text-slate-800 dark:text-sky-300">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>58 Wilayas Couvertes</span>
-                </span>
-                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/5 dark:bg-emerald-500/10 border border-black/10 dark:border-emerald-500/20 text-slate-800 dark:text-emerald-300">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Tolérance 0.1 mm</span>
-                </span>
-                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/5 dark:bg-cyan-500/10 border border-black/10 dark:border-cyan-500/20 text-slate-800 dark:text-cyan-300">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>100% Fonctionnel Hors-Ligne</span>
-                </span>
-              </div>
             </div>
 
-            {/* Direct CTA Buttons */}
+            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
               <a
                 href="#cad-studio"
                 onClick={() => playTactileClick()}
-                className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#C5A880] to-[#D4AF37] hover:brightness-110 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-xl shadow-[#D4AF37]/25 cursor-pointer hover-lift btn-press"
+                className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#C5A880] to-[#D4AF37] hover:brightness-110 text-slate-950 font-bold text-xs sm:text-sm font-mono flex items-center justify-center gap-2 transition-all shadow-xl shadow-[#D4AF37]/20 cursor-pointer hover-lift btn-press"
               >
                 <Grid className="w-4 h-4" />
                 <span>
-                  {language === 'ar' ? 'بدء التصميم في ورشة CAD' : 'Lancer le Studio CAD 2D'}
+                  {language === 'ar' ? 'فتح ورشة CAD 2D' : 'OUVRIR LE STUDIO CAD'}
                 </span>
                 <ArrowRight className="w-4 h-4" />
               </a>
 
-              <button
-                onClick={() => {
-                  playTactileClick();
-                  setMaterialMarketOpen(true);
-                }}
+              <a
+                href="/downloads/baiti-atelier-desktop-setup.exe"
+                download
                 className={`px-5 py-3.5 rounded-xl border text-xs font-mono flex items-center justify-center gap-2 transition-all cursor-pointer hover-lift btn-press ${
                   isLight
                     ? 'bg-slate-50 hover:bg-slate-100 border-slate-300 text-slate-800'
-                    : 'bg-white/10 hover:bg-white/15 border-white/15 text-white'
+                    : 'bg-white/5 hover:bg-white/10 border-white/15 text-zinc-200'
                 }`}
               >
-                <TrendingUp className="w-4 h-4 text-emerald-400" />
-                <span>{language === 'ar' ? 'أسعار المواد الأولية' : 'Bourse des Matières'}</span>
-              </button>
+                <Download className="w-4 h-4 text-[#D4AF37]" />
+                <span>App Windows (.exe)</span>
+              </a>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. MAIN FOOTER 5-COLUMN MATRIX */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 border-t border-black/5 dark:border-sky-500/15 pt-12 relative z-10">
+      {/* 2. MAIN 4-COLUMN ARCHITECTURAL MATRIX */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 pt-6 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10">
-          {/* COLUMN 1: BRAND IDENTITY & OFFICIAL STANDARDS (4 cols) */}
+          {/* COLUMN 1: BRAND IDENTITY & STANDARDS (4 cols) */}
           <div className="lg:col-span-4 flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0F4C81] via-[#003366] to-[#D4AF37] p-0.5 shadow-lg shadow-sky-900/30 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0F355E] to-[#D4AF37] p-0.5 flex items-center justify-center shadow-lg">
                 <div
-                  className={`w-full h-full rounded-[14px] flex items-center justify-center ${
-                    isLight ? 'bg-white' : 'bg-[#041124]'
+                  className={`w-full h-full rounded-[10px] flex items-center justify-center ${
+                    isLight ? 'bg-white text-slate-900' : 'bg-[#030914] text-[#D4AF37]'
                   }`}
                 >
-                  <Hammer className="w-5 h-5 text-[#D4AF37]" />
+                  <Grid className="w-4 h-4 text-[#D4AF37]" />
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <span
-                  className={`text-xl font-bold tracking-tight ${
+                  className={`text-lg font-serif font-bold tracking-tight ${
                     isLight ? 'text-slate-900' : 'text-white'
                   }`}
                 >
                   Baiti Atelier
                 </span>
-                <span dir="rtl" lang="ar" className="text-xl font-bold text-[#D4AF37] font-arabic">
+                <span dir="rtl" lang="ar" className="text-base font-bold text-[#D4AF37] font-arabic">
                   بيتي
                 </span>
               </div>
             </div>
 
-            <p className={`text-xs leading-relaxed ${isLight ? 'text-slate-600' : 'text-zinc-400'}`}>
+            <p className={`text-xs leading-relaxed font-light ${isLight ? 'text-slate-600' : 'text-zinc-400'}`}>
               {language === 'ar'
-                ? 'المنصة الرقمية المتكاملة لورشات نجارة الألمنيوم والـ PVC والخشب والحدادة الفنية عبر 58 ولاية جزائرية. مخططات تصنيع وحسابات دقيقة وفق المعايير الوطنية.'
-                : 'Suite logicielle industrielle dédiée aux artisans fabricants et menuisiers en Algérie. Calculs de débitage au millimètre, plans d’atelier et chiffrage en Dinars Algériens.'}
+                ? 'البرمجية الرائدة للتفصيل الهندسي وحسابات كلف التصنيع لورشات النجارة المعمارية في الجزائر. مطابقة تامة للمعايير التقنية الوطنية CNERIB و DTR C3-2.'
+                : 'Solution logicielle intégrée pour ateliers de menuiserie aluminium, PVC, bois et ferronnerie d’art en Algérie. Précision de coupe, fiches de débitage et conformité DTR C3-2.'}
             </p>
 
-            {/* Regulatory & System Status Pills */}
-            <div className="flex flex-col gap-2 pt-1 text-[11px] font-mono">
+            <div className="flex flex-col gap-2 pt-2 text-[11px] font-mono">
               <div
                 className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border ${
                   isLight
-                    ? 'bg-slate-50 border-slate-200 text-slate-700'
-                    : 'bg-sky-950/40 border-sky-500/20 text-sky-200'
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Conforme aux normes DTR C3-2 / CNERIB</span>
-              </div>
-              <div
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border ${
-                  isLight
-                    ? 'bg-slate-50 border-slate-200 text-slate-700'
+                    ? 'bg-white border-slate-200 text-slate-700'
                     : 'bg-white/5 border-white/10 text-zinc-300'
                 }`}
               >
-                <MapPin className="w-3.5 h-3.5 text-[#D4AF37]" />
-                <span>Réseau Opérationnel sur les 58 Wilayas</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Réseau Opérationnel · 58 Wilayas</span>
               </div>
               <div
                 className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border ${
                   isLight
-                    ? 'bg-slate-50 border-slate-200 text-slate-700'
-                    : 'bg-emerald-950/30 border-emerald-500/20 text-emerald-300'
+                    ? 'bg-white border-slate-200 text-slate-700'
+                    : 'bg-white/5 border-white/10 text-zinc-300'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
+                <span>Conformité Thermique DTR C3-2 / CNERIB</span>
+              </div>
+              <div
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border ${
+                  isLight
+                    ? 'bg-white border-slate-200 text-slate-700'
+                    : 'bg-white/5 border-white/10 text-zinc-300'
                 }`}
               >
                 <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Chiffrement Local & Zéro Fuite de Marge</span>
+                <span>Chiffrement Local & Devis Protégés</span>
               </div>
             </div>
           </div>
 
-          {/* COLUMN 2: LES 4 MÉTIERS DE FABRICATION (2 cols) */}
-          <div className="lg:col-span-2 flex flex-col gap-3">
+          {/* COLUMN 2: SOLUTIONS DE FABRICATION (3 cols) */}
+          <div className="lg:col-span-3 flex flex-col gap-3">
             <h4
               className={`text-xs font-mono font-bold uppercase tracking-wider ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}
             >
-              {language === 'ar' ? 'المهن وورشات التصنيع' : 'Les 4 Métiers Baiti'}
+              {language === 'ar' ? 'حلول التصنيع' : 'Menuiseries & Métiers'}
             </h4>
             <ul className="flex flex-col gap-2 text-xs">
               <li>
@@ -259,8 +190,32 @@ export const Footer: React.FC = () => {
                     isLight ? 'text-slate-600' : 'text-zinc-400'
                   }`}
                 >
-                  <span>Menuiserie Alu & PVC</span>
-                  <span className="text-[10px] font-mono text-[#D4AF37]">40/45</span>
+                  <span>Aluminium 45/52 RPT</span>
+                  <span className="text-[10px] font-mono text-[#D4AF37]">40/45 mm</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#cad-studio"
+                  onClick={() => playTactileClick()}
+                  className={`transition-colors hover:text-[#D4AF37] flex items-center justify-between ${
+                    isLight ? 'text-slate-600' : 'text-zinc-400'
+                  }`}
+                >
+                  <span>PVC Multi-Chambres</span>
+                  <span className="text-[10px] font-mono text-cyan-400">70 mm</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#cad-studio"
+                  onClick={() => playTactileClick()}
+                  className={`transition-colors hover:text-[#D4AF37] flex items-center justify-between ${
+                    isLight ? 'text-slate-600' : 'text-zinc-400'
+                  }`}
+                >
+                  <span>Double Vitrage 4/16/4</span>
+                  <span className="text-[10px] font-mono text-emerald-400">Uw 1.4</span>
                 </a>
               </li>
               <li>
@@ -283,45 +238,21 @@ export const Footer: React.FC = () => {
                     isLight ? 'text-slate-600' : 'text-zinc-400'
                   }`}
                 >
-                  <span>Ferronnerie d’Art</span>
+                  <span>Ferronnerie d’Art & Sécurité</span>
                   <span className="text-[10px] font-mono text-red-400">Acier</span>
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#trade-studios"
-                  onClick={() => playTactileClick()}
-                  className={`transition-colors hover:text-[#D4AF37] flex items-center justify-between ${
-                    isLight ? 'text-slate-600' : 'text-zinc-400'
-                  }`}
-                >
-                  <span>Draperie & Salons Seddari</span>
-                  <span className="text-[10px] font-mono text-purple-400">Textile</span>
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#configurator"
-                  onClick={() => playTactileClick()}
-                  className={`transition-colors hover:text-[#D4AF37] flex items-center justify-between ${
-                    isLight ? 'text-slate-600' : 'text-zinc-400'
-                  }`}
-                >
-                  <span>Façades Murs-Rideaux</span>
-                  <span className="text-[10px] font-mono text-emerald-400">BIM</span>
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* COLUMN 3: OUTILS D'ATELIER & PRODUCTION (2 cols) */}
+          {/* COLUMN 3: MOTEURS DE CALCUL (2 cols) */}
           <div className="lg:col-span-2 flex flex-col gap-3">
             <h4
               className={`text-xs font-mono font-bold uppercase tracking-wider ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}
             >
-              {language === 'ar' ? 'أدوات الورشة والإنتاج' : 'Outils de Débitage'}
+              {language === 'ar' ? 'محركات الحساب' : 'Calcul & Débit'}
             </h4>
             <ul className="flex flex-col gap-2 text-xs">
               <li>
@@ -333,7 +264,7 @@ export const Footer: React.FC = () => {
                   }`}
                 >
                   <Scissors className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>Optimiseur Linéaire 1D</span>
+                  <span>Débit Linéaire 1D</span>
                 </a>
               </li>
               <li>
@@ -345,7 +276,7 @@ export const Footer: React.FC = () => {
                   }`}
                 >
                   <Grid className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Découpe 2D (Verre/MDF)</span>
+                  <span>Découpe Verre 2D</span>
                 </a>
               </li>
               <li>
@@ -357,7 +288,7 @@ export const Footer: React.FC = () => {
                   }`}
                 >
                   <Download className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Exports SVG, DXF & CSV</span>
+                  <span>Exports SVG & G-Code</span>
                 </a>
               </li>
               <li>
@@ -369,59 +300,8 @@ export const Footer: React.FC = () => {
                   }`}
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Fiches Devis BPU / DQE</span>
+                  <span>Attestation DTR C3-2</span>
                 </a>
-              </li>
-              <li>
-                <a
-                  href="#debitage-optimizer"
-                  onClick={() => playTactileClick()}
-                  className={`transition-colors hover:text-[#D4AF37] flex items-center gap-1.5 ${
-                    isLight ? 'text-slate-600' : 'text-zinc-400'
-                  }`}
-                >
-                  <HardDrive className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Spooler Scie Thermique</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* COLUMN 4: APPLICATIONS & ÉCOSYSTÈME (2 cols) */}
-          <div className="lg:col-span-2 flex flex-col gap-3">
-            <h4
-              className={`text-xs font-mono font-bold uppercase tracking-wider ${
-                isLight ? 'text-slate-900' : 'text-white'
-              }`}
-            >
-              Applications
-            </h4>
-            <ul className="flex flex-col gap-2 text-xs">
-              <li>
-                <a
-                  href="/downloads/baiti-atelier-desktop-setup.exe"
-                  download
-                  className={`transition-colors hover:text-[#D4AF37] flex items-center gap-1.5 font-semibold ${
-                    isLight ? 'text-slate-800' : 'text-zinc-200'
-                  }`}
-                >
-                  <Download className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>Desktop Windows</span>
-                </a>
-                <span className="text-[10px] text-zinc-500 block ml-5">Tauri v2 · Rust Shell</span>
-              </li>
-              <li>
-                <a
-                  href="/downloads/baiti-companion-setup.exe"
-                  download
-                  className={`transition-colors hover:text-[#D4AF37] flex items-center gap-1.5 font-semibold ${
-                    isLight ? 'text-slate-800' : 'text-zinc-200'
-                  }`}
-                >
-                  <Smartphone className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Compagnon Mobile</span>
-                </a>
-                <span className="text-[10px] text-zinc-500 block ml-5">Flutter 3 · Scie & QR</span>
               </li>
               <li>
                 <button
@@ -429,81 +309,90 @@ export const Footer: React.FC = () => {
                     playTactileClick();
                     setMaterialMarketOpen(true);
                   }}
-                  className={`transition-colors hover:text-[#D4AF37] text-left rtl:text-right cursor-pointer flex items-center gap-1.5 pt-1 ${
+                  className={`transition-colors hover:text-[#D4AF37] flex items-center gap-1.5 cursor-pointer text-left rtl:text-right ${
                     isLight ? 'text-slate-600' : 'text-zinc-400'
                   }`}
                 >
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Bourse Matières 58W</span>
+                  <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Bourse Matières (DZD)</span>
                 </button>
-              </li>
-              <li>
-                <a
-                  href="#workshops"
-                  onClick={() => playTactileClick()}
-                  className={`transition-colors hover:text-[#D4AF37] ${
-                    isLight ? 'text-slate-600' : 'text-zinc-400'
-                  }`}
-                >
-                  Annuaire des Fabricants
-                </a>
               </li>
             </ul>
           </div>
 
-          {/* COLUMN 5: SÉCURITÉ, AUDIT & CONFORMITÉ (2 cols) */}
-          <div className="lg:col-span-2 flex flex-col gap-3">
+          {/* COLUMN 4: APPLICATIONS & ÉCOSYSTÈME (3 cols) */}
+          <div className="lg:col-span-3 flex flex-col gap-3">
             <h4
               className={`text-xs font-mono font-bold uppercase tracking-wider ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}
             >
-              Sécurité & Normes
+              {language === 'ar' ? 'التطبيقات والمنظومة' : 'Applications & Accès'}
             </h4>
-            <ul className="flex flex-col gap-2 text-xs">
-              <li className="flex items-center gap-1.5 text-zinc-400">
-                <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Base SQLite / Supabase</span>
+            <ul className="flex flex-col gap-2.5 text-xs">
+              <li>
+                <a
+                  href="/downloads/baiti-atelier-desktop-setup.exe"
+                  download
+                  className={`transition-colors hover:text-[#D4AF37] flex items-center gap-2 font-medium ${
+                    isLight ? 'text-slate-800' : 'text-zinc-200'
+                  }`}
+                >
+                  <Download className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Application Bureau Windows</span>
+                </a>
+                <span className="text-[10px] text-zinc-500 block ml-5">Tauri v2 · Exécution Hors-Ligne</span>
               </li>
-              <li className="flex items-center gap-1.5 text-zinc-400">
-                <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
-                <span>Row Level Security (RLS)</span>
+              <li>
+                <a
+                  href="/downloads/baiti-companion-setup.exe"
+                  download
+                  className={`transition-colors hover:text-[#D4AF37] flex items-center gap-2 font-medium ${
+                    isLight ? 'text-slate-800' : 'text-zinc-200'
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Compagnon Mobile Chantier</span>
+                </a>
+                <span className="text-[10px] text-zinc-500 block ml-5">Flutter 3 · Prise de Cotes & QR</span>
               </li>
-              <li className="flex items-center gap-1.5 text-zinc-400">
-                <Layers className="w-3.5 h-3.5 text-indigo-400" />
-                <span>InitPlan Optimisé</span>
-              </li>
-              <li className="flex items-center gap-1.5 text-zinc-400">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#D4AF37]" />
-                <span>NF DTU 36.5 / 39</span>
-              </li>
-              <li className="flex items-center gap-1.5 text-zinc-400">
-                <HardDrive className="w-3.5 h-3.5 text-amber-400" />
-                <span>Tokens Nonces Sécurisés</span>
+              <li>
+                <a
+                  href="#workshops"
+                  onClick={() => playTactileClick()}
+                  className={`transition-colors hover:text-[#D4AF37] flex items-center gap-2 ${
+                    isLight ? 'text-slate-600' : 'text-zinc-400'
+                  }`}
+                >
+                  <MapPin className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Annuaire des Ateliers Agréés</span>
+                </a>
               </li>
             </ul>
           </div>
         </div>
       </div>
 
-      {/* 4. BOTTOM LEGAL, CONFIDENTIALITY & TRUST STRIP */}
-      <div className="border-t border-black/5 dark:border-sky-500/15 py-6 text-[11px] font-mono relative z-10">
+      {/* 3. SUB-FOOTER LEGAL & TRUST STRIP */}
+      <div className={`border-t py-6 text-[11px] font-mono relative z-10 ${
+        isLight ? 'border-slate-200 text-slate-500 bg-white/50' : 'border-white/10 text-zinc-500 bg-black/20'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
             <p>
               {language === 'ar'
-                ? `© ${new Date().getFullYear()} منصة بيتي (Baiti Atelier) • جميع الحقوق محفوظة لورشات التصنيع بالجزائر.`
-                : `© ${new Date().getFullYear()} Baiti Atelier | بيتي. Conçu pour les artisans fabricants d'Algérie.`}
+                ? `© ${new Date().getFullYear()} بيتي أتيليه (Baiti Atelier) • جميع الحقوق محفوظة لورشات التصنيع بالجزائر.`
+                : `© ${new Date().getFullYear()} Baiti Atelier. Conçu pour les maîtres artisans fabricants d'Algérie.`}
             </p>
           </div>
 
-          <div className="flex items-center gap-4 text-zinc-500">
+          <div className="flex items-center gap-4">
             <span>Données Chiffrées en Local</span>
             <span>•</span>
-            <span>Prix Confidentiels Atelier</span>
+            <span>Tarifs Confidentiels Atelier</span>
             <span>•</span>
-            <span>DTR C3-2 / CNERIB</span>
+            <span>Normes DTR C3-2 / DTU 36.5</span>
           </div>
         </div>
       </div>

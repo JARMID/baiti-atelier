@@ -233,12 +233,12 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
       {/* ============================================================ */}
       {trade === 'aluminum' && (
         <group>
-          {/* Top Roller Shutter Caisson Monobloc (Seamless Flush Fit, Zero Gaps, Zero Flickering) */}
+          {/* Top Roller Shutter Caisson Monobloc (2mm expansion clearance to eliminate seam z-fighting) */}
           <mesh
-            position={[0, 0.85 + explodeDilation, 0]}
+            position={[0, 0.852 + explodeDilation, 0]}
             material={whiteShutterMaterial}
           >
-            <boxGeometry args={[1.44 + explodeDilation * 2, 0.18, 0.11]} />
+            <boxGeometry args={[1.44 + explodeDilation * 2, 0.178, 0.11]} />
           </mesh>
 
           {/* Outer Frame (Dormant 45/52 RPT) */}
@@ -260,13 +260,17 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
               <boxGeometry args={[0.08, 1.36, 0.09]} />
             </mesh>
 
-            {/* Polyamide Thermal Break Bars */}
-            <mesh position={[0, 0.72 + explodeDilation, 0]} material={thermalBreakMaterial}>
-              <boxGeometry args={[1.4, 0.02, 0.025]} />
-            </mesh>
-            <mesh position={[0, -0.72 - explodeDilation, 0]} material={thermalBreakMaterial}>
-              <boxGeometry args={[1.4, 0.02, 0.025]} />
-            </mesh>
+            {/* Polyamide Thermal Break Bars (displayed cleanly during technical clipping/explosion without coplanar fighting) */}
+            {(clippingPlane || isExploded) && (
+              <>
+                <mesh position={[0, 0.72 + explodeDilation, 0]} material={thermalBreakMaterial} renderOrder={2}>
+                  <boxGeometry args={[1.4, 0.02, 0.025]} />
+                </mesh>
+                <mesh position={[0, -0.72 - explodeDilation, 0]} material={thermalBreakMaterial} renderOrder={2}>
+                  <boxGeometry args={[1.4, 0.02, 0.025]} />
+                </mesh>
+              </>
+            )}
           </group>
 
           {/* ============================================== */}
