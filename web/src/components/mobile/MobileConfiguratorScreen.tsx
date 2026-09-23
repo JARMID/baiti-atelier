@@ -69,6 +69,7 @@ import { HandleErgonomicsModal } from './HandleErgonomicsModal';
 import { FrictionStayModal } from './FrictionStayModal';
 import { BriseSoleilModal } from './BriseSoleilModal';
 import { SmokeVentilationModal } from './SmokeVentilationModal';
+import { RollerShutterWindModal } from './RollerShutterWindModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -194,6 +195,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isFrictionStayModalOpen, setIsFrictionStayModalOpen] = useState(false);
   const [isBriseSoleilModalOpen, setIsBriseSoleilModalOpen] = useState(false);
   const [isSmokeVentModalOpen, setIsSmokeVentModalOpen] = useState(false);
+  const [isShutterWindModalOpen, setIsShutterWindModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -933,6 +935,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Flame className="w-4 h-4" />
           <span>Désenfumage Naturel & Sécurité Incendie (DENFC NF EN 12101-2)</span>
+        </button>
+
+        {/* Roller Shutter Storm Wind Slat Deflection & Rail Retention Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsShutterWindModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Wind className="w-4 h-4" />
+          <span>Tenue au Vent Tablier & Flèche Lames Volet (NF EN 13659 / RNV 2013)</span>
         </button>
       </div>
 
@@ -2159,6 +2174,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           projectReference={`DENFC ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* ROLLER SHUTTER STORM WIND SLAT DEFLECTION & GUIDE RAIL RETENTION MODAL */}
+      {isShutterWindModalOpen && (
+        <RollerShutterWindModal
+          isOpen={isShutterWindModalOpen}
+          onClose={() => setIsShutterWindModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          projectReference={`Volet Roulant ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />

@@ -8382,6 +8382,301 @@ export async function generateSmokeVentilationNoticePdf(params: SmokeVentilation
   doc.save(safeFilename);
 }
 
+export interface RollerShutterWindPdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName: string;
+  wilayaName: string;
+  result: import('./rollerShutterWindManager').RollerShutterWindAuditResult;
+  workshopName?: string;
+}
+
+/**
+ * Generates an official calculation notice for roller shutter wind load resistance,
+ * slat bending deflection, and guide rail bite retention according to NF EN 13659 and RNV 2013.
+ */
+export async function generateRollerShutterWindNoticePdf(params: RollerShutterWindPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const res = params.result;
+  const isOk = res.globalStatus === 'conform';
+  const isWarning = res.globalStatus === 'warning';
+  const todayStr = new Date().toLocaleDateString('fr-DZ', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  // 1. Header Banner
+  doc.setFillColor(15, 23, 42); // slate-900
+  doc.rect(0, 0, 210, 28, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER ALGERIE', 14, 12);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text('BUREAU TECHNIQUE • EXPERTISE TENUE AU VENT FERMETURES & TABLIERS', 14, 18);
+  doc.text('NORME NF EN 13659 • CNERIB DTR BC 2-47 (RNV 2013) • CSTB 3422', 14, 23);
+
+  // Status Badge in Header
+  const badgeColor: [number, number, number] = isOk
+    ? [16, 185, 129]
+    : isWarning
+      ? [245, 158, 11]
+      : [239, 68, 68];
+  doc.setFillColor(...badgeColor);
+  doc.roundedRect(148, 8, 48, 12, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  const badgeText = isOk
+    ? `CLASSE ${res.achievedEn13659Class} CONFORME`
+    : isWarning
+      ? 'VIGILANCE FLECHE'
+      : 'NON CONFORME DERAIL';
+  doc.text(badgeText, 172, 15.5, { align: 'center' });
+
+  // 2. Document Title Box
+  let curY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, curY, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('CERTIFICAT DE TENUE AU VENT & RETENTION EN COULISSE DU TABLIER', 18, curY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(
+    `Doc N° : ${params.documentId}  |  Chantier : ${params.projectRef}  |  Wilaya : ${params.wilayaName}  |  Date : ${todayStr}`,
+    18,
+    curY + 13
+  );
+
+  curY += 22;
+
+  // 3. Table 1: Slat Profile and Guide Rail Characteristics
+  autoTable(doc, {
+    startY: curY,
+    head: [['CARACTERISTIQUES TABLIER & COULISSES', 'SPECIFICATION RETENUE', 'PARAMETRES MECANIQUES']],
+    body: [
+      [
+        'Modele de lame de tablier',
+        res.slatSpec.nameFr,
+        `Masse : ${res.slatSpec.linearMassKgM2} kg/m² | Pas : ${res.slatSpec.slatHeightMm} mm`,
+      ],
+      [
+        'Inertie & Module elastique lame',
+        `Ixx = ${res.slatSpec.momentOfInertiaCm4} cm4`,
+        `Wel = ${res.slatSpec.sectionModulusCm3} cm3 (Limite elastique fy = ${res.slatSpec.yieldStrengthMpa} MPa)`,
+      ],
+      [
+        'Dimensions du tablier de fermeture',
+        `${res.curtainWidthMm} x ${res.curtainHeightMm} mm (Portee L = ${(res.curtainWidthMm / 1000).toFixed(2)} m)`,
+        `Surface totale : ${res.curtainAreaM2.toFixed(2)} m² | Poids : ${res.curtainTotalWeightKg} kg (${res.totalSlatCount} lames)`,
+      ],
+      [
+        'Coulisses laterales de guidage',
+        res.railSpec.nameFr,
+        `Profondeur utile : ${res.railSpec.grooveDepthMm} mm | Levre retention : ${res.railSpec.hasRetentionLip ? `${res.railSpec.retentionLipWidthMm} mm` : 'Aucune'}`,
+      ],
+      [
+        'Embouts d extremite de lame',
+        res.endLockType === 'caps_anti_storm_hooks'
+          ? 'Embouts a crochets ergots anti-tempete'
+          : 'Embouts droits standards en polyamide',
+        res.areHooksEngagedAndSecuring
+          ? 'Verrouillage positif dans coulisse active'
+          : 'Glissement libre sans accrochage mecanique',
+      ],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 4. Table 2: Wind Load & Depressure Analysis (RNV 2013)
+  autoTable(doc, {
+    startY: curY,
+    head: [['ACTION DU VENT RNV 2013 & CHARGE APPLIQUEE', 'VALEUR CALCULEE', 'COMMENTAIRES REGLEMENTAIRES']],
+    body: [
+      ['Zone de vent CNERIB RNV 2013', res.windZoneName, `Pression dynamique de reference qref = ${res.baseReferenceWindPressurePa} N/m²`],
+      ['Rugosite & Categorie de terrain', res.terrainName, `Coefficient d exposition ce(z) = ${res.exposureCoefficientCe}`],
+      ['Pression de vent dynamique de crete', `qp(z) = ${res.peakDynamicWindPressurePa} Pa (N/m²)`, `Pression de calcul ELU = ${res.designWindPressurePa} Pa (majoree 25%)`],
+      ['Poussee globale totale sur le tablier', `${res.totalWindForceOnCurtainN} N (${(res.totalWindForceOnCurtainN / 9.81).toFixed(0)} kgf)`, 'Effort horizontal d enfoncement sous depression'],
+      ['Reaction horizontale par coulisse', `${res.reactionPerGuideRailN} N par cote`, `Repartie sur ${res.fastenersPerRailCount} fixations (${res.shearForcePerFastenerN} N / cheville)`],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 5. Table 3: Slat Deflection and Retention inside Rail
+  autoTable(doc, {
+    startY: curY,
+    head: [['FLECHE, CONTRAINTE & RETENTION COULISSE', 'RESULTAT MESURE', 'VERIFICATION DE SECURITE']],
+    body: [
+      [
+        'Fleche maximale a mi-portee',
+        `${res.midSpanDeflectionMm} mm (L / ${res.deflectionSpanRatio})`,
+        res.deflectionSpanRatio >= 50
+          ? 'Rigidite satisfaisante (Fleche sous controle)'
+          : 'Fleche marquee (Surveiller le contact vitrage)',
+      ],
+      [
+        'Contrainte de flexion dans la lame',
+        `Sigma = ${res.bendingStressMpa} MPa (${res.bendingStressUtilizationPercent}%)`,
+        `Limite admissible : ${res.allowableBendingStressMpa} MPa (${res.bendingStressUtilizationPercent <= 100 ? 'CONFORME ELASTIQUE' : 'DEPASSEMENT PLASTIQUE'})`,
+      ],
+      [
+        'Penetration initiale au repos',
+        `p0 = ${res.initialNominalBiteMm} mm en coulisse`,
+        'Encastrement lateral initial de la lame',
+      ],
+      [
+        'Retrait lateral sous arc de cintrage',
+        `Delta L = ${res.arcShorteningMm} mm (${res.pulloutPerSideMm} mm par cote)`,
+        'Raccourcissement de corde provoque par la fleche',
+      ],
+      [
+        'Penetration residuelle sous vent',
+        `p_res = ${res.residualBiteDepthMm} mm en fond de rainure`,
+        res.isDerailmentRiskDetected
+          ? 'DANGER SORTIE DE COULISSE (Bite < 8 mm)'
+          : 'Securise (Seuil minimal 8 mm respecte)',
+      ],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 6. Classification NF EN 13659 Box
+  doc.setDrawColor(isOk ? 16 : 203, isOk ? 185 : 213, isOk ? 129 : 225);
+  doc.setFillColor(isOk ? 240 : 248, isOk ? 253 : 250, isOk ? 244 : 252);
+  doc.roundedRect(14, curY, 182, 16, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(isOk ? 22 : 15, isOk ? 101 : 23, isOk ? 52 : 42);
+  doc.text('CLASSIFICATION OFFICIELLE NF EN 13659 (RESISTANCE AU VENT) :', 18, curY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    `Classe certifiee : CLASSE ${res.achievedEn13659Class} (Pression nominale pN = ${res.nominalPressureLimitPa} Pa • Securite pS = ${res.safetyPressureLimitPa} Pa).`,
+    18,
+    curY + 9.5
+  );
+  doc.text(
+    res.statusSummaryFr,
+    18,
+    curY + 13.5
+  );
+
+  curY += 20;
+
+  // 7. Workshop Recommendations
+  if (res.recommendations.length > 0) {
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(255, 255, 255);
+    const boxHeight = Math.min(22, 6 + res.recommendations.length * 3.5);
+    doc.roundedRect(14, curY, 182, boxHeight, 1.5, 1.5, 'D');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(15, 23, 42);
+    doc.text('RECOMMANDATIONS ATELIER & DIRECTIVES DE POSE :', 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    res.recommendations.slice(0, 4).forEach((rec, idx) => {
+      doc.text(`• ${rec}`, 20, curY + 8.5 + idx * 3.8);
+    });
+
+    curY += boxHeight + 4;
+  }
+
+  // 8. Signature Block
+  const signY = Math.min(curY, 258);
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 70, 22, 1.5, 1.5, 'D');
+  doc.roundedRect(126, signY, 70, 22, 1.5, 1.5, 'D');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Visa Responsable Technique Atelier', 18, signY + 5.5);
+  doc.text('Bon pour Accord Client / Chantier', 130, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Date & Signature :', 18, signY + 11);
+  doc.text('Signature & Cachet :', 130, signY + 11);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|SHUTTER_WIND|${params.documentId}|REF=${params.projectRef}|CL=${res.achievedEn13659Class}|SPAN=${res.curtainWidthMm}|SLAT=${res.slatSpec.id}|STATUS=${res.globalStatus}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 9. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Fiche technique officielle Baiti Atelier • ${params.documentId} • NF EN 13659 • CNERIB DTR BC 2-47 (RNV 2013) • CSTB 3422`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Certificat_Tenue_Vent_Volet_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
 
 
 

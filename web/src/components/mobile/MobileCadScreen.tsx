@@ -64,6 +64,7 @@ import { HandleErgonomicsModal } from './HandleErgonomicsModal';
 import { FrictionStayModal } from './FrictionStayModal';
 import { BriseSoleilModal } from './BriseSoleilModal';
 import { SmokeVentilationModal } from './SmokeVentilationModal';
+import { RollerShutterWindModal } from './RollerShutterWindModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -253,6 +254,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showFrictionStayModal, setShowFrictionStayModal] = useState(false);
   const [showBriseSoleilModal, setShowBriseSoleilModal] = useState(false);
   const [showSmokeVentModal, setShowSmokeVentModal] = useState(false);
+  const [showShutterWindModal, setShowShutterWindModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1098,6 +1100,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Flame className="w-3 h-3" />
               <span>Désenfumage (DENFC)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowShutterWindModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-sky-500/10 dark:bg-sky-500/15 border border-sky-500/30 hover:bg-sky-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-sky-300 font-semibold"
+              title="Audit tenue au vent volet roulant, flèche et retenue coulisse NF EN 13659 / RNV 2013"
+            >
+              <Wind className="w-3 h-3" />
+              <span>Vent Volet</span>
             </button>
 
             <button
@@ -2323,6 +2338,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           projectReference={`DENFC ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* ROLLER SHUTTER STORM WIND SLAT DEFLECTION & GUIDE RAIL RETENTION MODAL */}
+      {showShutterWindModal && (
+        <RollerShutterWindModal
+          isOpen={showShutterWindModal}
+          onClose={() => setShowShutterWindModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          projectReference={`Volet Roulant ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />
