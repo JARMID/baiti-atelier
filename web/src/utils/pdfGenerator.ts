@@ -7415,6 +7415,249 @@ export async function generateCornerCrimpingNoticePdf(params: CornerCrimpingPdfP
   doc.save(safeFilename);
 }
 
+export interface HandleErgonomicsPdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName: string;
+  wilayaName: string;
+  workshopName: string;
+  result: import('./handleErgonomicsManager').HandleErgonomicsResult;
+}
+
+export async function generateHandleErgonomicsNoticePdf(params: HandleErgonomicsPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const todayStr = new Date().toLocaleDateString('fr-DZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  const res = params.result;
+  const isOk = res.complianceStatus === 'CONFORME';
+  const isWarning = res.complianceStatus === 'ATTENTION';
+
+  // 1. Header Banner
+  doc.setFillColor(15, 23, 42); // Slate 900
+  doc.rect(0, 0, 210, 26, 'F');
+
+  doc.setFillColor(14, 165, 233); // Sky 500 accent bar
+  doc.rect(0, 26, 210, 2, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER ALGERIE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text('Bureau d Etudes Menuiserie Aluminium • Audit Ergonomique & Accessibilite PMR', 14, 17);
+  doc.text('Normes : NF EN 12046-1 • NF EN 13115 • NF EN 13126-3 • Decret Algerien 06-455 (PMR) • NF DTU 36.5', 14, 22);
+
+  // Status Badge in Header
+  doc.setFillColor(
+    res.isPmrClassAchieved ? 16 : isOk ? 2 : isWarning ? 217 : 225,
+    res.isPmrClassAchieved ? 185 : isOk ? 132 : isWarning ? 119 : 29,
+    res.isPmrClassAchieved ? 129 : isOk ? 199 : isWarning ? 6 : 72
+  );
+  doc.roundedRect(142, 7, 54, 12, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(
+    res.isPmrClassAchieved ? 'CONFORME PMR' : isOk ? 'CONFORME STD' : isWarning ? 'AVEC RESERVES' : 'NON CONFORME',
+    169,
+    14.5,
+    { align: 'center' }
+  );
+
+  // 2. Document Title Box
+  let curY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, curY, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('CERTIFICAT D AUDIT ERGONOMIQUE & EFFORTS DE MANŒUVRE (PMR)', 18, curY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Doc N° : ${params.documentId}  |  Chantier : ${params.projectRef}  |  Wilaya : ${params.wilayaName}  |  Date : ${todayStr}`, 18, curY + 13);
+
+  curY += 22;
+
+  // 3. Sash Dimensions & Hardware Specification Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['PARAMETRE DE LA BAIE & QUINCAILLERIE', 'VALEUR RETENUE', 'EXIGENCE NORMATIVE']],
+    body: [
+      ['Dimensions du vantail mobile', `${res.sashWidthMm} x ${res.sashHeightMm} mm`, `Perimetre profil : ${res.sashPerimeterM.toFixed(2)} m`],
+      ['Modele de poignee installee', res.handleSpec.name, `Bras de levier : ${res.handleSpec.leverArmLengthMm} mm`],
+      ['Garde / Degagement au dormant', `${res.handleSpec.frameClearanceMm} mm`, `Minimum securite doigts : 40.0 mm (${res.isClearanceCompliant ? 'CONFORME' : 'DANGEREUX'})`],
+      ['Hauteur de manoeuvre du sol fini', 'Plage recommandee : 900 a 1300 mm', 'Conforme Decret executif algerien 06-455'],
+      ['Demultiplication cremone', `${res.gearRatio.toFixed(2)}x`, 'Rapport de transmission a pignon / cremaillere'],
+      ['Agrement accessibilite PMR', res.handleSpec.isPmrApproved ? 'Valide PMR (retour courbe)' : 'Usage courant standard', 'Prise en main sans rotation poignet douloureuse'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 4. Operating Forces & Torques Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['EFFORT DE MANŒUVRE & COUPLE', 'VALEUR CALCULEE', 'SEUIL ADMISSIBLE (NF EN 12046-1)']],
+    body: [
+      ['Couple sur l axe de la poignee', `${res.calculatedHandleTorqueNm} N.m`, `Limite max autorisee : ${res.maxAllowableTorqueNm} N.m (${res.calculatedHandleTorqueNm <= res.maxAllowableTorqueNm ? 'CONFORME' : 'EXCESSIF'})`],
+      ['Effort de traction / rotation main', `${res.operatingHandForceN} N`, `Limite max main : ${res.maxAllowableHandForceN} N (${res.operatingHandForceN <= res.maxAllowableHandForceN ? 'DOUX' : 'DUR'})`],
+      ['Resistance compression joints', `${res.totalGasketResistanceN} N`, `Force lineaire : ${res.gasketLinearForceNPerM} N/m`],
+      ['Frottement galets de verrouillage', `${res.camFrictionForceN} N`, 'Frottement sur gaches de securite'],
+      ['Effort lineaire tringle cremaillere', `${res.totalRodOperatingForceN} N`, 'Poussee axiale necessaire au verrouillage'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 5. Algerian PMR Accessibility Compliance Checklist Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['CRITERE ACCESSIBILITE PMR', 'VERIFICATION CHANTIER', 'STATUT DECRET 06-455']],
+    body: [
+      ['Effort d ouverture et fermeture', `${res.operatingHandForceN} N (requis <= 20 N)`, res.operatingHandForceN <= 20 ? 'CONFORME CLASSE 2 PMR' : 'CLASSE 1 STANDARD'],
+      ['Couple de manoeuvre poignee', `${res.calculatedHandleTorqueNm} N.m (requis <= 5.0 N.m)`, res.calculatedHandleTorqueNm <= 5.0 ? 'CONFORME PMR' : 'COUPLE STANDARD'],
+      ['Prehension ergonomique sans torsion', res.handleSpec.gripDiameterMm >= 20 ? 'Diametre tube optimal' : 'Trop fin', 'Manœuvrable paume ouverte ou poing ferme'],
+      ['Garde anti-pincement dormant', `${res.handleSpec.frameClearanceMm} mm (requis >= 40 mm)`, res.isClearanceCompliant ? 'SECURITE GARANTIE' : 'RISQUE PINCEMENT'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [15, 118, 110], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 6. Workshop Maintenance Guidelines Box
+  doc.setDrawColor(res.isPmrClassAchieved ? 16 : 203, res.isPmrClassAchieved ? 185 : 213, res.isPmrClassAchieved ? 129 : 225);
+  doc.setFillColor(res.isPmrClassAchieved ? 240 : 248, res.isPmrClassAchieved ? 253 : 250, res.isPmrClassAchieved ? 244 : 252);
+  doc.roundedRect(14, curY, 182, 16, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(res.isPmrClassAchieved ? 22 : 15, res.isPmrClassAchieved ? 101 : 23, res.isPmrClassAchieved ? 52 : 42);
+  doc.text('DIRECTIVES D AJUSTEMENT QUINCAILLERIE & LUBRIFICATION ATELIER :', 18, curY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    `Bras de levier : ${res.handleSpec.leverArmLengthMm} mm • Effort hand : ${res.operatingHandForceN} N • Classe PMR : ${res.isPmrClassAchieved ? 'Atteinte' : 'Non atteinte'}`,
+    18,
+    curY + 9.5
+  );
+  doc.text(
+    'Ajuster la pression des galets excentriques sur les gaches et appliquer une graisse silicone neutre sur les tringles.',
+    18,
+    curY + 13.5
+  );
+
+  curY += 20;
+
+  // 7. Workshop Recommendations
+  if (res.recommendations.length > 0) {
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(255, 255, 255);
+    const boxHeight = Math.min(22, 6 + res.recommendations.length * 3.5);
+    doc.roundedRect(14, curY, 182, boxHeight, 1.5, 1.5, 'D');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(15, 23, 42);
+    doc.text('RECOMMANDATIONS D ERGONOMIE & CONFORT D USAGE :', 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    res.recommendations.slice(0, 4).forEach((rec, idx) => {
+      doc.text(`• ${rec}`, 20, curY + 8.5 + idx * 3.8);
+    });
+
+    curY += boxHeight + 4;
+  }
+
+  // 8. Signature Block
+  const signY = Math.min(curY, 258);
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 70, 22, 1.5, 1.5, 'D');
+  doc.roundedRect(126, signY, 70, 22, 1.5, 1.5, 'D');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Visa Responsable Quincaillerie', 18, signY + 5.5);
+  doc.text('Bon pour Reception Ergonomique', 130, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Date & Cachet Atelier :', 18, signY + 11);
+  doc.text('Signature Controleur PMR :', 130, signY + 11);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|HANDLE|${params.documentId}|REF=${params.projectRef}|TYPE=${res.handleSpec.id}|TORQUE=${res.calculatedHandleTorqueNm}NM|PMR=${res.isPmrClassAchieved ? 'YES' : 'NO'}|STATUS=${isOk ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 9. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Fiche technique officielle Baiti Atelier • ${params.documentId} • NF EN 12046-1 • NF EN 13115 • Decret PMR 06-455`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Certificat_Ergonomie_Poignee_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 

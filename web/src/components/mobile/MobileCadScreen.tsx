@@ -31,6 +31,7 @@ import {
   Box,
   Sun,
   Droplets,
+  Hand,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -58,6 +59,7 @@ import { StructuralGlazingModal } from './StructuralGlazingModal';
 import { IntegratedBlindModal } from './IntegratedBlindModal';
 import { WindowDrainageModal } from './WindowDrainageModal';
 import { CornerCrimpingModal } from './CornerCrimpingModal';
+import { HandleErgonomicsModal } from './HandleErgonomicsModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -243,6 +245,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showIntegratedBlindModal, setShowIntegratedBlindModal] = useState(false);
   const [showDrainageModal, setShowDrainageModal] = useState(false);
   const [showCornerCrimpingModal, setShowCornerCrimpingModal] = useState(false);
+  const [showHandleErgonomicsModal, setShowHandleErgonomicsModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1036,6 +1039,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Wrench className="w-3 h-3" />
               <span>Sertissage Angle</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowHandleErgonomicsModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-emerald-300 font-semibold"
+              title="Audit ergonomie, efforts de manœuvre et accessibilité PMR NF EN 12046-1 / Décret 06-455"
+            >
+              <Hand className="w-3 h-3" />
+              <span>Efforts Poignée (PMR)</span>
             </button>
 
             <button
@@ -2210,6 +2226,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           windowReference={`Onglet ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* HANDLE ERGONOMICS & OPERATING FORCES PMR MODAL */}
+      {showHandleErgonomicsModal && (
+        <HandleErgonomicsModal
+          isOpen={showHandleErgonomicsModal}
+          onClose={() => setShowHandleErgonomicsModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          windowReference={`Poignée ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

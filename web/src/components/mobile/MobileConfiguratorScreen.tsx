@@ -31,6 +31,7 @@ import {
   Box,
   Droplets,
   Wrench,
+  Hand,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -62,6 +63,7 @@ import { StructuralGlazingModal } from './StructuralGlazingModal';
 import { IntegratedBlindModal } from './IntegratedBlindModal';
 import { WindowDrainageModal } from './WindowDrainageModal';
 import { CornerCrimpingModal } from './CornerCrimpingModal';
+import { HandleErgonomicsModal } from './HandleErgonomicsModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -183,6 +185,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isIntegratedBlindModalOpen, setIsIntegratedBlindModalOpen] = useState(false);
   const [isDrainageModalOpen, setIsDrainageModalOpen] = useState(false);
   const [isCornerCrimpingModalOpen, setIsCornerCrimpingModalOpen] = useState(false);
+  const [isHandleErgonomicsModalOpen, setIsHandleErgonomicsModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -870,6 +873,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Wrench className="w-4 h-4" />
           <span>Sertissage & Équerres d'Angle (NF P 20-302 / Eurocode 9)</span>
+        </button>
+
+        {/* Handle Operating Forces & PMR Accessibility Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsHandleErgonomicsModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Hand className="w-4 h-4" />
+          <span>Forces de Manœuvre & Ergonomie PMR (NF EN 12046-1 / Décret 06-455)</span>
         </button>
       </div>
 
@@ -2045,6 +2061,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           windowReference={`Onglet ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* HANDLE ERGONOMICS & OPERATING FORCES PMR MODAL */}
+      {isHandleErgonomicsModalOpen && (
+        <HandleErgonomicsModal
+          isOpen={isHandleErgonomicsModalOpen}
+          onClose={() => setIsHandleErgonomicsModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          windowReference={`Poignée ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />
