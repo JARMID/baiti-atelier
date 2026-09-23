@@ -70,6 +70,7 @@ import { FrictionStayModal } from './FrictionStayModal';
 import { BriseSoleilModal } from './BriseSoleilModal';
 import { SmokeVentilationModal } from './SmokeVentilationModal';
 import { RollerShutterWindModal } from './RollerShutterWindModal';
+import { PerimeterSealantModal } from './PerimeterSealantModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -196,6 +197,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isBriseSoleilModalOpen, setIsBriseSoleilModalOpen] = useState(false);
   const [isSmokeVentModalOpen, setIsSmokeVentModalOpen] = useState(false);
   const [isShutterWindModalOpen, setIsShutterWindModalOpen] = useState(false);
+  const [isSealantModalOpen, setIsSealantModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -948,6 +950,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Wind className="w-4 h-4" />
           <span>Tenue au Vent Tablier & Flèche Lames Volet (NF EN 13659 / RNV 2013)</span>
+        </button>
+
+        {/* Perimeter Sealant Joint Width & Movement Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsSealantModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Droplets className="w-4 h-4" />
+          <span>Calfeutrement Mastic Périphérique & Dilatation (NF DTU 36.5 / SNJF)</span>
         </button>
       </div>
 
@@ -2187,6 +2202,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           projectReference={`Volet Roulant ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* PERIMETER SEALANT JOINT WIDTH & THERMAL MOVEMENT MODAL */}
+      {isSealantModalOpen && (
+        <PerimeterSealantModal
+          isOpen={isSealantModalOpen}
+          onClose={() => setIsSealantModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          projectReference={`Calfeutrement ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />

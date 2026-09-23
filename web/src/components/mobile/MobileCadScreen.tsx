@@ -65,6 +65,7 @@ import { FrictionStayModal } from './FrictionStayModal';
 import { BriseSoleilModal } from './BriseSoleilModal';
 import { SmokeVentilationModal } from './SmokeVentilationModal';
 import { RollerShutterWindModal } from './RollerShutterWindModal';
+import { PerimeterSealantModal } from './PerimeterSealantModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -255,6 +256,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showBriseSoleilModal, setShowBriseSoleilModal] = useState(false);
   const [showSmokeVentModal, setShowSmokeVentModal] = useState(false);
   const [showShutterWindModal, setShowShutterWindModal] = useState(false);
+  const [showSealantModal, setShowSealantModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1113,6 +1115,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Wind className="w-3 h-3" />
               <span>Vent Volet</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowSealantModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/15 border border-cyan-500/30 hover:bg-cyan-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-cyan-300 font-semibold"
+              title="Audit joint d'étanchéité périphérique, mastic et dilatation NF DTU 36.5 / SNJF"
+            >
+              <Droplets className="w-3 h-3" />
+              <span>Mastic Joint</span>
             </button>
 
             <button
@@ -2351,6 +2366,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           projectReference={`Volet Roulant ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* PERIMETER SEALANT JOINT WIDTH & THERMAL MOVEMENT MODAL */}
+      {showSealantModal && (
+        <PerimeterSealantModal
+          isOpen={showSealantModal}
+          onClose={() => setShowSealantModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          projectReference={`Calfeutrement ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

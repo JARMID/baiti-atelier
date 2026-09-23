@@ -8677,6 +8677,309 @@ export async function generateRollerShutterWindNoticePdf(params: RollerShutterWi
   doc.save(safeFilename);
 }
 
+export interface PerimeterSealantPdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName: string;
+  wilayaName: string;
+  result: import('./perimeterSealantManager').PerimeterSealantAuditResult;
+  workshopName?: string;
+}
+
+/**
+ * Generates an official technical notice for perimeter sealant joint sizing,
+ * thermal movement amplitude, and SNJF / DTU 36.5 compliance.
+ */
+export async function generatePerimeterSealantNoticePdf(params: PerimeterSealantPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const res = params.result;
+  const isOk = res.globalStatus === 'conform';
+  const isWarning = res.globalStatus === 'warning';
+  const todayStr = new Date().toLocaleDateString('fr-DZ', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  // 1. Header Banner
+  doc.setFillColor(15, 23, 42); // slate-900
+  doc.rect(0, 0, 210, 28, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER ALGERIE', 14, 12);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text('BUREAU TECHNIQUE • EXPERTISE CALFEUTREMENT & ÉTANCHÉITÉ PÉRIPHÉRIQUE', 14, 18);
+  doc.text('NORME NF DTU 36.5 • ISO 11600 • RÈGLES PROFESSIONNELLES SNJF • CSTB 3521', 14, 23);
+
+  // Status Badge in Header
+  const badgeColor: [number, number, number] = isOk
+    ? [16, 185, 129]
+    : isWarning
+      ? [245, 158, 11]
+      : [239, 68, 68];
+  doc.setFillColor(...badgeColor);
+  doc.roundedRect(148, 8, 48, 12, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  const badgeText = isOk
+    ? 'JOINT CONFORME SNJF'
+    : isWarning
+      ? 'VIGILANCE DILATATION'
+      : 'LARGEUR INSUFFISANTE';
+  doc.text(badgeText, 172, 15.5, { align: 'center' });
+
+  // 2. Document Title Box
+  let curY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, curY, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('CERTIFICAT DE DIMENSIONNEMENT DU JOINT DE CALFEUTREMENT PÉRIPHÉRIQUE', 18, curY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(
+    `Doc N° : ${params.documentId}  |  Chantier : ${params.projectRef}  |  Wilaya : ${params.wilayaName}  |  Date : ${todayStr}`,
+    18,
+    curY + 13
+  );
+
+  curY += 22;
+
+  // 3. Table 1: Frame and Substrate Specifications
+  autoTable(doc, {
+    startY: curY,
+    head: [['CARACTERISTIQUES BAIE & GROS-OEUVRE', 'SPECIFICATION RETENUE', 'PARAMETRES THERMIQUES']],
+    body: [
+      [
+        'Dimensions de la baie vitree',
+        `${res.windowWidthMm} x ${res.windowHeightMm} mm (Axe directeur : ${res.governingAxis})`,
+        `Perimetre de calfeutrement a etancher : ${res.linearMetersCount} m lineaires`,
+      ],
+      [
+        'Teinte et finition profil aluminium',
+        res.frameColorLabelFr,
+        `Tmax surface alu : ${res.aluminumSurfaceMaxTempC}°C (Ecart DT = ${res.deltaTAluminumK} K)`,
+      ],
+      [
+        'Support gros-oeuvre / maconnerie',
+        res.substrateNameFr,
+        `Coeff. dilatation support : ${res.thermalExpansionCoeffSubstrate * 1e6} x10-6 /K`,
+      ],
+      [
+        'Mastic elastique selectionne',
+        res.sealantSpec.nameFr,
+        `Classe : ${res.sealantSpec.isoClass} (Capacite deformation : ±${res.movementCapabilityPercent}%)`,
+      ],
+      [
+        'Recouvrement primaire d accrochage',
+        res.primerRequired ? 'Primaire obligatoire sur fond poreux' : 'Application directe sans primaire',
+        res.primerTypeFr,
+      ],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 4. Table 2: Movement Amplitude and Thermal Expansion
+  autoTable(doc, {
+    startY: curY,
+    head: [['AMPLITUDE DE MOUVEMENT DU JOINT', 'VALEUR CALCULEE', 'INCIDENCE ET VERIFICATION']],
+    body: [
+      [
+        'Dilatation thermique differentielle alu/support',
+        `Delta L = ${res.differentialThermalMovementMm} mm`,
+        `Variation de longueur sur la portee de ${(res.governingDimensionMm / 1000).toFixed(2)} m`,
+      ],
+      [
+        'Mouvement saisonnier max (Ete/Hiver)',
+        `Delta_saisonnier = ${res.maxSeasonalThermalMovementMm} mm`,
+        'Amplitude sous les ecarts extremes d Algerie',
+      ],
+      [
+        'Tolerance de pose et fleche de dalle',
+        `Cumul structurel : ${(res.erectionToleranceMm * 0.5 + res.structuralSlabDeflectionMm * 0.5).toFixed(1)} mm`,
+        'Alas de pose et deformation elastique de rive',
+      ],
+      [
+        'Amplitude totale de conception (Delta W)',
+        `Delta W = ${res.totalDesignMovementAmplitudeMm} mm`,
+        'Deformation cyclique totale que le mastic doit absorber',
+      ],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [14, 116, 144], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 5. Table 3: Joint Geometry and Consumables
+  autoTable(doc, {
+    startY: curY,
+    head: [['GEOMETRIE JOINT & ESTIMATION CONSOMMABLES', 'RESULTAT MESURE', 'REGLES DE L ART SNJF']],
+    body: [
+      [
+        'Largeur minimale requise (Wmin)',
+        `Wmin = ${res.minimumRequiredJointWidthMm} mm`,
+        `Seuil calcul selon regles DTU 36.5 (Marge : ${res.widthSafetyMarginMm >= 0 ? `+${res.widthSafetyMarginMm}` : res.widthSafetyMarginMm} mm)`,
+      ],
+      [
+        'Largeur preconisee / retenue',
+        `W = ${res.actualPlannedJointWidthMm} mm (Conseille : ${res.recommendedDesignJointWidthMm} mm)`,
+        res.isWidthCompliant ? 'CONFORME (Capacite deformation respectee)' : 'NON CONFORME (Joint trop etroit)',
+      ],
+      [
+        'Profondeur optimale de mastic (D)',
+        `D = ${res.recommendedJointDepthMm} mm (Rapport 2:1)`,
+        'Evite les contraintes de cisaillement excessives',
+      ],
+      [
+        'Fond de joint PE a cellules fermees',
+        `Diametre : ${res.backingRodDiameterMm} mm`,
+        'Compression requise d environ 25% (Empeche adher. 3 faces)',
+      ],
+      [
+        'Volume total mastic & Fournitures',
+        `${res.sealantVolumeLiters} Litres necessaires`,
+        `Prevoir ${res.cartridges310mlCount} cartouches 310 ml ou ${res.sausages600mlCount} poches 600 ml`,
+      ],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 6. Directives and Verdict Box
+  doc.setDrawColor(isOk ? 16 : 203, isOk ? 185 : 213, isOk ? 129 : 225);
+  doc.setFillColor(isOk ? 240 : 248, isOk ? 253 : 250, isOk ? 244 : 252);
+  doc.roundedRect(14, curY, 182, 16, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(isOk ? 22 : 15, isOk ? 101 : 23, isOk ? 52 : 42);
+  doc.text('DIRECTIVES D APPLICATION SUR CHANTIER (NF DTU 36.5 / SNJF) :', 18, curY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    `Fond de joint obligatoire Ø ${res.backingRodDiameterMm} mm • Degraissage : ${res.cleaningSolventFr}.`,
+    18,
+    curY + 9.5
+  );
+  doc.text(
+    res.statusSummaryFr,
+    18,
+    curY + 13.5
+  );
+
+  curY += 20;
+
+  // 7. Workshop Recommendations
+  if (res.recommendations.length > 0) {
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(255, 255, 255);
+    const boxHeight = Math.min(22, 6 + res.recommendations.length * 3.5);
+    doc.roundedRect(14, curY, 182, boxHeight, 1.5, 1.5, 'D');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(15, 23, 42);
+    doc.text('RECOMMANDATIONS ET PRESCRIPTIONS TECHNIQUES :', 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    res.recommendations.slice(0, 4).forEach((rec, idx) => {
+      doc.text(`• ${rec}`, 20, curY + 8.5 + idx * 3.8);
+    });
+
+    curY += boxHeight + 4;
+  }
+
+  // 8. Signature Block
+  const signY = Math.min(curY, 258);
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 70, 22, 1.5, 1.5, 'D');
+  doc.roundedRect(126, signY, 70, 22, 1.5, 1.5, 'D');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Visa Poseur / Applicateur Mastic', 18, signY + 5.5);
+  doc.text('Bon pour Reception Etancheite Baie', 130, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Date & Signature Applicateur :', 18, signY + 11);
+  doc.text('Signature Controleur Chantier :', 130, signY + 11);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|SEALANT|${params.documentId}|REF=${params.projectRef}|W=${res.actualPlannedJointWidthMm}MM|WMIN=${res.minimumRequiredJointWidthMm}MM|CLASS=${res.sealantSpec.id}|STATUS=${res.globalStatus}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 9. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Fiche technique officielle Baiti Atelier • ${params.documentId} • NF DTU 36.5 • ISO 11600 • Regles SNJF • CSTB 3521`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Certificat_Calfeutrement_Mastic_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 
