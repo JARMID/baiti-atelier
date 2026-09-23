@@ -5,6 +5,8 @@ import type { WindowConfig, CostBreakdown, OpeningType, ProfileSystem, GlassType
 import type { CadStructure, WorkshopBOM, HardwareItemDetail } from '../types/cad';
 import { ALGERIAN_WILAYAS_58 } from './algerianWilayas';
 import { DTR_ZONE_THRESHOLDS, getDtrZoneForWilaya } from './dtrThermal';
+import type { BioclimaticPergolaInput, BioclimaticPergolaAuditResult } from './bioclimaticPergolaManager';
+import { SLAT_SPECS, POST_SPECS, BEAM_SPECS } from './bioclimaticPergolaManager';
 
 export interface DevisOpeningItem {
   id: string;
@@ -9303,6 +9305,344 @@ export async function generateGlassBalustradeNoticePdf(params: GlassBalustradePd
   );
 
   const safeFilename = `Certificat_Garde_Corps_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+export interface BioclimaticPergolaNoticePdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName: string;
+  wilayaName: string;
+  input: BioclimaticPergolaInput;
+  audit: BioclimaticPergolaAuditResult;
+}
+
+export async function generateBioclimaticPergolaNoticePdf(params: BioclimaticPergolaNoticePdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const audit = params.audit;
+  const input = params.input;
+  const slat = SLAT_SPECS[input.slatModel];
+  const post = POST_SPECS[input.postModel];
+  const beam = BEAM_SPECS[input.beamModel];
+
+  // Palette: Dark Slate, Deep Teal #0D9488, Gold #D4AF37, Accent Emerald #10B981
+  const tealPrimary: [number, number, number] = [13, 148, 136];
+  const slateDark: [number, number, number] = [15, 23, 42];
+  const goldAccent: [number, number, number] = [212, 175, 55];
+  const bgLight: [number, number, number] = [248, 250, 252];
+  const borderLight: [number, number, number] = [226, 232, 240];
+
+  // 1. Top Header Banner
+  doc.setFillColor(...tealPrimary);
+  doc.rect(0, 0, 210, 26, 'F');
+  doc.setFillColor(...goldAccent);
+  doc.rect(0, 26, 210, 1.5, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(255, 255, 255);
+  doc.text('FICHE TECHNIQUE ET CERTIFICAT DE DIMENSIONNEMENT', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(204, 251, 241);
+  doc.text('Pergola Bioclimatique Lames Orientables • Eurocode 9 • RNV 2013 • NF EN 12056-3', 14, 17);
+
+  const todayStr = new Date().toLocaleDateString('fr-DZ');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Réf : ${params.projectRef}`, 196, 11, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(`Date : ${todayStr} • Doc ID : ${params.documentId}`, 196, 17, { align: 'right' });
+
+  // 2. Project & Geometry Metadata Card
+  doc.setFillColor(...bgLight);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, 32, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...tealPrimary);
+  doc.text('DONNÉES GÉOMÉTRIQUES & LOCALISATION', 18, 38);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...slateDark);
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 18, 44);
+  doc.text(`Wilaya : ${params.wilayaName}`, 18, 49);
+
+  doc.text(`Dimensions : ${input.pergolaWidthMm} x ${input.pergolaLengthMm} mm (H = ${input.pergolaHeightMm} mm)`, 80, 44);
+  doc.text(`Surface toiture : ${audit.roofAreaM2} m² • Poids total : ${audit.totalStructureWeightKg} kg`, 80, 49);
+
+  doc.text(`Portée des lames : ${audit.slatLengthMm} mm (${audit.slatCount} lames)`, 148, 44);
+  doc.text(`Poteaux : ${audit.postCount} u • Descentes : ${audit.downspoutCount} u`, 148, 49);
+
+  // 3. Technical Summary Blocks (3 Columns)
+  // Box 1: Slat Resistance & Deflection
+  const boxY = 58;
+  const boxW = 58;
+  const boxH = 34;
+
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(13, 148, 136, 0.1);
+  doc.rect(14, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...tealPrimary);
+  doc.text('1. LAMES ORIENTABLES (EC9)', 17, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Modèle : ${slat.widthMm} mm (${slat.weightKgPerM} kg/m)`, 17, boxY + 10);
+  doc.text(`Inertie Ix : ${slat.momentOfInertiaIxCm4} cm4 (Wx = ${slat.sectionModulusWxCm3} cm3)`, 17, boxY + 14);
+  doc.text(`Moment max : ${audit.slatMomentMaxNm} N.m`, 17, boxY + 18);
+  doc.text(`Contrainte : ${audit.slatBendingStressMpa} MPa (Max 145.5)`, 17, boxY + 22);
+
+  const slatDefText = `Flèche : ${audit.slatDeflectionMm} mm (Lim ${audit.slatAllowableDeflectionMm})`;
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(audit.isSlatDeflectionCompliant ? 16 : 225, audit.isSlatDeflectionCompliant ? 185 : 29, audit.isSlatDeflectionCompliant ? 129 : 72);
+  doc.text(slatDefText, 17, boxY + 27);
+  doc.text(audit.isSlatStressCompliant ? 'Statut : Conforme EC9' : 'Statut : Flèche excessive', 17, boxY + 31);
+
+  // Box 2: Beam & Gutter
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(76, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(13, 148, 136, 0.1);
+  doc.rect(76, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...tealPrimary);
+  doc.text('2. SABLIÈRE & CHÉNEAU', 79, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Modèle : ${beam.labelFr.split(' ')[2]} ${beam.labelFr.split(' ')[3]}`, 79, boxY + 10);
+  doc.text(`Chéneau : ${beam.gutterWidthMm}x${beam.gutterDepthMm} mm (${beam.gutterCrossSectionCm2} cm2)`, 79, boxY + 14);
+  doc.text(`Moment max : ${audit.beamMomentMaxNm} N.m`, 79, boxY + 18);
+  doc.text(`Contrainte : ${audit.beamBendingStressMpa} MPa (Max 145.5)`, 79, boxY + 22);
+
+  const beamDefText = `Flèche : ${audit.beamDeflectionMm} mm (Lim ${audit.beamAllowableDeflectionMm})`;
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(audit.isBeamDeflectionCompliant ? 16 : 225, audit.isBeamDeflectionCompliant ? 185 : 29, audit.isBeamDeflectionCompliant ? 129 : 72);
+  doc.text(beamDefText, 79, boxY + 27);
+  doc.text(audit.isBeamDeflectionCompliant ? 'Statut : Rigidité validée' : 'Statut : Sablière trop souple', 79, boxY + 31);
+
+  // Box 3: Wind Uplift & Footing Tension
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(138, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(13, 148, 136, 0.1);
+  doc.rect(138, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...tealPrimary);
+  doc.text('3. SOULÈVEMENT AU VENT (RNV)', 141, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Pression vent : ${input.windDynamicPressurePa} Pa (Cp = ${audit.windUpliftCoefficientCp})`, 141, boxY + 10);
+  doc.text(`Soulèvement net : ${audit.netUpliftForceKn} kN total`, 141, boxY + 14);
+  doc.text(`Traction poteau : ${audit.upliftPerPostKn} kN (${audit.anchorTensionDan} daN)`, 141, boxY + 18);
+  doc.text(`Lestage mini : ${audit.recommendedBallastPerPostKg} kg / poteau`, 141, boxY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...tealPrimary);
+  doc.text('Ancrage requis :', 141, boxY + 27);
+  doc.setFontSize(6.2);
+  doc.text(audit.anchorTensionDan > 600 ? 'Scellement chimique M12' : 'Cheville chimique M10', 141, boxY + 31);
+
+  // 4. Hydraulic Rain Drainage and Motorization Tables
+  const hydroY = boxY + boxH + 5;
+  doc.setFillColor(...bgLight);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, hydroY, 182, 38, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...tealPrimary);
+  doc.text('4. BILAN HYDRAULIQUE DES EAUX PLUVIALES & MOTORISATION VÉRIN (NF EN 12056-3)', 18, hydroY + 6);
+
+  // Left col: Drainage
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...slateDark);
+  doc.text(`Intensité d averse calculée : ${input.rainIntensityMmH} mm/h (Orage méditerranéen)`, 18, hydroY + 13);
+  doc.text(`Débit d eau pluviale total : ${audit.stormFlowLiterPerSec} L/s sur ${audit.roofAreaM2} m²`, 18, hydroY + 18);
+  doc.text(`Capacité chéneau double sablière : ${audit.gutterEvacuationCapacityLiterPerSec} L/s (Pente 0.5%)`, 18, hydroY + 23);
+  doc.text(`Capacité des descentes poteau (dia ${post.internalDownspoutDiameterMm} mm) : ${audit.downspoutCapacityLiterPerSec} L/s`, 18, hydroY + 28);
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(audit.isDrainageCompliant ? 16 : 225, audit.isDrainageCompliant ? 185 : 29, audit.isDrainageCompliant ? 129 : 72);
+  doc.text(`Marge de sécurité hydraulique : x${audit.hydraulicSafetyRatio} (${audit.isDrainageCompliant ? 'Évacuation garantie sans débordement' : 'Risque de refoulement'})`, 18, hydroY + 34);
+
+  // Right col: Motorization
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...slateDark);
+  doc.text(`Poussée mécanique vérin requise : ${audit.actuatorPushForceN} N`, 110, hydroY + 13);
+  doc.text(`Puissance recommandée vérin 24V : ${audit.recommendedActuatorRatingN} N (IP66)`, 110, hydroY + 18);
+  doc.text(`Course utile du vérin : ${audit.actuatorStrokeMm} mm (${audit.operatingSpeedSeconds} s)`, 110, hydroY + 23);
+  doc.text('Sécurité météo : Capteur pluie auto-fermeture + Anémomètre 50 km/h', 110, hydroY + 28);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...tealPrimary);
+  doc.text('Synchronisation : Bielle inox 316L avec paliers bronze autolubrifiants', 110, hydroY + 34);
+
+  // 5. Bill of Materials & Workshop Cut Sheet Table
+  const tableData = [
+    [
+      'Lames orientables',
+      slat.labelFr,
+      `${audit.slatCount} unités`,
+      `${audit.slatLengthMm} mm`,
+      'Coupe droite 90 deg + perçage tourillons 12mm',
+      `${audit.slatsTotalWeightKg} kg`,
+    ],
+    [
+      'Poutres sablières chéneaux',
+      beam.labelFr,
+      '2 unités',
+      `${audit.beamLengthMm} mm`,
+      'Onglet 45 deg + embout collecteur d eau',
+      `${Math.round(2 * (audit.beamLengthMm / 1000) * beam.weightKgPerM)} kg`,
+    ],
+    [
+      'Poutres d about transversales',
+      beam.labelFr,
+      '2 unités',
+      `${input.pergolaWidthMm} mm`,
+      'Onglet 45 deg + platines de liaison d angle',
+      `${Math.round(2 * (input.pergolaWidthMm / 1000) * beam.weightKgPerM)} kg`,
+    ],
+    [
+      'Poteaux porteurs creux',
+      post.labelFr,
+      `${audit.postCount} unités`,
+      `${input.pergolaHeightMm} mm`,
+      'Platine sol soudée + tube descente pluviale',
+      `${audit.postsTotalWeightKg} kg`,
+    ],
+    [
+      'Joints d étanchéité EPDM',
+      'Joint co-extrudé à lèvre anti-bruit',
+      `${audit.slatCount} barres`,
+      `${audit.slatLengthMm} mm`,
+      'Clipsé sur chant de lame (herméticité pluie)',
+      '6 kg',
+    ],
+    [
+      'Kit motorisation & pivots',
+      `Vérin électrique 24V CC ${audit.recommendedActuatorRatingN}N`,
+      '1 ensemble',
+      `Course ${audit.actuatorStrokeMm} mm`,
+      'Platine équerre inox + centrale radio & capteurs',
+      '14 kg',
+    ],
+  ];
+
+  autoTable(doc, {
+    startY: hydroY + 42,
+    head: [['Composant', 'Spécification Profilé', 'Quantité', 'Débit / Longueur', 'Usinage Atelier', 'Masse']],
+    body: tableData,
+    theme: 'grid',
+    styles: {
+      fontSize: 6.5,
+      cellPadding: 1.8,
+      textColor: [15, 23, 42],
+    },
+    headStyles: {
+      fillColor: [13, 148, 136],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'left',
+    },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 32 },
+      1: { cellWidth: 46 },
+      2: { cellWidth: 20 },
+      3: { fontStyle: 'bold', cellWidth: 24 },
+      4: { cellWidth: 44 },
+      5: { halign: 'right', cellWidth: 16 },
+    },
+  });
+
+  // 6. Synthesis Recommendations Card
+  const finalTable = (doc as any).lastAutoTable;
+  const synthY = finalTable.finalY + 4;
+
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, synthY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...tealPrimary);
+  doc.text('5. PRESCRIPTIONS DE POSE & SÉCURITÉ CHANTIER', 18, synthY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...slateDark);
+
+  let recoLineY = synthY + 10;
+  audit.recommendationsFr.slice(0, 3).forEach((reco) => {
+    doc.text(`• ${reco}`, 18, recoLineY);
+    recoLineY += 4.2;
+  });
+
+  // 7. Signature & QR Code Verification Block
+  const signY = synthY + 28;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, signY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('VISA TECHNIQUE FABRICANT', 18, signY + 6);
+  doc.text('BON POUR ACCORD & POSE CLIENT', 128, signY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.2);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Atelier de Menuiserie Aluminium Baiti', 18, signY + 11);
+  doc.text('Signature & Cachet :', 18, signY + 16);
+
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 128, signY + 11);
+  doc.text('Date & Signature :', 128, signY + 16);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|PERGOLA|${params.documentId}|REF=${params.projectRef}|DIM=${input.pergolaWidthMm}x${input.pergolaLengthMm}|SLAT=${slat.widthMm}|STATUS=${audit.overallStatus}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer Legal Line
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.2);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Attestation officielle Baiti Atelier • ${params.documentId} • Eurocode 9 (NF EN 1999-1-1) • CNERIB RNV 2013 • NF EN 12056-3`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Notice_Technique_Pergola_Bioclimatique_${params.documentId}.pdf`;
   doc.save(safeFilename);
 }
 

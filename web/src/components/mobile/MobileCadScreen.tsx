@@ -67,6 +67,7 @@ import { SmokeVentilationModal } from './SmokeVentilationModal';
 import { RollerShutterWindModal } from './RollerShutterWindModal';
 import { PerimeterSealantModal } from './PerimeterSealantModal';
 import { GlassBalustradeModal } from './GlassBalustradeModal';
+import { BioclimaticPergolaModal } from './BioclimaticPergolaModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -259,6 +260,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showShutterWindModal, setShowShutterWindModal] = useState(false);
   const [showSealantModal, setShowSealantModal] = useState(false);
   const [showBalustradeModal, setShowBalustradeModal] = useState(false);
+  const [showBioclimaticPergolaModal, setShowBioclimaticPergolaModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1143,6 +1145,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <ShieldCheck className="w-3 h-3" />
               <span>Garde-Corps</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowBioclimaticPergolaModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-emerald-300 font-semibold"
+              title="Audit pergola bioclimatique à lames orientables, tenue au vent et drainage Eurocode 9 / RNV 2013"
+            >
+              <Sun className="w-3 h-3" />
+              <span>Pergola Bio</span>
             </button>
 
             <button
@@ -2407,6 +2422,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           projectReference={`Garde-Corps ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* BIOCLIMATIC LOUVRE PERGOLA STRUCTURAL & HYDRAULIC MODAL */}
+      {showBioclimaticPergolaModal && (
+        <BioclimaticPergolaModal
+          isOpen={showBioclimaticPergolaModal}
+          onClose={() => setShowBioclimaticPergolaModal(false)}
+          initialWidth={cadStructure.width}
+          initialLength={cadStructure.height}
+          projectReference={`Pergola ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

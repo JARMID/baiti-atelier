@@ -73,6 +73,7 @@ import { SmokeVentilationModal } from './SmokeVentilationModal';
 import { RollerShutterWindModal } from './RollerShutterWindModal';
 import { PerimeterSealantModal } from './PerimeterSealantModal';
 import { GlassBalustradeModal } from './GlassBalustradeModal';
+import { BioclimaticPergolaModal } from './BioclimaticPergolaModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -201,6 +202,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isShutterWindModalOpen, setIsShutterWindModalOpen] = useState(false);
   const [isSealantModalOpen, setIsSealantModalOpen] = useState(false);
   const [isBalustradeModalOpen, setIsBalustradeModalOpen] = useState(false);
+  const [isBioclimaticPergolaModalOpen, setIsBioclimaticPergolaModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -979,6 +981,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <ShieldCheck className="w-4 h-4" />
           <span>Garde-Corps Verre Autoportant & Sabots Sol (NF P 01-012 / Eurocode 1)</span>
+        </button>
+
+        {/* Bioclimatic Louvre Pergola Structural & Hydraulic Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsBioclimaticPergolaModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Sun className="w-4 h-4" />
+          <span>Pergola Bioclimatique à Lames Orientables (Eurocode 9 / RNV 2013)</span>
         </button>
       </div>
 
@@ -2244,6 +2259,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           projectReference={`Garde-Corps ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* BIOCLIMATIC LOUVRE PERGOLA STRUCTURAL & HYDRAULIC MODAL */}
+      {isBioclimaticPergolaModalOpen && (
+        <BioclimaticPergolaModal
+          isOpen={isBioclimaticPergolaModalOpen}
+          onClose={() => setIsBioclimaticPergolaModalOpen(false)}
+          initialWidth={config.width}
+          initialLength={config.height}
+          projectReference={`Pergola ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />
