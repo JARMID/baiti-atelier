@@ -17,6 +17,8 @@ import type { SillFlashingInput, SillFlashingAuditResult } from './sillFlashingM
 import { SILL_PROFILE_SPECS, ACOUSTIC_DAMPENER_SPECS } from './sillFlashingManager';
 import type { GasketAuditInput, GasketAuditResult } from './gasketVulcanizationManager';
 import { GASKET_MATERIAL_SPECS, CORNER_TECHNOLOGY_SPECS, GASKET_PROFILE_SPECS } from './gasketVulcanizationManager';
+import type { PerimeterAnchorInput, PerimeterAnchorResult } from './perimeterAnchorManager';
+import { SUBSTRATE_SPECS, FASTENER_SPECS } from './perimeterAnchorManager';
 
 export interface DevisOpeningItem {
   id: string;
@@ -11204,6 +11206,312 @@ export async function generateGasketVulcanizationNoticePdf(params: GasketVulcani
   const safeFilename = `Attestation_Joints_Etancheite_${params.documentId}.pdf`;
   doc.save(safeFilename);
 }
+
+export interface PerimeterAnchorNoticePdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName?: string;
+  wilaya?: string;
+  auditInput: PerimeterAnchorInput;
+  auditResult: PerimeterAnchorResult;
+}
+
+export async function generatePerimeterAnchorNoticePdf(params: PerimeterAnchorNoticePdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const bluePrimary: [number, number, number] = [15, 76, 129];
+  const slateDark: [number, number, number] = [30, 41, 59];
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const amberWarning: [number, number, number] = [245, 158, 11];
+  const roseRed: [number, number, number] = [225, 29, 72];
+
+  const input = params.auditInput;
+  const audit = params.auditResult;
+  const substrate = SUBSTRATE_SPECS[input.substrateType];
+  const fastener = FASTENER_SPECS[input.fastenerType ?? substrate.recommendedFastener];
+
+  // 1. Header Banner
+  doc.setFillColor(...bluePrimary);
+  doc.rect(0, 0, 210, 32, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text('BAITI ATELIER • AUDIT ANCRAGE AU GROS ŒUVRE & ENTRAXE DTU', 14, 13);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(226, 232, 240);
+  doc.text('Conforme NF DTU 36.5 P1-1 • CSTB Cahier 3529 • RNV 2013 • ETAG 020 / NF EN 1992-4', 14, 19);
+  doc.text(`Réf Dossier : ${params.projectRef} • Wilaya : ${params.wilaya || 'Alger'} • Réf Doc : ${params.documentId}`, 14, 25);
+
+  // Status Badge
+  const isApproved = audit.isStructurallySafe && audit.dtuPitchCompliant;
+  const badgeColor = isApproved ? emeraldGreen : audit.isStructurallySafe ? amberWarning : roseRed;
+  const badgeText = isApproved ? 'CONFORME DTU 36.5' : audit.isStructurallySafe ? 'ENTRAXE À AJUSTER' : 'NON CONFORME RISQUE';
+
+  doc.setFillColor(badgeColor[0], badgeColor[1], badgeColor[2]);
+  doc.roundedRect(144, 8, 52, 16, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(badgeText, 170, 18, { align: 'center' });
+
+  // 2. Project Metadata Card
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, 36, 182, 20, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('1. CONTEXTE OUVRAGE & GÉOMÉTRIE DU CADRE DORMANT', 18, 42);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Dimensions : ${audit.windowWidthMm} × ${audit.windowHeightMm} mm`, 18, 48);
+  doc.text(`Surface exposée : ${audit.windowAreaM2} m²`, 75, 48);
+  doc.text(`Périmètre dormant : ${audit.framePerimeterM} m`, 130, 48);
+
+  const mountingLabel = input.mountingType === 'applique_interieure'
+    ? 'Pose en applique intérieure'
+    : input.mountingType === 'tunnel_tableau'
+    ? 'Pose en tunnel (en tableau)'
+    : input.mountingType === 'feuillure_maconnerie'
+    ? 'Pose en feuillure maçonnerie'
+    : 'Pose en applique extérieure (ITE)';
+
+  doc.text(`Mode de pose : ${mountingLabel}`, 18, 53);
+  doc.text(`Pression vent RNV 2013 : ${input.windDesignPressurePa} Pa`, 95, 53);
+  doc.text(`Force globale vent : ${audit.totalWindForceKn} kN`, 150, 53);
+
+  // 3. Substrate & Fastener Card
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, 59, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('2. CARACTÉRISTIQUES SUPPORT & TECHNOLOGIE D ANCRAGE', 18, 65);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...slateDark);
+  doc.text(`Support maçonnerie : ${substrate.labelFr}`, 18, 70);
+  doc.text(`Résistance carac. N_Rk : ${substrate.characteristicTensileResistanceKn} kN`, 118, 70);
+  doc.text(`Facteur partiel gamma_M : ${substrate.safetyPartialFactorGammaM}`, 164, 70);
+
+  doc.text(`Cheville / Vis : ${fastener.labelFr.slice(0, 55)}`, 18, 75);
+  doc.text(`Perçage : Diamètre ${fastener.drillDiameterMm} mm`, 118, 75);
+  doc.text(`Ancrage effectif hef : ${substrate.minEmbedmentDepthHefMm} mm`, 154, 75);
+
+  // 4. Performance KPI Cards
+  const kpiY = 84;
+  const tileW = 43.5;
+  const tileH = 22;
+
+  interface KpiItem {
+    title: string;
+    val: string;
+    sub: string;
+    status: string;
+    color: [number, number, number];
+  }
+
+  const kpis: KpiItem[] = [
+    {
+      title: 'Entraxe Réel Montants',
+      val: `${audit.actualJambSpacingMm} mm`,
+      sub: `Max DTU 36.5 : ${audit.maxAllowablePitchMm} mm`,
+      status: audit.dtuPitchCompliant ? 'Conforme DTU' : 'Entraxe trop large',
+      color: audit.dtuPitchCompliant ? emeraldGreen : amberWarning,
+    },
+    {
+      title: 'Traction par Fixation (N_Ed)',
+      val: `${audit.tensileDesignReactionPerAnchorKn} kN`,
+      sub: `Admissible N_Rd : ${audit.designTensileResistanceKn} kN`,
+      status: audit.isStructurallySafe ? 'Sécuritaire' : 'Surcharge vent',
+      color: audit.isStructurallySafe ? emeraldGreen : roseRed,
+    },
+    {
+      title: 'Taux de Sollicitation',
+      val: `${audit.utilizationRatePercent}%`,
+      sub: 'Critère ETAG 020 <= 100%',
+      status: audit.utilizationRatePercent <= 70 ? 'Marge optimale' : 'Admissible',
+      color: audit.utilizationRatePercent <= 100 ? emeraldGreen : roseRed,
+    },
+    {
+      title: 'Nombre Total Fixations',
+      val: `${audit.totalAnchorsCount} unités`,
+      sub: `${audit.jambAnchorsPerSide} par montant • ${audit.headAnchorsCount} imposte`,
+      status: 'Répartition 4 côtés',
+      color: bluePrimary,
+    },
+  ];
+
+  kpis.forEach((kpi, idx) => {
+    const x = 14 + idx * (tileW + 2.6);
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(x, kpiY, tileW, tileH, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(100, 116, 139);
+    doc.text(kpi.title, x + 3, kpiY + 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.text(kpi.val, x + 3, kpiY + 11);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.8);
+    doc.setTextColor(...slateDark);
+    doc.text(kpi.sub, x + 3, kpiY + 16);
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(5.5);
+    doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.text(kpi.status, x + 3, kpiY + 19.5);
+  });
+
+  // 5. Hardware Bill of Materials Table
+  const tableData = [
+    [
+      'Chevilles / Fixations de dormant',
+      fastener.labelFr,
+      `${audit.totalAnchorsCount} pièces`,
+      `Diamètre ${fastener.drillDiameterMm} mm • Longueur ${fastener.totalLengthMm} mm`,
+      'Distance aux angles : 100 à 150 mm (NF DTU 36.5)',
+      'Quincaillerie d ancrage',
+    ],
+    [
+      'Consommable de forage',
+      audit.billOfMaterials.recommendedDrillBit,
+      '1 outil',
+      `Perçage profondeur minimale : ${substrate.minEmbedmentDepthHefMm + 15} mm`,
+      'Perçage en rotation simple sans percussion dans la brique creuse',
+      'Outillage atelier / pose',
+    ],
+    [
+      'Calage de pose périphérique',
+      'Cales d assise et cales d espacement plastique imputrescible',
+      `${Math.max(6, Math.ceil(audit.totalAnchorsCount * 0.8))} cales`,
+      'Épaisseur 3 à 8 mm pour jeu de calfeutrement régulier',
+      'Placer les cales au droit des fixations sans comprimer le dormant',
+      'Accessoires de réglage',
+    ],
+    [
+      'Temps de pose & chevillage',
+      'Main d œuvre qualifiée poseur',
+      `${audit.billOfMaterials.assemblyTimeMinutes} minutes`,
+      `Couple de serrage recommandé : ${fastener.tighteningTorqueNm} N*m`,
+      'Vérifier l aplomb et le niveau avant serrage définitif',
+      'Main d œuvre',
+    ],
+  ];
+
+  autoTable(doc, {
+    startY: kpiY + 26,
+    head: [['Composant', 'Désignation Technique', 'Quantité', 'Spécifications Chantier', 'Prescription Normative', 'Catégorie']],
+    body: tableData,
+    theme: 'grid',
+    styles: {
+      fontSize: 6.5,
+      cellPadding: 1.8,
+      textColor: [15, 23, 42],
+    },
+    headStyles: {
+      fillColor: [15, 76, 129],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'left',
+    },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 32 },
+      1: { cellWidth: 46 },
+      2: { cellWidth: 18 },
+      3: { fontStyle: 'bold', cellWidth: 26 },
+      4: { cellWidth: 44 },
+      5: { halign: 'right', cellWidth: 16 },
+    },
+  });
+
+  // 6. Synthesis Recommendations Card
+  const finalTable = (doc as any).lastAutoTable;
+  const synthY = finalTable.finalY + 4;
+
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, synthY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('5. PRESCRIPTIONS DE CHANTIER & GARANTIE D ANCRAGE', 18, synthY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...slateDark);
+
+  let recoLineY = synthY + 10;
+  audit.auditRecommendations.slice(0, 3).forEach((reco) => {
+    doc.text(`• ${reco}`, 18, recoLineY);
+    recoLineY += 4.2;
+  });
+
+  // 7. Signature & QR Code Block
+  const signY = synthY + 28;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, signY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('VISA TECHNIQUE FABRICANT / POSEUR', 18, signY + 6);
+  doc.text('RÉCEPTION TECHNIQUE CHANTIER', 128, signY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.2);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Atelier de Menuiserie Aluminium Baiti', 18, signY + 11);
+  doc.text('Signature & Cachet :', 18, signY + 16);
+
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 128, signY + 11);
+  doc.text('Date & Signature :', 128, signY + 16);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|ANCHOR|${params.documentId}|REF=${params.projectRef}|SUBSTRATE=${input.substrateType}|TOTAL=${audit.totalAnchorsCount}|PITCH=${audit.actualJambSpacingMm}MM|UTIL=${audit.utilizationRatePercent}%|STATUS=${audit.isStructurallySafe ? 'CONFORME' : 'NON_CONFORME'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer Legal Line
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.2);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Attestation officielle Baiti Atelier • ${params.documentId} • NF DTU 36.5 P1-1 • CSTB Cahier 3529 • RNV 2013 • ETAG 020`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Attestation_Ancrage_Gros_Oeuvre_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
 
 
 

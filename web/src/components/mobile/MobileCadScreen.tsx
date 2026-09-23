@@ -75,6 +75,7 @@ import { SlidingCarriageModal } from './SlidingCarriageModal';
 import { TransomDeadLoadModal } from './TransomDeadLoadModal';
 import { SillFlashingModal } from './SillFlashingModal';
 import { GasketVulcanizationModal } from './GasketVulcanizationModal';
+import { PerimeterAnchorModal } from './PerimeterAnchorModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -273,6 +274,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showTransomDeadLoadModal, setShowTransomDeadLoadModal] = useState(false);
   const [showSillFlashingModal, setShowSillFlashingModal] = useState(false);
   const [showGasketModal, setShowGasketModal] = useState(false);
+  const [showAnchorModal, setShowAnchorModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1235,6 +1237,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <ShieldCheck className="w-3 h-3" />
               <span>Joints AEV</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowAnchorModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/30 hover:bg-blue-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-blue-300 font-semibold min-h-[44px]"
+              title="Audit ancrage au gros œuvre, entraxe maximal 800 mm et traction vent (NF DTU 36.5 / CSTB 3529)"
+            >
+              <Anchor className="w-3 h-3" />
+              <span>Ancrage DTU</span>
             </button>
 
             <button
@@ -2576,6 +2591,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           projectReference={`Joints EPDM ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* WINDOW PERIMETER ANCHORAGE & FASTENER PITCH AUDITOR MODAL */}
+      {showAnchorModal && (
+        <PerimeterAnchorModal
+          isOpen={showAnchorModal}
+          onClose={() => setShowAnchorModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          projectReference={`Ancrage ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />
