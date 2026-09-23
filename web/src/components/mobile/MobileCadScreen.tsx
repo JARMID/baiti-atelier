@@ -34,6 +34,7 @@ import {
   Hand,
   Anchor,
   Compass,
+  Thermometer,
   Scale,
   SplitSquareVertical,
 } from 'lucide-react';
@@ -78,6 +79,7 @@ import { SillFlashingModal } from './SillFlashingModal';
 import { GasketVulcanizationModal } from './GasketVulcanizationModal';
 import { PerimeterAnchorModal } from './PerimeterAnchorModal';
 import { CasementHingeModal } from './CasementHingeModal';
+import { FrameThermalModal } from './FrameThermalModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -278,6 +280,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showGasketModal, setShowGasketModal] = useState(false);
   const [showAnchorModal, setShowAnchorModal] = useState(false);
   const [showCasementHingeModal, setShowCasementHingeModal] = useState(false);
+  const [showFrameThermalModal, setShowFrameThermalModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1266,6 +1269,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Compass className="w-3 h-3" />
               <span>Ferrure DTU</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowFrameThermalModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-orange-500/10 dark:bg-orange-500/15 border border-orange-500/30 hover:bg-orange-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-orange-300 font-semibold min-h-[44px]"
+              title="Audit transmittance thermique Uf, barrette polyamide et pont linéique intercalaire (ISO 10077-2 / DTR C3-2)"
+            >
+              <Thermometer className="w-3 h-3" />
+              <span>Thermique Uf</span>
             </button>
 
             <button
@@ -2633,6 +2649,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           projectReference={`Ferrure ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* WINDOW FRAME THERMAL TRANSMITTANCE Uf, POLYAMIDE RPT & PSI_G MODAL */}
+      {showFrameThermalModal && (
+        <FrameThermalModal
+          isOpen={showFrameThermalModal}
+          onClose={() => setShowFrameThermalModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          projectReference={`Thermique ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

@@ -11820,6 +11820,301 @@ export async function generateCasementHingeNoticePdf(params: CasementHingeNotice
   doc.save(safeFilename);
 }
 
+export interface FrameThermalNoticePdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName?: string;
+  wilaya?: string;
+  auditInput: import('./frameThermalTransmittanceManager').FrameThermalInput;
+  auditResult: import('./frameThermalTransmittanceManager').FrameThermalResult;
+}
+
+export async function generateFrameThermalNoticePdf(params: FrameThermalNoticePdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const bluePrimary: [number, number, number] = [15, 76, 129];
+  const slateDark: [number, number, number] = [30, 41, 59];
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const amberWarning: [number, number, number] = [245, 158, 11];
+  const roseRed: [number, number, number] = [225, 29, 72];
+
+  const audit = params.auditResult;
+  const frame = audit.selectedFrame;
+  const spacer = audit.selectedSpacer;
+  const glazing = audit.selectedGlazing;
+
+  // 1. Header Banner
+  doc.setFillColor(...bluePrimary);
+  doc.rect(0, 0, 210, 32, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text('BAITI ATELIER • AUDIT TRANSMITTANCE THERMIQUE Uf & ISOTHERMES', 14, 13);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(226, 232, 240);
+  doc.text('Conforme ISO 10077-1 • ISO 10077-2 • NF EN 14351-1 • CNERIB DTR C3-2 / C3-4', 14, 19);
+  doc.text(`Réf Dossier : ${params.projectRef} • Wilaya : ${params.wilaya || 'Alger'} • Réf Doc : ${params.documentId}`, 14, 25);
+
+  // Status Badge
+  const isApproved = audit.isDtrCompliant && !audit.isCondensationLikelyOnFrame && !audit.isCondensationLikelyOnGlassEdge;
+  const isWarning = audit.isDtrCompliant && (audit.isCondensationLikelyOnGlassEdge || audit.uwOverallWindowTransmittanceWPerM2K > 2.0);
+  const badgeColor = isApproved ? emeraldGreen : isWarning ? amberWarning : roseRed;
+  const badgeText = isApproved ? 'CONFORME DTR C3-2' : isWarning ? 'VIGILANCE BUÉE' : 'NON CONFORME DTR';
+
+  doc.setFillColor(badgeColor[0], badgeColor[1], badgeColor[2]);
+  doc.roundedRect(144, 8, 52, 16, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(badgeText, 170, 18, { align: 'center' });
+
+  // 2. Project Metadata Card
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, 36, 182, 20, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('1. CONTEXTE BIOCLIMATIQUE & SPÉCIFICATIONS BAIE', 18, 42);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...slateDark);
+
+  const col1X = 18;
+  const col2X = 80;
+  const col3X = 142;
+
+  doc.text(`Chantier : ${params.clientName || 'Client Particulier'}`, col1X, 48);
+  doc.text(`Zone DTR : ${audit.dtrZoneName}`, col1X, 53);
+
+  doc.text(`Dimensions baie : ${audit.windowWidthMm} x ${audit.windowHeightMm} mm (${audit.windowTotalAreaM2} m²)`, col2X, 48);
+  doc.text(`Profil cadre : ${frame.labelFr}`, col2X, 53);
+
+  doc.text(`Intercalaire : ${spacer.labelFr}`, col3X, 48);
+  doc.text(`Vitrage : ${glazing.labelFr}`, col3X, 53);
+
+  // 3. Four Core Thermal Tiles (KPIs)
+  const tileY = 60;
+  const tileW = 43.5;
+  const tileH = 22;
+
+  const kpis = [
+    {
+      title: 'Transmittance Uw Global',
+      val: `${audit.uwOverallWindowTransmittanceWPerM2K} W/m²K`,
+      sub: `Classe Énergie : ${audit.energyClassBadge} • Seuil DTR : ${audit.dtrZoneTargetUwWPerM2K}`,
+      status: audit.isDtrCompliant ? 'Conforme Réglementation' : 'Dépassement de seuil',
+      color: audit.isDtrCompliant ? emeraldGreen : roseRed,
+    },
+    {
+      title: 'Transmittance Cadre Uf',
+      val: `${audit.ufValueWPerM2K} W/m²K`,
+      sub: frame.polyamideStripWidthMm > 0 ? `Barrette RPT : ${frame.polyamideStripWidthMm} mm` : 'Sans barrette isolante',
+      status: frame.ufValueWPerM2K <= 2.2 ? 'Excellente isolation' : frame.ufValueWPerM2K <= 2.8 ? 'Standard résidentiel' : 'Pont thermique direct',
+      color: frame.ufValueWPerM2K <= 2.2 ? emeraldGreen : frame.ufValueWPerM2K <= 2.8 ? bluePrimary : roseRed,
+    },
+    {
+      title: 'Transmittance Verre Ug',
+      val: `${audit.ugValueWPerM2K} W/m²K`,
+      sub: `Surface vitrée : ${audit.glassVisionAreaM2} m² (${100 - audit.frameAreaFractionPercent}%)`,
+      status: audit.ugValueWPerM2K <= 1.1 ? 'Faible émissivité ITR' : 'Standard clair',
+      color: audit.ugValueWPerM2K <= 1.1 ? emeraldGreen : bluePrimary,
+    },
+    {
+      title: 'Pont Linéique Psi_g',
+      val: `${audit.psiValueWPerMK} W/m.K`,
+      sub: `Périmètre intercalaire : ${audit.glassEdgePerimeterM} m`,
+      status: spacer.id !== 'aluminum_standard' ? 'Warm-Edge certifié' : 'Alu conducteur',
+      color: spacer.id !== 'aluminum_standard' ? emeraldGreen : amberWarning,
+    },
+  ];
+
+  kpis.forEach((kpi, idx) => {
+    const x = 14 + idx * (tileW + 2.6);
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(x, tileY, tileW, tileH, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(100, 116, 139);
+    doc.text(kpi.title, x + 3, tileY + 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.text(kpi.val, x + 3, tileY + 11);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.8);
+    doc.setTextColor(...slateDark);
+    doc.text(kpi.sub, x + 3, tileY + 16);
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(5.5);
+    doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.text(kpi.status, x + 3, tileY + 19.5);
+  });
+
+  // 4. Psychrometric & Condensation Analysis Card
+  const psychoY = tileY + 26;
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, psychoY, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('2. CONDITIONS HYGROTHERMIQUES & RISQUE DE CONDENSATION (ISO 13788)', 18, psychoY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...slateDark);
+
+  doc.text(`• Température point de rosée intérieur (T_rosée) : ${audit.dewPointTempC}°C (pour Tint = 20°C, HR = 50%)`, 18, psychoY + 11);
+  doc.text(`• Température de surface intérieure du profilé : ${audit.indoorSurfaceTempFrameC}°C • Diagnostic buée cadre : ${audit.isCondensationLikelyOnFrame ? 'RISQUE DE CONDENSATION' : 'SAIN SANS CONDENSATION'}`, 18, psychoY + 15.5);
+  doc.text(`• Température au bord du vitrage : ${audit.indoorSurfaceTempGlassEdgeC}°C • Facteur de température f_Rsi : ${audit.condensationRiskIndexFrsi} (Seuil hygiénique min : 0.70)`, 18, psychoY + 20);
+
+  // 5. Heat Loss Breakdown & Bill of Materials Table (autoTable)
+  const tableData = [
+    [
+      'Vitrage isolant de vision',
+      glazing.labelFr,
+      `${audit.glassVisionAreaM2} m²`,
+      `Ug = ${audit.ugValueWPerM2K} W/m²K`,
+      `${(audit.glassVisionAreaM2 * audit.ugValueWPerM2K).toFixed(2)} W/K`,
+      `${audit.heatLossBreakdownPercent.glassLossPercent} %`,
+    ],
+    [
+      'Profilé cadre ouvrant & dormant',
+      frame.labelFr,
+      `${audit.frameOpaqueAreaM2} m²`,
+      `Uf = ${audit.ufValueWPerM2K} W/m²K`,
+      `${(audit.frameOpaqueAreaM2 * audit.ufValueWPerM2K).toFixed(2)} W/K`,
+      `${audit.heatLossBreakdownPercent.frameLossPercent} %`,
+    ],
+    [
+      'Pont thermique intercalaire vitrage',
+      spacer.labelFr,
+      `${audit.glassEdgePerimeterM} ml`,
+      `Psi = ${audit.psiValueWPerMK} W/m.K`,
+      `${(audit.glassEdgePerimeterM * audit.psiValueWPerMK).toFixed(2)} W/K`,
+      `${audit.heatLossBreakdownPercent.spacerLossPercent} %`,
+    ],
+    [
+      'TOTAL BAIE COMPLÈTE',
+      `Performance Globale Uw = ${audit.uwOverallWindowTransmittanceWPerM2K} W/m²K`,
+      `${audit.windowTotalAreaM2} m²`,
+      `Classe DTR : ${audit.energyClassBadge}`,
+      `${audit.heatLossRateWPerK} W/K`,
+      '100.0 %',
+    ],
+  ];
+
+  autoTable(doc, {
+    startY: psychoY + 26,
+    head: [['Composant', 'Désignation Technique', 'Quantité / Surface', 'Coefficient Thermique', 'Déperdition Linéique/Surfacique', 'Part Déperditions']],
+    body: tableData,
+    theme: 'grid',
+    styles: {
+      fontSize: 6.5,
+      cellPadding: 1.8,
+      textColor: [15, 23, 42],
+    },
+    headStyles: {
+      fillColor: [15, 76, 129],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'left',
+    },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 38 },
+      1: { cellWidth: 50 },
+      2: { cellWidth: 20 },
+      3: { fontStyle: 'bold', cellWidth: 28 },
+      4: { cellWidth: 26 },
+      5: { halign: 'right', fontStyle: 'bold', cellWidth: 20 },
+    },
+  });
+
+  // 6. Synthesis Recommendations Card
+  const finalTable = (doc as any).lastAutoTable;
+  const synthY = finalTable.finalY + 4;
+
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, synthY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('3. PRÉCONISATIONS D ATELIER & PERFORMANCE BIOCLIMATIQUE', 18, synthY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...slateDark);
+
+  let recoLineY = synthY + 10;
+  audit.auditRecommendations.slice(0, 3).forEach((reco) => {
+    doc.text(`• ${reco}`, 18, recoLineY);
+    recoLineY += 4.2;
+  });
+
+  // 7. Signature & QR Code Block
+  const signY = synthY + 28;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, signY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('VISA TECHNIQUE THERMICIEN & BUREAU D ÉTUDES', 18, signY + 6);
+  doc.text('RÉCEPTION QUALITÉ CHANTIER', 128, signY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.2);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Atelier de Menuiserie Aluminium Baiti', 18, signY + 11);
+  doc.text('Signature & Cachet :', 18, signY + 16);
+
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 128, signY + 11);
+  doc.text('Date & Signature :', 128, signY + 16);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|THERMAL_UF|${params.documentId}|REF=${params.projectRef}|UW=${audit.uwOverallWindowTransmittanceWPerM2K}|UF=${audit.ufValueWPerM2K}|PSI=${audit.psiValueWPerMK}|CLASS=${audit.energyClassBadge}|STATUS=${audit.isDtrCompliant ? 'CONFORME' : 'ATTENTION'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer Legal Line
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.2);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Attestation officielle Baiti Atelier • ${params.documentId} • ISO 10077-1 • ISO 10077-2 • CNERIB DTR C3-2 • CSTB e-Cahier 3698`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Attestation_Thermique_Uf_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 
