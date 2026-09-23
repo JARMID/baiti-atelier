@@ -68,6 +68,7 @@ import { RollerShutterWindModal } from './RollerShutterWindModal';
 import { PerimeterSealantModal } from './PerimeterSealantModal';
 import { GlassBalustradeModal } from './GlassBalustradeModal';
 import { BioclimaticPergolaModal } from './BioclimaticPergolaModal';
+import { SolarSunshadeModal } from './SolarSunshadeModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -261,6 +262,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showSealantModal, setShowSealantModal] = useState(false);
   const [showBalustradeModal, setShowBalustradeModal] = useState(false);
   const [showBioclimaticPergolaModal, setShowBioclimaticPergolaModal] = useState(false);
+  const [showSolarSunshadeModal, setShowSolarSunshadeModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1158,6 +1160,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Sun className="w-3 h-3" />
               <span>Pergola Bio</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowSolarSunshadeModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-amber-300 font-semibold"
+              title="Audit brise-soleil architectural, facteur solaire g_tot et confort visuel DTR C3-2 / NF EN 13363-1"
+            >
+              <Sun className="w-3 h-3" />
+              <span>Masque Solaire</span>
             </button>
 
             <button
@@ -2435,6 +2450,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialLength={cadStructure.height}
           projectReference={`Pergola ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* SOLAR SUNSHADE & ARCHITECTURAL LOUVER MODAL */}
+      {showSolarSunshadeModal && (
+        <SolarSunshadeModal
+          isOpen={showSolarSunshadeModal}
+          onClose={() => setShowSolarSunshadeModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          projectReference={`Brise-Soleil ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

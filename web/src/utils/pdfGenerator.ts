@@ -7,6 +7,8 @@ import { ALGERIAN_WILAYAS_58 } from './algerianWilayas';
 import { DTR_ZONE_THRESHOLDS, getDtrZoneForWilaya } from './dtrThermal';
 import type { BioclimaticPergolaInput, BioclimaticPergolaAuditResult } from './bioclimaticPergolaManager';
 import { SLAT_SPECS, POST_SPECS, BEAM_SPECS } from './bioclimaticPergolaManager';
+import type { SolarSunshadeInput, SolarSunshadeAuditResult } from './solarSunshadeManager';
+import { BLADE_SPECS } from './solarSunshadeManager';
 
 export interface DevisOpeningItem {
   id: string;
@@ -9643,6 +9645,316 @@ export async function generateBioclimaticPergolaNoticePdf(params: BioclimaticPer
   );
 
   const safeFilename = `Notice_Technique_Pergola_Bioclimatique_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+export interface SolarSunshadeNoticePdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName: string;
+  wilayaName: string;
+  input: SolarSunshadeInput;
+  audit: SolarSunshadeAuditResult;
+}
+
+export async function generateSolarSunshadeNoticePdf(params: SolarSunshadeNoticePdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const audit = params.audit;
+  const input = params.input;
+  const blade = BLADE_SPECS[input.bladeModel];
+
+  // Palette: Dark Navy #0F172A, Amber Sun #D97706, Gold #D4AF37, Emerald #10B981
+  const navyDark: [number, number, number] = [15, 23, 42];
+  const amberSun: [number, number, number] = [217, 119, 6];
+  const goldAccent: [number, number, number] = [212, 175, 55];
+  const bgLight: [number, number, number] = [248, 250, 252];
+  const borderLight: [number, number, number] = [226, 232, 240];
+
+  // 1. Header Banner
+  doc.setFillColor(...amberSun);
+  doc.rect(0, 0, 210, 26, 'F');
+  doc.setFillColor(...goldAccent);
+  doc.rect(0, 26, 210, 1.5, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(255, 255, 255);
+  doc.text('ATTESTATION DE PERFORMANCE THERMIQUE & SOLAIRE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(254, 243, 199);
+  doc.text('Brise-Soleil Architectural Aluminium • DTR C3-2 / DTR C3-4 • NF EN 13363-1 • NF EN 14501', 14, 17);
+
+  const todayStr = new Date().toLocaleDateString('fr-DZ');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Réf : ${params.projectRef}`, 196, 11, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(`Date : ${todayStr} • Doc ID : ${params.documentId}`, 196, 17, { align: 'right' });
+
+  // 2. Metadata Card
+  doc.setFillColor(...bgLight);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, 32, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...amberSun);
+  doc.text('DONNÉES DU CHANTIER & ORIENTATION DU BÂTIMENT', 18, 38);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...navyDark);
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 18, 44);
+  doc.text(`Wilaya : ${params.wilayaName}`, 18, 49);
+
+  doc.text(`Baie vitrée : ${input.windowWidthMm} x ${input.windowHeightMm} mm (${audit.glazingAreaM2} m²)`, 80, 44);
+  doc.text(`Orientation façade : ${input.facadeOrientation.toUpperCase().replace('_', ' ')}`, 80, 49);
+
+  doc.text(`Lames : ${audit.bladeCount} unités (${blade.labelFr.split('(')[0].trim()})`, 148, 44);
+  doc.text(`Facteur solaire initial vitrage : g = ${input.glassSolarFactorG}`, 148, 49);
+
+  // 3. Technical Summary Blocks (3 Columns)
+  const boxY = 58;
+  const boxW = 58;
+  const boxH = 34;
+
+  // Box 1: Solar Factor & DTR Compliance
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(217, 119, 6, 0.1);
+  doc.rect(14, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...amberSun);
+  doc.text('1. FACTEUR SOLAIRE GTOT', 17, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...navyDark);
+  doc.text(`Vitrage nu : g = ${audit.unshadedSolarFactorG}`, 17, boxY + 10);
+  doc.text(`Facteur combiné g_tot : ${audit.totalCombinedSolarFactorGtot}`, 17, boxY + 14);
+  doc.text(`Plafond DTR C3-2 : ${audit.dtrMaxAllowedGtot}`, 17, boxY + 18);
+  doc.text(`Blocage chaleur : -${audit.solarHeatReductionPercent}%`, 17, boxY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(audit.isDtrCompliant ? 16 : 225, audit.isDtrCompliant ? 185 : 29, audit.isDtrCompliant ? 129 : 72);
+  doc.text(audit.isDtrCompliant ? 'Statut : Conforme DTR C3-2' : 'Statut : Dépassement DTR', 17, boxY + 28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text(`Classe confort : ${audit.thermalComfortSummerClass.split('(')[0].trim()}`, 17, boxY + 32);
+
+  // Box 2: Solar Geometry & Cutoff Angle
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(76, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(217, 119, 6, 0.1);
+  doc.rect(76, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...amberSun);
+  doc.text('2. GÉOMÉTRIE & MASQUE', 79, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...navyDark);
+  doc.text(`Hauteur solaire midi : ${audit.solarProfileAngleDeg}°`, 79, boxY + 10);
+  doc.text(`Angle de coupure : ${audit.cutOffAngleDeg}°`, 79, boxY + 14);
+  doc.text(`Projection lame P : ${blade.depthMm} mm`, 79, boxY + 18);
+  doc.text(`Entraxe lames S : ${input.bladePitchSpacingMm} mm`, 79, boxY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...amberSun);
+  doc.text(`Taux d ombrage : ${Math.round(audit.effectiveShadingRatio * 100)}% direct masqué`, 79, boxY + 28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text(`Inclinaison lame : ${input.bladeTiltAngleDeg}°`, 79, boxY + 32);
+
+  // Box 3: Energy Savings & Air Conditioning
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(138, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(217, 119, 6, 0.1);
+  doc.rect(138, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...amberSun);
+  doc.text('3. ÉCONOMIE CLIMATISATION', 141, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...navyDark);
+  doc.text(`Apport solaire nu : ${audit.unshadedCoolingPowerW} W`, 141, boxY + 10);
+  doc.text(`Apport avec brise-soleil : ${audit.shadedCoolingPowerW} W`, 141, boxY + 14);
+  doc.text(`Puissance évitée : ${audit.coolingPowerSavedW} W`, 141, boxY + 18);
+  doc.text(`Énergie épargnée : ${audit.summerEnergySavedKwh} kWh/été`, 141, boxY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(16, 185, 129);
+  doc.text(`Gain facture : ~${audit.coolingCostSavedDzd.toLocaleString('fr-DZ')} DZD/an`, 141, boxY + 28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text('Tarif Sonelgaz 5.40 DZD/kWh', 141, boxY + 32);
+
+  // 4. Daylight & Visual Comfort Section (NF EN 14501)
+  const dayY = boxY + boxH + 5;
+  doc.setFillColor(...bgLight);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, dayY, 182, 36, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...amberSun);
+  doc.text('4. CONFORT VISUEL & TRANSMISSION LUMINEUSE NATURELLE (NF EN 14501)', 18, dayY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...navyDark);
+  doc.text(`Transmission lumineuse totale tau_v_tot : ${Math.round(audit.effectiveLightTransmissionTvTot * 100)}% (Vitrage initial : ${Math.round(input.glassLightTransmissionTv * 100)}%)`, 18, dayY + 13);
+  doc.text(`Facteur de lumière du jour estimé (FLJ) : ${audit.daylightFactorEstimatedPercent}% (Recommandation min : 1.5% à 2.0%)`, 18, dayY + 18);
+  doc.text(`Classe anti-éblouissement : ${audit.glareProtectionLabelFr}`, 18, dayY + 23);
+  doc.text('Protection de l intimité : Préservation de la vue extérieure tout en bloquant les regards rasants', 18, dayY + 28);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...amberSun);
+  doc.text('Bilan lumineux : Éclairage naturel doux et homogène sans éblouissement sur écrans de travail', 18, dayY + 33);
+
+  // 5. Bill of Materials & Workshop Cut Sheet Table
+  const tableData = [
+    [
+      'Lames profilées brise-soleil',
+      blade.labelFr,
+      `${audit.bladeCount} unités`,
+      `${audit.bladeLengthMm} mm`,
+      'Coupe droite 90 deg + perçage tourillons latéraux',
+      `${Math.round(audit.bladeCount * (audit.bladeLengthMm / 1000) * blade.weightKgPerM)} kg`,
+    ],
+    [
+      'Montants latéraux supports',
+      'Plat alu 80x10 mm ou tube 60x40 mm',
+      '2 barres',
+      `${input.windowHeightMm + 200} mm`,
+      'Grugeage d onglet + perçage entraxe régulier',
+      '8 kg',
+    ],
+    [
+      'Consoles de fixation murales',
+      'Consoles acier inox 316L ou alu massif',
+      '4 à 6 unités',
+      `Saillie ${blade.depthMm + 80} mm`,
+      'Perçage oblong pour réglage d aplomb et chevilles',
+      '5 kg',
+    ],
+    [
+      'Tourillons & visserie inox A4',
+      'Axes de rotation inox 316L + bagues téflon',
+      `${audit.bladeCount * 2} ensembles`,
+      'M8 x 40 mm',
+      'Montage silencieux anti-vibrations au vent',
+      '2 kg',
+    ],
+  ];
+
+  autoTable(doc, {
+    startY: dayY + 40,
+    head: [['Composant', 'Spécification Profilé', 'Quantité', 'Débit / Longueur', 'Usinage Atelier', 'Masse']],
+    body: tableData,
+    theme: 'grid',
+    styles: {
+      fontSize: 6.5,
+      cellPadding: 1.8,
+      textColor: [15, 23, 42],
+    },
+    headStyles: {
+      fillColor: [217, 119, 6],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'left',
+    },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 32 },
+      1: { cellWidth: 46 },
+      2: { cellWidth: 20 },
+      3: { fontStyle: 'bold', cellWidth: 24 },
+      4: { cellWidth: 44 },
+      5: { halign: 'right', cellWidth: 16 },
+    },
+  });
+
+  // 6. Synthesis Recommendations Card
+  const finalTable = (doc as any).lastAutoTable;
+  const synthY = finalTable.finalY + 4;
+
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, synthY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...amberSun);
+  doc.text('5. PRESCRIPTIONS DE POSE & ORIENTATION SOLAIRE', 18, synthY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...navyDark);
+
+  let recoLineY = synthY + 10;
+  audit.recommendationsFr.slice(0, 3).forEach((reco) => {
+    doc.text(`• ${reco}`, 18, recoLineY);
+    recoLineY += 4.2;
+  });
+
+  // 7. Signature & QR Code Block
+  const signY = synthY + 28;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, signY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('VISA TECHNIQUE FABRICANT', 18, signY + 6);
+  doc.text('BON POUR ACCORD & POSE CLIENT', 128, signY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.2);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Atelier de Menuiserie Aluminium Baiti', 18, signY + 11);
+  doc.text('Signature & Cachet :', 18, signY + 16);
+
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 128, signY + 11);
+  doc.text('Date & Signature :', 128, signY + 16);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|BRISE-SOLEIL|${params.documentId}|REF=${params.projectRef}|GTOT=${audit.totalCombinedSolarFactorGtot}|SAVED=${audit.coolingPowerSavedW}W|STATUS=${audit.overallStatus}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer Legal Line
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.2);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Attestation officielle Baiti Atelier • ${params.documentId} • DTR C3-2 • DTR C3-4 • NF EN 13363-1 • NF EN 14501`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Attestation_Protection_Solaire_${params.documentId}.pdf`;
   doc.save(safeFilename);
 }
 

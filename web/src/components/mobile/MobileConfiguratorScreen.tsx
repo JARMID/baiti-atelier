@@ -74,6 +74,7 @@ import { RollerShutterWindModal } from './RollerShutterWindModal';
 import { PerimeterSealantModal } from './PerimeterSealantModal';
 import { GlassBalustradeModal } from './GlassBalustradeModal';
 import { BioclimaticPergolaModal } from './BioclimaticPergolaModal';
+import { SolarSunshadeModal } from './SolarSunshadeModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -203,6 +204,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isSealantModalOpen, setIsSealantModalOpen] = useState(false);
   const [isBalustradeModalOpen, setIsBalustradeModalOpen] = useState(false);
   const [isBioclimaticPergolaModalOpen, setIsBioclimaticPergolaModalOpen] = useState(false);
+  const [isSolarSunshadeModalOpen, setIsSolarSunshadeModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -994,6 +996,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Sun className="w-4 h-4" />
           <span>Pergola Bioclimatique à Lames Orientables (Eurocode 9 / RNV 2013)</span>
+        </button>
+
+        {/* Solar Sunshade & Architectural Louver Energy Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsSolarSunshadeModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Sun className="w-4 h-4" />
+          <span>Brise-Soleil Architectural & Masque Solaire (DTR C3-2 / NF EN 13363-1)</span>
         </button>
       </div>
 
@@ -2272,6 +2287,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialLength={config.height}
           projectReference={`Pergola ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* SOLAR SUNSHADE & ARCHITECTURAL LOUVER MODAL */}
+      {isSolarSunshadeModalOpen && (
+        <SolarSunshadeModal
+          isOpen={isSolarSunshadeModalOpen}
+          onClose={() => setIsSolarSunshadeModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          projectReference={`Brise-Soleil ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />
