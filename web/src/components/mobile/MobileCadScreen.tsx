@@ -63,6 +63,7 @@ import { CornerCrimpingModal } from './CornerCrimpingModal';
 import { HandleErgonomicsModal } from './HandleErgonomicsModal';
 import { FrictionStayModal } from './FrictionStayModal';
 import { BriseSoleilModal } from './BriseSoleilModal';
+import { SmokeVentilationModal } from './SmokeVentilationModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -251,6 +252,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showHandleErgonomicsModal, setShowHandleErgonomicsModal] = useState(false);
   const [showFrictionStayModal, setShowFrictionStayModal] = useState(false);
   const [showBriseSoleilModal, setShowBriseSoleilModal] = useState(false);
+  const [showSmokeVentModal, setShowSmokeVentModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1083,6 +1085,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Sun className="w-3 h-3" />
               <span>Brise-Soleil</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowSmokeVentModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/30 hover:bg-rose-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-rose-300 font-semibold"
+              title="Audit désenfumage naturel DENFC, surface utile et vérins SSI NF EN 12101-2 / Arrêté Incendie"
+            >
+              <Flame className="w-3 h-3" />
+              <span>Désenfumage (DENFC)</span>
             </button>
 
             <button
@@ -2295,6 +2310,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           onClose={() => setShowBriseSoleilModal(false)}
           initialWidth={cadStructure.width}
           projectReference={`Brise-Soleil ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* NATURAL SMOKE & HEAT EXHAUST VENTILATOR (DENFC) MODAL */}
+      {showSmokeVentModal && (
+        <SmokeVentilationModal
+          isOpen={showSmokeVentModal}
+          onClose={() => setShowSmokeVentModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          projectReference={`DENFC ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

@@ -35,6 +35,10 @@ export interface BaridiMobReconciliationModalProps {
   onPaymentRecorded?: (updatedDepositDzd: number) => void;
 }
 
+function generateFallbackTxRef(): string {
+  return `BM-${Date.now().toString().slice(-6)}`;
+}
+
 export const BaridiMobReconciliationModal: React.FC<BaridiMobReconciliationModalProps> = ({
   isOpen,
   onClose,
@@ -64,7 +68,7 @@ export const BaridiMobReconciliationModal: React.FC<BaridiMobReconciliationModal
   });
 
   const [paymentMethod, setPaymentMethod] = useState<'baridimob' | 'virement_ccp' | 'especes' | 'cheque'>('baridimob');
-  const [transactionRef, setTransactionRef] = useState<string>(() => `BM-${Date.now().toString().slice(-6)}`);
+  const [transactionRef, setTransactionRef] = useState<string>(() => generateFallbackTxRef());
   const [senderRipLast4, setSenderRipLast4] = useState<string>('8412');
   const [paymentNotes, setPaymentNotes] = useState<string>('');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -154,7 +158,7 @@ export const BaridiMobReconciliationModal: React.FC<BaridiMobReconciliationModal
       clientName: job?.clientName || 'Client Atelier',
       clientPhone: job?.clientPhone,
       amountDzd,
-      transactionRef: transactionRef.trim() || `BM-${Date.now().toString().slice(-6)}`,
+      transactionRef: transactionRef.trim() || generateFallbackTxRef(),
       senderRipLast4: senderRipLast4.trim() || undefined,
       paymentMethod,
       status: 'valide',

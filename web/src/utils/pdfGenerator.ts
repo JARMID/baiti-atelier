@@ -8141,6 +8141,248 @@ export async function generateBriseSoleilNoticePdf(params: BriseSoleilPdfParams)
   doc.save(safeFilename);
 }
 
+export interface SmokeVentilationPdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName: string;
+  wilayaName: string;
+  workshopName: string;
+  result: import('./smokeVentilationManager').SmokeVentilationResult;
+}
+
+export async function generateSmokeVentilationNoticePdf(params: SmokeVentilationPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const todayStr = new Date().toLocaleDateString('fr-DZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  const res = params.result;
+  const isOk = res.complianceStatus === 'CONFORME';
+  const isWarning = res.complianceStatus === 'ATTENTION';
+
+  // 1. Header Banner
+  doc.setFillColor(15, 23, 42); // Slate 900
+  doc.rect(0, 0, 210, 26, 'F');
+
+  doc.setFillColor(220, 38, 38); // Red 600 fire safety accent bar
+  doc.rect(0, 26, 210, 2, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER ALGERIE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text('Bureau d Etudes Menuiserie Aluminium • Désenfumage Naturel & Sécurité Incendie (DENFC)', 14, 17);
+  doc.text('Normes : NF EN 12101-2 • NF S 61-937 • Arrete Algerien Securite Incendie ERP/IGH • CNERIB DTR BC 2-47', 14, 22);
+
+  // Status Badge in Header
+  doc.setFillColor(
+    isOk ? 16 : isWarning ? 217 : 225,
+    isOk ? 185 : isWarning ? 119 : 29,
+    isOk ? 129 : isWarning ? 6 : 72
+  );
+  doc.roundedRect(142, 7, 54, 12, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(
+    isOk ? 'DENFC CONFORME' : isWarning ? 'AVEC RESERVES' : 'NON CONFORME',
+    169,
+    14.5,
+    { align: 'center' }
+  );
+
+  // 2. Document Title Box
+  let curY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, curY, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('CERTIFICAT DE DIMENSIONNEMENT DENFC & SURFACE UTILE DE DÉSENFUMAGE', 18, curY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Doc N° : ${params.documentId}  |  Chantier : ${params.projectRef}  |  Wilaya : ${params.wilayaName}  |  Date : ${todayStr}`, 18, curY + 13);
+
+  curY += 22;
+
+  // 3. Geometry & Useful Area Table (NF EN 12101-2)
+  autoTable(doc, {
+    startY: curY,
+    head: [['AERAULIQUE & SURFACES DE DESENFUMAGE', 'VALEUR RETENUE', 'CRITERE NORMATIF NF EN 12101-2']],
+    body: [
+      ['Dimensions du vantail d evacuation', `${res.sashWidthMm} x ${res.sashHeightMm} mm`, `Surface geometrique brute Ag = ${res.geometricAreaAgM2.toFixed(2)} m²`],
+      ['Coefficient aeraulique d ecoulement', `Cv = ${res.dischargeCoefficientCv.toFixed(2)}`, `Angle d ouverture : ${res.openingAngleDeg}°`],
+      ['Surface utile d evacuation (SUE - Aa)', `${res.aerodynamicUsefulAreaAaM2.toFixed(2)} m² (Aa = Ag x Cv)`, `Seuil minimal requis : ${res.requiredUsefulAreaM2.toFixed(2)} m² (${res.isUsefulAreaCompliant ? 'CONFORME' : 'INSUFFISANT'})`],
+      ['Taux de couverture du canton ERP', `${res.usefulAreaRatioPercent}% de l objectif réglementaire`, 'Conforme Arrete incendie Algerie ERP/IGH'],
+      ['Poids total du vantail mobile', `${res.sashWeightKg} kg (Ossature alu + vitrage)`, `Resistance gravitationnelle Fg = ${res.gravityResistanceN} N`],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [220, 38, 38], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 4. Actuator Mechanics & Wind Resistance Table (RNV 2013)
+  autoTable(doc, {
+    startY: curY,
+    head: [['ACTIONNEUR DE SECURITE & VENT RNV 2013', 'VALEUR CALCULEE', 'VERIFICATION PUISSANCE']],
+    body: [
+      ['Modele de verin DAS installe', res.actuatorSpec.nameFr, `Tension : ${res.actuatorSpec.voltageV === 0 ? 'Pneumatique CO2' : `${res.actuatorSpec.voltageV}V DC`}`],
+      ['Poussee nominale du verin', `${res.actuatorThrustCapacityN} N disponible`, `Poussee totale requise : ${res.totalRequiredActuatorThrustN} N (${res.thrustCapacityRatioPercent}%)`],
+      ['Effort antagoniste vent RNV 2013', `${res.windOpposingForceN} N sous ${res.windDynamicPressurePa} Pa`, `Calcul selon DTR BC 2-47 (${params.wilayaName})`],
+      ['Temps d ouverture alerte incendie', `${res.calculatedOpeningTimeSeconds} secondes`, `Limite maximale : ${res.maxAllowableOpeningTimeSeconds} s (${res.isOpeningTimeCompliant ? 'CONFORME RAPIDE' : 'TROP LENT'})`],
+      ['Course active du mecanisme', `${res.actuatorSpec.strokeLengthMm} mm de debattement`, 'Course adaptee a l angle d ouverture'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 5. Fire Reliability & High Temperature Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['CRITERE DE FIABILITE & SECURITE INCENDIE', 'CLASSE RETENUE', 'EXIGENCE REGLEMENTAIRE']],
+    body: [
+      ['Classe de fiabilite d endurance', res.reliabilityClass === 'Re_1000_dual_comfort_smoke' ? 'Re 1000 (Usage mixte aeration + fumee)' : 'Re 50 (Desenfumage seul)', 'Essais de cycles NF EN 12101-2'],
+      ['Tenue a haute temperature', res.temperatureClass === 'B_600_30min' ? 'Classe B 600 (600°C pendant 30 min)' : 'Classe B 300 (300°C pendant 30 min)', 'Conservation de la position ouverte sous feu'],
+      ['Aeration confort quotidienne', res.actuatorSpec.isDailyVentilationApproved ? 'Autorisee (Moteur electrique continu)' : 'Interdite (Securite incendie pure)', 'Avis technique du constructeur verin'],
+      ['Liaison SSI & Dispositif Actionne', 'Ligne de commande de securite CR1/C1', 'Cable resistant au feu sans coupure'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [15, 118, 110], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 6. Workshop Guidelines Box
+  doc.setDrawColor(isOk ? 16 : 203, isOk ? 185 : 213, isOk ? 129 : 225);
+  doc.setFillColor(isOk ? 240 : 248, isOk ? 253 : 250, isOk ? 244 : 252);
+  doc.roundedRect(14, curY, 182, 16, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(isOk ? 22 : 15, isOk ? 101 : 23, isOk ? 52 : 42);
+  doc.text('DIRECTIVES DE MONTAGE & ESSAIS DE DECLENCHEMENT SSI :', 18, curY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    `SUE : ${res.aerodynamicUsefulAreaAaM2.toFixed(2)} m² • Poussee : ${res.actuatorThrustCapacityN} N • Alimentation : Câble incendie resistant 2x2.5 mm² CR1.`,
+    18,
+    curY + 9.5
+  );
+  doc.text(
+    'Realiser un essai de declenchement reel avec verification de fin de course et renvoi d information de position ouverte au CMSI.',
+    18,
+    curY + 13.5
+  );
+
+  curY += 20;
+
+  // 7. Workshop Recommendations
+  if (res.recommendations.length > 0) {
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(255, 255, 255);
+    const boxHeight = Math.min(22, 6 + res.recommendations.length * 3.5);
+    doc.roundedRect(14, curY, 182, boxHeight, 1.5, 1.5, 'D');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(15, 23, 42);
+    doc.text('RECOMMANDATIONS ET PRESCRIPTIONS CHANTIER :', 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    res.recommendations.slice(0, 4).forEach((rec, idx) => {
+      doc.text(`• ${rec}`, 20, curY + 8.5 + idx * 3.8);
+    });
+
+    curY += boxHeight + 4;
+  }
+
+  // 8. Signature Block
+  const signY = Math.min(curY, 258);
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 70, 22, 1.5, 1.5, 'D');
+  doc.roundedRect(126, signY, 70, 22, 1.5, 1.5, 'D');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Visa Responsable Securite Incendie', 18, signY + 5.5);
+  doc.text('Bon pour Reception Technique DENFC', 130, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Date & Cachet Bureau d Etudes :', 18, signY + 11);
+  doc.text('Signature Controleur Technique SSI :', 130, signY + 11);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|DENFC|${params.documentId}|REF=${params.projectRef}|SUE=${res.aerodynamicUsefulAreaAaM2}M2|ACT=${res.actuatorSpec.id}|THRUST=${res.actuatorThrustCapacityN}N|STATUS=${isOk ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 9. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Fiche technique officielle Baiti Atelier • ${params.documentId} • NF EN 12101-2 • NF S 61-937 • DTR BC 2-47 (RNV 2013)`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Certificat_DENFC_Desenfumage_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 

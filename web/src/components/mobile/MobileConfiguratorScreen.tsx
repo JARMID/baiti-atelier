@@ -33,6 +33,7 @@ import {
   Wrench,
   Hand,
   Anchor,
+  Flame,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -67,6 +68,7 @@ import { CornerCrimpingModal } from './CornerCrimpingModal';
 import { HandleErgonomicsModal } from './HandleErgonomicsModal';
 import { FrictionStayModal } from './FrictionStayModal';
 import { BriseSoleilModal } from './BriseSoleilModal';
+import { SmokeVentilationModal } from './SmokeVentilationModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -191,6 +193,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isHandleErgonomicsModalOpen, setIsHandleErgonomicsModalOpen] = useState(false);
   const [isFrictionStayModalOpen, setIsFrictionStayModalOpen] = useState(false);
   const [isBriseSoleilModalOpen, setIsBriseSoleilModalOpen] = useState(false);
+  const [isSmokeVentModalOpen, setIsSmokeVentModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -917,6 +920,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Sun className="w-4 h-4" />
           <span>Brise-Soleil Architectural & Consoles (Eurocode 9 / RNV 2013)</span>
+        </button>
+
+        {/* Natural Smoke & Heat Exhaust Ventilator (DENFC) Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsSmokeVentModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Flame className="w-4 h-4" />
+          <span>Désenfumage Naturel & Sécurité Incendie (DENFC NF EN 12101-2)</span>
         </button>
       </div>
 
@@ -2130,6 +2146,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           onClose={() => setIsBriseSoleilModalOpen(false)}
           initialWidth={config.width}
           projectReference={`Brise-Soleil ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* NATURAL SMOKE & HEAT EXHAUST VENTILATOR (DENFC) MODAL */}
+      {isSmokeVentModalOpen && (
+        <SmokeVentilationModal
+          isOpen={isSmokeVentModalOpen}
+          onClose={() => setIsSmokeVentModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          projectReference={`DENFC ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />
