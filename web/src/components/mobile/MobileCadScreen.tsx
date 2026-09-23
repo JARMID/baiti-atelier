@@ -66,6 +66,7 @@ import { BriseSoleilModal } from './BriseSoleilModal';
 import { SmokeVentilationModal } from './SmokeVentilationModal';
 import { RollerShutterWindModal } from './RollerShutterWindModal';
 import { PerimeterSealantModal } from './PerimeterSealantModal';
+import { GlassBalustradeModal } from './GlassBalustradeModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -257,6 +258,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showSmokeVentModal, setShowSmokeVentModal] = useState(false);
   const [showShutterWindModal, setShowShutterWindModal] = useState(false);
   const [showSealantModal, setShowSealantModal] = useState(false);
+  const [showBalustradeModal, setShowBalustradeModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1128,6 +1130,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Droplets className="w-3 h-3" />
               <span>Mastic Joint</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowBalustradeModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-teal-500/10 dark:bg-teal-500/15 border border-teal-500/30 hover:bg-teal-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-teal-300 font-semibold"
+              title="Audit garde-corps verre autoportant, poussée de foule et sabots sol NF P 01-012 / Eurocode 1"
+            >
+              <ShieldCheck className="w-3 h-3" />
+              <span>Garde-Corps</span>
             </button>
 
             <button
@@ -2379,6 +2394,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           projectReference={`Calfeutrement ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* STRUCTURAL GLASS BALUSTRADE & CANTILEVER LOAD MODAL */}
+      {showBalustradeModal && (
+        <GlassBalustradeModal
+          isOpen={showBalustradeModal}
+          onClose={() => setShowBalustradeModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          projectReference={`Garde-Corps ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

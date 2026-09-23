@@ -8979,6 +8979,334 @@ export async function generatePerimeterSealantNoticePdf(params: PerimeterSealant
   doc.save(safeFilename);
 }
 
+export interface GlassBalustradePdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName: string;
+  wilayaName: string;
+  result: import('./glassBalustradeManager').GlassBalustradeAuditResult;
+  workshopName?: string;
+}
+
+/**
+ * Generates an official calculation notice for structural glass balustrades,
+ * cantilever base moments, glass bending stress, and anchor pullout safety.
+ * Standards: NF P 01-012, NF P 01-013, Eurocode 1 NF EN 1991-1-1, CSTB 3034.
+ */
+export async function generateGlassBalustradeNoticePdf(params: GlassBalustradePdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const res = params.result;
+  const isOk = res.globalStatus === 'conform';
+  const isWarning = res.globalStatus === 'warning';
+  const todayStr = new Date().toLocaleDateString('fr-DZ', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  // 1. Header Banner
+  doc.setFillColor(15, 23, 42); // slate-900
+  doc.rect(0, 0, 210, 28, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER ALGERIE', 14, 12);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text('BUREAU TECHNIQUE • EXPERTISE GARDE-CORPS VITRES & PARAPETS AUTOPORTANTS', 14, 18);
+  doc.text('NORMES NF P 01-012 • NF P 01-013 • EUROCODE 1 (EN 1991-1-1) • CSTB 3034', 14, 23);
+
+  // Status Badge in Header
+  const badgeColor: [number, number, number] = isOk
+    ? [16, 185, 129]
+    : isWarning
+      ? [245, 158, 11]
+      : [239, 68, 68];
+  doc.setFillColor(...badgeColor);
+  doc.roundedRect(148, 8, 48, 12, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  const badgeText = isOk
+    ? 'CONFORME NF P 01-012'
+    : isWarning
+      ? 'VIGILANCE FLECHE'
+      : 'DANGER RUPTURE';
+  doc.text(badgeText, 172, 15.5, { align: 'center' });
+
+  // 2. Document Title Box
+  let curY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, curY, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
+  doc.text('CERTIFICAT DE DIMENSIONNEMENT GARDE-CORPS EN VERRE AUTOPORTANT', 18, curY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(
+    `Doc N° : ${params.documentId}  |  Chantier : ${params.projectRef}  |  Wilaya : ${params.wilayaName}  |  Date : ${todayStr}`,
+    18,
+    curY + 13
+  );
+
+  curY += 22;
+
+  // 3. Table 1: Balustrade Panel and Glass Specifications
+  autoTable(doc, {
+    startY: curY,
+    head: [['CARACTERISTIQUES GEOMETRIQUES & VITRAGE', 'SPECIFICATION RETENUE', 'CRITERES NORMATIFS NF P 01-012']],
+    body: [
+      [
+        'Dimensions du panneau vitré',
+        `${res.panelWidthMm} x ${res.panelHeightMm} mm (Surface : ${res.panelAreaM2.toFixed(2)} m²)`,
+        `Hauteur reglementaire min : ${res.minRegulatedHeightMm} mm (${res.isHeightCompliant ? 'CONFORME' : 'NON CONFORME TROP BAS'})`,
+      ],
+      [
+        'Hauteur de chute arriere balustrade',
+        `${res.fallHeightM} mètres au-dessus du sol inferieur`,
+        res.fallHeightM > 6.0 ? 'Exigence H >= 1.10 m (Chute > 6 m)' : 'Exigence H >= 1.00 m standard',
+      ],
+      [
+        'Composition du verre de securite',
+        res.effectiveGlassThicknessBendingMm ? `Verre feuillete trempe (heff = ${res.effectiveGlassThicknessBendingMm} mm)` : 'Verre de securite',
+        `Poids total : ${res.panelWeightKg} kg (Charge permanente g = ${(res.panelWeightKg * 9.81).toFixed(0)} N)`,
+      ],
+      [
+        'Securite post-rupture (Apres bris)',
+        res.isPostBreakageSecure ? 'Maintien residuel garanti' : 'Rupture instable critique',
+        res.postBreakageDiagnosisFr,
+      ],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 4. Table 2: Crowd and Wind Actions (Eurocode 1 / NF P 01-013)
+  autoTable(doc, {
+    startY: curY,
+    head: [['CHARGES D EXPLOITATION & ACTIONS HORIZONTALES', 'VALEUR CALCULEE', 'COMMENTAIRES REGLEMENTAIRES']],
+    body: [
+      [
+        'Destination et categorie du batiment',
+        res.buildingUsageNameFr,
+        'Norme Eurocode 1 (NF EN 1991-1-1 / DTR BC 2-2)',
+      ],
+      [
+        'Charge lineaire horizontale nominale',
+        `qk = ${res.nominalCrowdLineLoadQkKnM.toFixed(2)} kN/m (${(res.nominalCrowdLineLoadQkKnM * 100).toFixed(0)} daN/m)`,
+        'Effort d appui foule applique a hauteur d appui H',
+      ],
+      [
+        'Charge de calcul ponderee a l ELU (qd)',
+        `qd = ${res.designCrowdLineLoadQdKnM.toFixed(2)} kN/m (gamma_Q = 1.50)`,
+        `Force totale foule sur panneau : ${res.totalCrowdForceOnPanelN} N`,
+      ],
+      [
+        'Action dynamique du vent (RNV 2013)',
+        `q_vent = ${res.windPressurePa} Pa (Cp = 1.3)`,
+        `Force horizontale vent : ${res.totalWindForceOnPanelN} N`,
+      ],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 5. Table 3: Bending Stresses, Cantilever Moment, and Deflection
+  autoTable(doc, {
+    startY: curY,
+    head: [['MOMENT D ENCASTREMENT, CONTRAINTE & FLECHE', 'RESULTAT MESURE', 'VERIFICATION DE SECURITE']],
+    body: [
+      [
+        'Moment de renversement a la base (M_base)',
+        `M_base = ${res.overturningBaseMomentNm} N.m`,
+        'Couple de flexion en pied de vitrage encastre',
+      ],
+      [
+        'Contrainte de flexion dans le verre',
+        `Sigma = ${res.calculatedBendingStressMpa} MPa (${res.bendingStressUtilizationPercent}%)`,
+        `Limite admissible : ${res.allowableBendingStressMpa} MPa (${res.isStressCompliant ? 'CONFORME ELASTIQUE' : 'RUPTURE IMMINENTE'})`,
+      ],
+      [
+        'Fleche en tete sous charge de service',
+        `f = ${res.topTipDeflectionMm} mm (H / ${res.deflectionRatioSpan})`,
+        `Seuil maximal autorise : ${res.allowableDeflectionLimitMm} mm (${res.isDeflectionCompliant ? 'RIGIDITE VALIDE' : 'FLECHE EXCESSIVE'})`,
+      ],
+      [
+        'Essai de choc pendulaire de corps mou',
+        `${res.impactEnergyJoules} Joules (Sac 50 kg)`,
+        res.impactTestRatingFr,
+      ],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 6. Table 4: Base Shoe and Anchor Fixing Security
+  autoTable(doc, {
+    startY: curY,
+    head: [['SABOT DE SOL & ANCRAGE SUR DALLE BETON', 'VALEUR RETENUE', 'CRITERES DE FIXATION']],
+    body: [
+      [
+        'Modele de sabot de fixation en pied',
+        res.mountingTypeNameFr,
+        `Encastrement verre dans sabot : ${res.effectiveShoeEmbedmentDepthMm} mm`,
+      ],
+      [
+        'Fixations par panneau de verre',
+        `${res.anchorsCountPerPanel} chevilles (Entraxe ${res.anchorSpacingMm} mm)`,
+        `Effort de traction par cheville : ${res.tensilePulloutForcePerAnchorN} N`,
+      ],
+      [
+        'Type d ancrage chimique preconise',
+        res.recommendedAnchorTypeFr,
+        res.isAnchorSafe ? 'Resistance a l arrachement securisee' : 'Effort excessif pour la cheville',
+      ],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 7. Directives and Verdict Box
+  doc.setDrawColor(isOk ? 16 : 203, isOk ? 185 : 213, isOk ? 129 : 225);
+  doc.setFillColor(isOk ? 240 : 248, isOk ? 253 : 250, isOk ? 244 : 252);
+  doc.roundedRect(14, curY, 182, 16, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(isOk ? 22 : 15, isOk ? 101 : 23, isOk ? 52 : 42);
+  doc.text('VERDICT TECHNIQUE ET DIRECTIVES DE MONTAGE (NF P 01-012 / CSTB 3034) :', 18, curY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    `Moment pied : ${res.overturningBaseMomentNm} N.m • Contrainte : ${res.calculatedBendingStressMpa} MPa • Arrachement cheville : ${res.tensilePulloutForcePerAnchorN} N.`,
+    18,
+    curY + 9.5
+  );
+  doc.text(
+    res.statusSummaryFr,
+    18,
+    curY + 13.5
+  );
+
+  curY += 20;
+
+  // 8. Workshop Recommendations
+  if (res.recommendations.length > 0) {
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(255, 255, 255);
+    const boxHeight = Math.min(22, 6 + res.recommendations.length * 3.5);
+    doc.roundedRect(14, curY, 182, boxHeight, 1.5, 1.5, 'D');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(15, 23, 42);
+    doc.text('RECOMMANDATIONS ET PRESCRIPTIONS CHANTIER :', 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    res.recommendations.slice(0, 4).forEach((rec, idx) => {
+      doc.text(`• ${rec}`, 20, curY + 8.5 + idx * 3.8);
+    });
+
+    curY += boxHeight + 4;
+  }
+
+  // 9. Signature Block
+  const signY = Math.min(curY, 258);
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 70, 22, 1.5, 1.5, 'D');
+  doc.roundedRect(126, signY, 70, 22, 1.5, 1.5, 'D');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Visa Ingénieur Structure / Façades', 18, signY + 5.5);
+  doc.text('Bon pour Accord Contrôle Technique CTC', 130, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Date & Signature :', 18, signY + 11);
+  doc.text('Signature & Cachet :', 130, signY + 11);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|BALUSTRADE|${params.documentId}|REF=${params.projectRef}|GLASS=${res.effectiveGlassThicknessBendingMm}MM|MOMENT=${res.overturningBaseMomentNm}NM|STATUS=${res.globalStatus}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 10. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Fiche technique officielle Baiti Atelier • ${params.documentId} • NF P 01-012 • NF P 01-013 • Eurocode 1 (EN 1991-1-1) • CSTB 3034`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Certificat_Garde_Corps_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 

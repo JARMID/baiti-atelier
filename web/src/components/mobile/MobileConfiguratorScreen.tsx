@@ -34,6 +34,7 @@ import {
   Hand,
   Anchor,
   Flame,
+  ShieldCheck,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -71,6 +72,7 @@ import { BriseSoleilModal } from './BriseSoleilModal';
 import { SmokeVentilationModal } from './SmokeVentilationModal';
 import { RollerShutterWindModal } from './RollerShutterWindModal';
 import { PerimeterSealantModal } from './PerimeterSealantModal';
+import { GlassBalustradeModal } from './GlassBalustradeModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -198,6 +200,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isSmokeVentModalOpen, setIsSmokeVentModalOpen] = useState(false);
   const [isShutterWindModalOpen, setIsShutterWindModalOpen] = useState(false);
   const [isSealantModalOpen, setIsSealantModalOpen] = useState(false);
+  const [isBalustradeModalOpen, setIsBalustradeModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -963,6 +966,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Droplets className="w-4 h-4" />
           <span>Calfeutrement Mastic Périphérique & Dilatation (NF DTU 36.5 / SNJF)</span>
+        </button>
+
+        {/* Structural Glass Balustrade & Cantilever Load Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsBalustradeModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <ShieldCheck className="w-4 h-4" />
+          <span>Garde-Corps Verre Autoportant & Sabots Sol (NF P 01-012 / Eurocode 1)</span>
         </button>
       </div>
 
@@ -2215,6 +2231,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           projectReference={`Calfeutrement ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* STRUCTURAL GLASS BALUSTRADE & CANTILEVER LOAD MODAL */}
+      {isBalustradeModalOpen && (
+        <GlassBalustradeModal
+          isOpen={isBalustradeModalOpen}
+          onClose={() => setIsBalustradeModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          projectReference={`Garde-Corps ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />
