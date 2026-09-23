@@ -25,6 +25,7 @@ import {
   Wind,
   Disc,
   Waves,
+  Building2,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -43,6 +44,7 @@ import { GlazingThermalStressModal } from './GlazingThermalStressModal';
 import { FastenerSafetyModal } from './FastenerSafetyModal';
 import { RollerShutterWindingModal } from './RollerShutterWindingModal';
 import { AcousticInsulationModal } from './AcousticInsulationModal';
+import { CurtainWallStructuralModal } from './CurtainWallStructuralModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -219,6 +221,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showFastenersModal, setShowFastenersModal] = useState(false);
   const [showWindingModal, setShowWindingModal] = useState(false);
   const [showAcousticModal, setShowAcousticModal] = useState(false);
+  const [showCurtainWallModal, setShowCurtainWallModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -895,6 +898,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Disc className="w-3 h-3" />
               <span>Enroulement Volet</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowCurtainWallModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-sky-500/10 dark:bg-sky-500/15 border border-sky-500/30 hover:bg-sky-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-sky-300 font-semibold"
+              title="Calcul statique de montant et fleche sous vent de facade rideau DTU 33.1"
+            >
+              <Building2 className="w-3 h-3" />
+              <span>Façade Rideau</span>
             </button>
 
             <button
@@ -1952,6 +1968,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           windowReference={`Baie ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* CURTAIN WALL STRUCTURAL & WIND DEFLECTION MODAL */}
+      {showCurtainWallModal && (
+        <CurtainWallStructuralModal
+          isOpen={showCurtainWallModal}
+          onClose={() => setShowCurtainWallModal(false)}
+          initialFloorHeight={Math.max(cadStructure.height, 2800)}
+          initialMullionSpacing={Math.max(Math.round(cadStructure.width / 2), 1200)}
+          facadeReference={`Façade ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

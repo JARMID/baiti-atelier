@@ -24,6 +24,7 @@ import {
   Zap,
   Disc,
   Waves,
+  Building2,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -46,6 +47,7 @@ import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
 import { RollerShutterMotorModal } from './RollerShutterMotorModal';
 import { RollerShutterWindingModal } from './RollerShutterWindingModal';
 import { AcousticInsulationModal } from './AcousticInsulationModal';
+import { CurtainWallStructuralModal } from './CurtainWallStructuralModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -158,6 +160,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isMotorModalOpen, setIsMotorModalOpen] = useState(false);
   const [isWindingModalOpen, setIsWindingModalOpen] = useState(false);
   const [isAcousticModalOpen, setIsAcousticModalOpen] = useState(false);
+  const [isCurtainWallModalOpen, setIsCurtainWallModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -742,6 +745,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
             );
           })}
         </div>
+
+        {/* Curtain Wall Structural Sizing Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsCurtainWallModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Building2 className="w-4 h-4" />
+          <span>Dimensionnement Statique Façade Rideau (DTU 33.1 / EC9)</span>
+        </button>
       </div>
 
       {/* 6. ARCHITECTURAL FINISH & SURFACE TREATMENT PALETTE */}
@@ -1786,6 +1802,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           windowReference={`Baie ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* CURTAIN WALL STRUCTURAL & WIND DEFLECTION MODAL */}
+      {isCurtainWallModalOpen && (
+        <CurtainWallStructuralModal
+          isOpen={isCurtainWallModalOpen}
+          onClose={() => setIsCurtainWallModalOpen(false)}
+          initialFloorHeight={Math.max(config.height, 2800)}
+          initialMullionSpacing={Math.max(Math.round(config.width / 2), 1200)}
+          facadeReference={`Façade ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />

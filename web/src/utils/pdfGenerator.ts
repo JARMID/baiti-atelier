@@ -4982,6 +4982,238 @@ export async function generateAcousticInsulationNoticePdf(params: AcousticNotice
   doc.save(safeFilename);
 }
 
+export interface CurtainWallPdfParams {
+  documentId: string;
+  projectOrClientName: string;
+  locationWilaya: string;
+  facadeReference: string;
+  typologyFr: string;
+  result: import('./curtainWallStructuralManager').CurtainWallCalculationResult;
+  workshopName?: string;
+}
+
+/**
+ * Generates an official A4 structural calculation sheet for curtain wall mullion deflection and wind inertia (Eurocode 9 / DTU 33.1 / DTR BC 2-47).
+ */
+export async function generateCurtainWallCalculationPdf(params: CurtainWallPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryNavy: [number, number, number] = [15, 23, 42]; // slate-900
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const amberOrange: [number, number, number] = [245, 158, 11];
+  const roseRed: [number, number, number] = [239, 68, 68];
+
+  const isOk = params.result.isMullionCompliant && params.result.isTransomCompliant;
+  const statusColor = isOk
+    ? emeraldGreen
+    : params.result.deflectionRatioPercent <= 110
+      ? amberOrange
+      : roseRed;
+
+  // 1. Header Banner
+  doc.setFillColor(...primaryNavy);
+  doc.rect(0, 0, 210, 28, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(255, 255, 255);
+  doc.text(params.workshopName || 'BAITI ATELIER ALGERIE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text('Note de Calcul Statique Façade Rideau (Inertie & Fleche sous Vent)', 14, 17);
+  doc.text('Normes : NF DTU 33.1, NF EN 13830, Eurocode 9 (NF EN 1999) & CNERIB DTR BC 2-47 RNV', 14, 22);
+
+  // Document Badge
+  doc.setFillColor(30, 41, 59);
+  doc.roundedRect(145, 6, 51, 16, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`FACADE : ${params.documentId}`, 148, 12);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 148, 18);
+
+  // 2. Identification Block
+  const infoY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, infoY, 182, 24, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Chantier / Tour :', 18, infoY + 6);
+  doc.text('Wilaya / Localisation :', 18, infoY + 12);
+  doc.text('Zone de Vent & Site :', 18, infoY + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(params.projectOrClientName || 'Tour de Bureaux / Complexe', 55, infoY + 6);
+  doc.text(params.locationWilaya || 'Alger Bab Ezzouar', 55, infoY + 12);
+  doc.text(`${params.result.selectedWindZone.nameFr} (z = ${params.result.buildingHeightAboveGroundM} m)`, 55, infoY + 18);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...primaryNavy);
+  doc.text('Repere Façade :', 125, infoY + 6);
+  doc.text('Trame / Entraxe B :', 125, infoY + 12);
+  doc.text('Hauteur d Etage L :', 125, infoY + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text(params.facadeReference, 158, infoY + 6);
+  doc.text(`${params.result.mullionSpacingMm} mm`, 158, infoY + 12);
+  doc.text(`${params.result.floorHeightMm} mm entre dalles`, 158, infoY + 18);
+
+  // 3. Structural Calculation Table
+  const tableY = infoY + 28;
+  autoTable(doc, {
+    startY: tableY,
+    margin: { left: 14, right: 14 },
+    head: [['Parametre Statique / Element de Structure', 'Valeur Calculee', 'Exigence Normative / Observation']],
+    body: [
+      ['Pression Dynamique de Pointe qp(z)', `${params.result.dynamicWindPressureQpDanM2} daN/m² (${params.result.dynamicWindPressurePascals} Pa)`, 'Calcul DTR BC 2-47 avec coefficient d exposition Ce(z)'],
+      ['Charge Lineique sur Montant (w)', `${params.result.linearWindLoadNPerMm.toFixed(3)} N/mm`, `Pour un entraxe entre montants de ${params.result.mullionSpacingMm} mm`],
+      ['Montant Aluminium Selectionne', `${params.result.selectedMullion.labelFr}`, `Inertie Ix : ${params.result.selectedMullion.ixCm4} cm4 (Poids : ${params.result.selectedMullion.weightKgPerM} kg/m)`],
+      ['Inertie Minimale Requise (Ix,min)', `${params.result.requiredMullionIxCm4} cm4`, 'Calcul Eurocode 9 sous charge de vent de service'],
+      ['Fleche Calculee du Montant (f)', `${params.result.calculatedMullionDeflectionMm} mm`, `Taux de fleche : ${params.result.deflectionRatioPercent}% de la limite admissible`],
+      ['Fleche Limite Admissible (f_adm)', `${params.result.permissibleMullionDeflectionMm} mm`, 'Limite NF DTU 33.1 (L/200 ou L/300 + 5mm, plafonnee a 15mm)'],
+      ['Traverse Horizontale Selectionnee', `${params.result.selectedTransom.labelFr}`, `Inertie Iy : ${params.result.selectedTransom.iyCm4} cm4 (Max : ${params.result.selectedTransom.maxGlassWeightKg} kg)`],
+      ['Poids du Vitrage & Fleche Traverse', `${params.result.glassPanelWeightKg} kg • f = ${params.result.calculatedTransomDeflectionMm} mm`, 'Fleche admissible traverse <= 3 mm pour drainage de feuillure'],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, textColor: [30, 41, 59] },
+    headStyles: { fillColor: primaryNavy, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 60 },
+      1: { cellWidth: 50, fontStyle: 'bold' },
+      2: { cellWidth: 72 },
+    },
+  });
+
+  // 4. Anchors and Dilatation Table
+  const anchorTableY = (doc as any).lastAutoTable.finalY + 4;
+  autoTable(doc, {
+    startY: anchorTableY,
+    margin: { left: 14, right: 14 },
+    head: [['Ancrage & Dilatation Thermique', 'Valeur de Calcul', 'Preconisation Technique DTU 33.1']],
+    body: [
+      ['Reaction Horizontale Vent a l Appui', `${params.result.anchorReactions.windReactionMaxDan} daN`, 'Effort de traction / cisaillement sur les chevilles d ancrage'],
+      ['Charge Verticale Poids Propre', `${params.result.anchorReactions.deadLoadAnchorDan} daN`, 'Poids cumule vitrage + montant repris a l appui fixe'],
+      ['Jeu de Dilatation Thermique', `${params.result.thermalExpansionGapMm} mm`, 'Jeu net obligatoire au droit du manchon telescopique de dalle'],
+      ['Type de Fixation Recommandee', `${params.result.anchorReactions.anchorBoltRecommendedFr}`, 'Etrier reglable 3D en acier galvanise ou aluminium moule'],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, textColor: [30, 41, 59] },
+    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 60 },
+      1: { cellWidth: 50, fontStyle: 'bold' },
+      2: { cellWidth: 72 },
+    },
+  });
+
+  // 5. Verdict Banner
+  const verdictY = (doc as any).lastAutoTable.finalY + 5;
+  doc.setDrawColor(...statusColor);
+  doc.setFillColor(isOk ? 240 : 254, isOk ? 253 : 242, isOk ? 244 : 242);
+  doc.roundedRect(14, verdictY, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...statusColor);
+  const verdictTitle = isOk
+    ? 'DIMENSIONNEMENT CONFORME : FLECHE ET INERTIE VALIDEES'
+    : 'NON CONFORME : FLECHE DU MONTANT HORS TOLERANCE';
+  doc.text(verdictTitle, 20, verdictY + 7);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(30, 41, 59);
+  doc.text(
+    `Fleche calculee : ${params.result.calculatedMullionDeflectionMm} mm pour une limite de ${params.result.permissibleMullionDeflectionMm} mm • Taux d utilisation : ${params.result.deflectionRatioPercent}%.`,
+    20,
+    verdictY + 13
+  );
+  const recLine = isOk
+    ? 'Le montant offre une reserve de securite satisfaisante protegeant l integrite des vitrages sous rafales.'
+    : `Preconisation imperative : Remplacer par le profil ${params.result.recommendedMullionModel} (Inertie requise : ${params.result.requiredMullionIxCm4} cm4).`;
+  doc.text(recLine, 20, verdictY + 18);
+
+  // 6. Directives and Recommendations
+  const directY = verdictY + 25;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, directY, 182, 24, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Directives de Montage et Securite Chantier DTU 33.1 :', 18, directY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(71, 85, 105);
+  let curDirY = directY + 9.5;
+  for (const note of params.result.engineeringObservationsFr.slice(0, 3)) {
+    doc.text(`• ${note}`, 18, curDirY);
+    curDirY += 4.5;
+  }
+
+  // 7. Signatures & QR Code
+  const signY = directY + 27;
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 22, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 22, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Pour le Bureau d Etudes Facades :', 18, signY + 5.5);
+  doc.text('Visa Controle Technique (CTC) :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Ingenieur structure Baiti Atelier', 18, signY + 11);
+  doc.text('Signature & Date :', 18, signY + 17);
+  doc.text('Organisme de controle qualite', 135, signY + 11);
+  doc.text('Signature & Date :', 135, signY + 17);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|CURTAIN_WALL|${params.documentId}|REF=${params.facadeReference}|MULLION=${params.result.selectedMullion.id}|IX=${params.result.selectedMullion.ixCm4}|DEFLECTION=${params.result.calculatedMullionDeflectionMm}MM|LIMIT=${params.result.permissibleMullionDeflectionMm}MM|STATUS=${isOk ? 'OK' : 'EXCEEDED'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Note technique officielle Baiti Atelier • ${params.documentId} • NF DTU 33.1 • NF EN 13830 • Eurocode 9 • CNERIB DTR BC 2-47`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Note_Calcul_Facade_Rideau_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 
