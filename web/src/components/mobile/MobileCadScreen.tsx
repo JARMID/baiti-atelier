@@ -33,6 +33,7 @@ import {
   Droplets,
   Hand,
   Anchor,
+  Scale,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -69,6 +70,7 @@ import { PerimeterSealantModal } from './PerimeterSealantModal';
 import { GlassBalustradeModal } from './GlassBalustradeModal';
 import { BioclimaticPergolaModal } from './BioclimaticPergolaModal';
 import { SolarSunshadeModal } from './SolarSunshadeModal';
+import { SlidingCarriageModal } from './SlidingCarriageModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -263,6 +265,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showBalustradeModal, setShowBalustradeModal] = useState(false);
   const [showBioclimaticPergolaModal, setShowBioclimaticPergolaModal] = useState(false);
   const [showSolarSunshadeModal, setShowSolarSunshadeModal] = useState(false);
+  const [showSlidingCarriageModal, setShowSlidingCarriageModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1173,6 +1176,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Sun className="w-3 h-3" />
               <span>Masque Solaire</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowSlidingCarriageModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/30 hover:bg-blue-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-blue-300 font-semibold min-h-[44px]"
+              title="Audit chariots coulissant lourd, capacité de charge et effort PMR (NF EN 13126-15 / Décret 06-455)"
+            >
+              <Scale className="w-3 h-3" />
+              <span>Chariots PMR</span>
             </button>
 
             <button
@@ -2463,6 +2479,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           projectReference={`Brise-Soleil ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* HEAVY SLIDING CARRIAGE & PMR FORCE AUDITOR MODAL */}
+      {showSlidingCarriageModal && (
+        <SlidingCarriageModal
+          isOpen={showSlidingCarriageModal}
+          onClose={() => setShowSlidingCarriageModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          projectReference={`Coulissant ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

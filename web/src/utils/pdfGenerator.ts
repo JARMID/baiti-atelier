@@ -9,6 +9,8 @@ import type { BioclimaticPergolaInput, BioclimaticPergolaAuditResult } from './b
 import { SLAT_SPECS, POST_SPECS, BEAM_SPECS } from './bioclimaticPergolaManager';
 import type { SolarSunshadeInput, SolarSunshadeAuditResult } from './solarSunshadeManager';
 import { BLADE_SPECS } from './solarSunshadeManager';
+import type { SlidingCarriageInput, SlidingCarriageAuditResult } from './slidingCarriageManager';
+import { CARRIAGE_SPECS, TRACK_SPECS } from './slidingCarriageManager';
 
 export interface DevisOpeningItem {
   id: string;
@@ -9955,6 +9957,321 @@ export async function generateSolarSunshadeNoticePdf(params: SolarSunshadeNotice
   );
 
   const safeFilename = `Attestation_Protection_Solaire_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+export interface SlidingCarriageNoticePdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName: string;
+  wilayaName: string;
+  input: SlidingCarriageInput;
+  audit: SlidingCarriageAuditResult;
+}
+
+export async function generateSlidingCarriageNoticePdf(params: SlidingCarriageNoticePdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const audit = params.audit;
+  const input = params.input;
+  const carriage = CARRIAGE_SPECS[input.carriageModel];
+  const track = TRACK_SPECS[input.trackRail];
+
+  // Palette: Royal Blue #1E40AF, Gold #D4AF37, Slate #0F172A, Background #F8FAFC
+  const bluePrimary: [number, number, number] = [30, 64, 175];
+  const slateDark: [number, number, number] = [15, 23, 42];
+  const goldAccent: [number, number, number] = [212, 175, 55];
+  const bgLight: [number, number, number] = [248, 250, 252];
+  const borderLight: [number, number, number] = [226, 232, 240];
+
+  // 1. Header Banner
+  doc.setFillColor(...bluePrimary);
+  doc.rect(0, 0, 210, 26, 'F');
+  doc.setFillColor(...goldAccent);
+  doc.rect(0, 26, 210, 1.5, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(255, 255, 255);
+  doc.text('CERTIFICAT DE MANIABILITÉ & EFFORTS DE ROULEMENT', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(224, 231, 255);
+  doc.text('Baie Coulissante Aluminium • NF EN 13126-15 • NF EN 12046-2 • Décret PMR 06-455', 14, 17);
+
+  const todayStr = new Date().toLocaleDateString('fr-DZ');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Réf : ${params.projectRef}`, 196, 11, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(`Date : ${todayStr} • Doc ID : ${params.documentId}`, 196, 17, { align: 'right' });
+
+  // 2. Metadata Card
+  doc.setFillColor(...bgLight);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, 32, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...bluePrimary);
+  doc.text('CARACTÉRISTIQUES DU VANTAIL & SYSTÈME COULISSANT', 18, 38);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...slateDark);
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 18, 44);
+  doc.text(`Wilaya : ${params.wilayaName}`, 18, 49);
+
+  doc.text(`Vantail : ${input.sashWidthMm} x ${input.sashHeightMm} mm (${audit.glassAreaM2} m² vitrage)`, 80, 44);
+  doc.text(`Masse totale vantail : ${audit.totalSashWeightKg} kg (Vitrage : ${audit.glassWeightKg} kg)`, 80, 49);
+
+  doc.text(`Série profilé : ${input.profileSeries.toUpperCase().replace('_', ' ')}`, 148, 44);
+  doc.text(`Chariots : 2 unités (${carriage.wheelCount} galets/chariot)`, 148, 49);
+
+  // 3. Technical Summary Blocks (3 Columns)
+  const boxY = 58;
+  const boxW = 58;
+  const boxH = 34;
+
+  // Box 1: Carriage Load Capacity
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(30, 64, 175, 0.08);
+  doc.rect(14, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('1. CAPACITÉ CHARIOTS', 17, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Modèle : ${carriage.labelFr.split('(')[0].trim()}`, 17, boxY + 10);
+  doc.text(`Charge unitaire : ${audit.loadPerCarriageKg} kg / chariot`, 17, boxY + 14);
+  doc.text(`Charge max admise : ${audit.ratedMaxLoadPerSashKg} kg / vantail`, 17, boxY + 18);
+  doc.text(`Taux d utilisation : ${audit.capacityUtilizationPercent}%`, 17, boxY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(audit.isCapacityCompliant ? 16 : 225, audit.isCapacityCompliant ? 185 : 29, audit.isCapacityCompliant ? 129 : 72);
+  doc.text(audit.isCapacityCompliant ? 'Statut : Charge Admissible' : 'Statut : Surcharge Critique', 17, boxY + 28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text(`Endurance : ${carriage.enduranceClassCycles.toLocaleString('fr-DZ')} cycles NF`, 17, boxY + 32);
+
+  // Box 2: Operating Forces (NF EN 12046-2)
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(76, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(30, 64, 175, 0.08);
+  doc.rect(76, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('2. FORCES DE MANŒUVRE', 79, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Effort arrachement initial : ${audit.startingFrictionForceN} N`, 79, boxY + 10);
+  doc.text(`Maintien en mouvement : ${audit.motionFrictionForceN} N`, 79, boxY + 14);
+  doc.text(`Classe NF EN 12046-2 : ${audit.en12046Class.toUpperCase().replace('_', ' ')}`, 79, boxY + 18);
+  doc.text(`Type de rail : ${track.material.split('(')[0].trim()}`, 79, boxY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(audit.isPmrForceCompliant ? 16 : 225, audit.isPmrForceCompliant ? 185 : 29, audit.isPmrForceCompliant ? 129 : 72);
+  doc.text(audit.isPmrForceCompliant ? 'Conforme Décret PMR (F <= 50N)' : 'Effort excessif (> 50N PMR)', 79, boxY + 28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text('Glissement certifié fluide & ergonomique', 79, boxY + 32);
+
+  // Box 3: Threshold & PMR Accessibility
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(138, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(30, 64, 175, 0.08);
+  doc.rect(138, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('3. SEUIL & PASSAGE PMR', 141, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Hauteur de seuil : ${audit.thresholdStepHeightMm} mm`, 141, boxY + 10);
+  doc.text('Limite Décret 06-455 : Max 20 mm', 141, boxY + 14);
+  doc.text(audit.isLiftAndSlide ? `Levant-coulissant : Oui` : 'Coulissant standard : Oui', 141, boxY + 18);
+  if (audit.isLiftAndSlide) {
+    doc.text(`Couple au levier : ${audit.leverOperatingTorqueNm} N.m`, 141, boxY + 22);
+  } else {
+    doc.text('Galets réglables en hauteur : Oui', 141, boxY + 22);
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(audit.isThresholdPmrCompliant ? 16 : 217, audit.isThresholdPmrCompliant ? 185 : 119, audit.isThresholdPmrCompliant ? 129 : 6);
+  doc.text(audit.isThresholdPmrCompliant ? 'Seuil PMR Conforme (< 20mm)' : 'Ressaut Standard (> 20mm)', 141, boxY + 28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text(audit.isThresholdPmrCompliant ? 'Passage fauteuil roulant sans butée' : 'Usage privé / terrasse surélevée', 141, boxY + 32);
+
+  // 4. Kinematics & Maintenance Section
+  const kinY = boxY + boxH + 5;
+  doc.setFillColor(...bgLight);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, kinY, 182, 36, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...bluePrimary);
+  doc.text('4. CINÉMATIQUE, FROTTEMENT HERTZIEN & RECOMMANDATIONS TECHNIQUES', 18, kinY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...slateDark);
+  doc.text(`Galets de roulement : ${carriage.wheelCount} galets Ø ${carriage.wheelDiameterMm} mm en ${carriage.wheelMaterial}`, 18, kinY + 13);
+  doc.text(`Roulements internes : ${carriage.bearingType} protégés des poussières fines de chantier`, 18, kinY + 18);
+  doc.text(`Rail de roulement : ${track.labelFr} (Coefficient de frottement mu = ${track.frictionCoefficientMu})`, 18, kinY + 23);
+  doc.text(`Étanchéité brosses : ${input.brushSeal.toUpperCase().replace('_', ' ')} réduisant les frottements d air et poussière`, 18, kinY + 28);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...bluePrimary);
+  doc.text('Vérification à l atelier : Réglage précis de l aplomb par les vis micrométriques des chariots', 18, kinY + 33);
+
+  // 5. Bill of Materials & Hardware Specs
+  const tableData = [
+    [
+      'Chariots de roulement bas',
+      carriage.labelFr,
+      '2 ensembles',
+      `Charge max ${carriage.maxSashLoadKg} kg`,
+      `Galets ${carriage.wheelMaterial} Ø${carriage.wheelDiameterMm}mm`,
+      `${audit.totalSashWeightKg} kg supporté`,
+    ],
+    [
+      'Rail de roulement rapporté',
+      track.labelFr,
+      '1 barre',
+      `${input.sashWidthMm * 2} mm`,
+      'Clipsé ou encastré dans traverse basse dormant',
+      'Inox 316 / Composite',
+    ],
+    [
+      'Poignée & crémone multipoints',
+      audit.isLiftAndSlide ? 'Poignée longue de levage 200 mm' : 'Poignée coquille ou ergonomique',
+      '1 garniture',
+      'Entraxe 200 mm',
+      'Verrouillage 3 à 5 points de sécurité anti-dégondage',
+      'Acier zingué',
+    ],
+    [
+      'Joints brosses d étanchéité',
+      input.brushSeal === 'brush_silicone_tri_fin' ? 'Brosse silicone triple lame' : 'Joint brosse fin-seal étanche',
+      '4 barres',
+      `${(input.sashWidthMm + input.sashHeightMm) * 2} mm`,
+      'Glissé dans gorge aluminium périphérique vantail',
+      'Polypropylène traité UV',
+    ],
+  ];
+
+  autoTable(doc, {
+    startY: kinY + 40,
+    head: [['Composant', 'Désignation Quincaillerie', 'Quantité', 'Capacité / Longueur', 'Spécification Technique', 'Matière / Finition']],
+    body: tableData,
+    theme: 'grid',
+    styles: {
+      fontSize: 6.5,
+      cellPadding: 1.8,
+      textColor: [15, 23, 42],
+    },
+    headStyles: {
+      fillColor: [30, 64, 175],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'left',
+    },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 32 },
+      1: { cellWidth: 46 },
+      2: { cellWidth: 18 },
+      3: { fontStyle: 'bold', cellWidth: 26 },
+      4: { cellWidth: 44 },
+      5: { halign: 'right', cellWidth: 16 },
+    },
+  });
+
+  // 6. Synthesis Recommendations Card
+  const finalTable = (doc as any).lastAutoTable;
+  const synthY = finalTable.finalY + 4;
+
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, synthY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('5. PRESCRIPTIONS DE POSE & SÉCURITÉ DE GLISSEMENT', 18, synthY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...slateDark);
+
+  let recoLineY = synthY + 10;
+  audit.recommendationsFr.slice(0, 3).forEach((reco) => {
+    doc.text(`• ${reco}`, 18, recoLineY);
+    recoLineY += 4.2;
+  });
+
+  // 7. Signature & QR Code Block
+  const signY = synthY + 28;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, signY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('VISA TECHNIQUE FABRICANT', 18, signY + 6);
+  doc.text('BON POUR ACCORD & POSE CLIENT', 128, signY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.2);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Atelier de Menuiserie Aluminium Baiti', 18, signY + 11);
+  doc.text('Signature & Cachet :', 18, signY + 16);
+
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 128, signY + 11);
+  doc.text('Date & Signature :', 128, signY + 16);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|CHARIOTS|${params.documentId}|REF=${params.projectRef}|WEIGHT=${audit.totalSashWeightKg}KG|FORCE=${audit.startingFrictionForceN}N|STATUS=${audit.overallStatus}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer Legal Line
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.2);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Attestation officielle Baiti Atelier • ${params.documentId} • NF EN 13126-15 • NF EN 12046-2 • Décret PMR 06-455`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Attestation_Chariots_Coulissant_${params.documentId}.pdf`;
   doc.save(safeFilename);
 }
 

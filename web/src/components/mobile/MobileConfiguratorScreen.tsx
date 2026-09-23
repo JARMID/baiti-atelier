@@ -35,6 +35,7 @@ import {
   Anchor,
   Flame,
   ShieldCheck,
+  Scale,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -75,6 +76,7 @@ import { PerimeterSealantModal } from './PerimeterSealantModal';
 import { GlassBalustradeModal } from './GlassBalustradeModal';
 import { BioclimaticPergolaModal } from './BioclimaticPergolaModal';
 import { SolarSunshadeModal } from './SolarSunshadeModal';
+import { SlidingCarriageModal } from './SlidingCarriageModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -205,6 +207,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isBalustradeModalOpen, setIsBalustradeModalOpen] = useState(false);
   const [isBioclimaticPergolaModalOpen, setIsBioclimaticPergolaModalOpen] = useState(false);
   const [isSolarSunshadeModalOpen, setIsSolarSunshadeModalOpen] = useState(false);
+  const [isSlidingCarriageModalOpen, setIsSlidingCarriageModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -1009,6 +1012,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Sun className="w-4 h-4" />
           <span>Brise-Soleil Architectural & Masque Solaire (DTR C3-2 / NF EN 13363-1)</span>
+        </button>
+
+        {/* Sliding Door Roller Carriage Load & PMR Operating Force Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsSlidingCarriageModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Scale className="w-4 h-4" />
+          <span>Chariots Coulissant Lourd & Effort PMR (NF EN 13126-15 / Décret 06-455)</span>
         </button>
       </div>
 
@@ -2300,6 +2316,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           projectReference={`Brise-Soleil ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* HEAVY SLIDING CARRIAGE & PMR FORCE AUDITOR MODAL */}
+      {isSlidingCarriageModalOpen && (
+        <SlidingCarriageModal
+          isOpen={isSlidingCarriageModalOpen}
+          onClose={() => setIsSlidingCarriageModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          projectReference={`Coulissant ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />
