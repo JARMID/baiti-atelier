@@ -29,6 +29,7 @@ import {
   Activity,
   Lock,
   Box,
+  Sun,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -53,6 +54,7 @@ import { BifoldDoorModal } from './BifoldDoorModal';
 import { LouverAerodynamicsModal } from './LouverAerodynamicsModal';
 import { SecurityLockingModal } from './SecurityLockingModal';
 import { StructuralGlazingModal } from './StructuralGlazingModal';
+import { IntegratedBlindModal } from './IntegratedBlindModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -235,6 +237,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showLouverModal, setShowLouverModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showStructuralGlazingModal, setShowStructuralGlazingModal] = useState(false);
+  const [showIntegratedBlindModal, setShowIntegratedBlindModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -989,6 +992,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Box className="w-3 h-3" />
               <span>VEC Silicone</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowIntegratedBlindModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-teal-500/10 dark:bg-teal-500/15 border border-teal-500/30 hover:bg-teal-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-teal-300 font-semibold"
+              title="Store vénitien et plissé intégré dans double vitrage NF EN 1279 / CSTB 3677"
+            >
+              <Sun className="w-3 h-3" />
+              <span>Store Intégré</span>
             </button>
 
             <button
@@ -2124,6 +2140,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           windowReference={`VEC ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* INTEGRATED BLIND IN INSULATED GLAZING MODAL */}
+      {showIntegratedBlindModal && (
+        <IntegratedBlindModal
+          isOpen={showIntegratedBlindModal}
+          onClose={() => setShowIntegratedBlindModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          windowReference={`Store Intégré ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

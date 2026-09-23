@@ -6714,6 +6714,237 @@ export async function generateStructuralGlazingPdf(params: StructuralGlazingPdfP
   doc.save(safeFilename);
 }
 
+export interface IntegratedBlindPdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName: string;
+  wilayaName: string;
+  workshopName: string;
+  result: import('./integratedBlindManager').IntegratedBlindResult;
+}
+
+export async function generateIntegratedBlindNoticePdf(params: IntegratedBlindPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const todayStr = new Date().toLocaleDateString('fr-DZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  const res = params.result;
+  const isOk = res.complianceStatus === 'CONFORME';
+  const isWarning = res.complianceStatus === 'ATTENTION';
+
+  // 1. Header Banner
+  doc.setFillColor(15, 23, 42); // Slate 900
+  doc.rect(0, 0, 210, 26, 'F');
+
+  doc.setFillColor(13, 148, 136); // Teal 600 accent bar
+  doc.rect(0, 26, 210, 2, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER ALGERIE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text('Plateforme Technique de Conception & Fabrication Menuiserie Aluminium & Vitrage Isolant', 14, 17);
+  doc.text('Normes : NF EN 1279-1 a 6 • NF DTU 39 P1-1 • Cahier CSTB 3677 • NF EN 13363-1 • DTR C3-2', 14, 22);
+
+  // Status Badge in Header
+  doc.setFillColor(isOk ? 16 : isWarning ? 217 : 225, isOk ? 185 : isWarning ? 119 : 29, isOk ? 129 : isWarning ? 6 : 72);
+  doc.roundedRect(148, 7, 48, 12, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(isOk ? 'STORE CONFORME' : isWarning ? 'AVEC RESERVES' : 'NON CONFORME', 172, 14.5, { align: 'center' });
+
+  // 2. Document Title Box
+  let curY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, curY, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('FICHE TECHNIQUE & COMMANDE : STORE INTEGRE DANS DOUBLE VITRAGE', 18, curY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Doc N° : ${params.documentId}  |  Chantier : ${params.projectRef}  |  Wilaya : ${params.wilayaName}  |  Date : ${todayStr}`, 18, curY + 13);
+
+  curY += 22;
+
+  // 3. Identification & Actuation Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['PARAMETRE DU STORE', 'VALEUR RETENUE', 'SPECIFICATION & NORME']],
+    body: [
+      ['Modele de store integre', res.blindSpec.name, res.blindSpec.slatMaterial],
+      ['Mode de manœuvre', res.actuationSpec.name, res.actuationSpec.powerSupply],
+      ['Dimensions de la baie', `${res.widthMm} x ${res.heightMm} mm`, `Surface : ${res.surfaceAreaM2.toFixed(3)} m2`],
+      ['Position / Orientation', 'Lamelles orientables & relevables', 'Reglage manuel ou telecommande'],
+      ['Poids du mecanisme store', `${res.blindMechanismWeightKg.toFixed(1)} kg`, 'Mecanisme et lamelles suspendues'],
+      ['Poids total du vitrage', `${res.totalWeightKg.toFixed(1)} kg`, `Verre + store (${(res.totalWeightKg / res.surfaceAreaM2).toFixed(1)} kg/m2)`],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [13, 148, 136], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 4. Glazing Makeup & Cavity Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['COMPOSITION DU VITRAGE ISOLANT', 'DIMENSION', 'EXIGENCE TECHNIQUE']],
+    body: [
+      ['Epaisseur totale du vitrage', `${res.totalIguThicknessMm} mm`, 'A verifier avec profondeur de parclose profil'],
+      ['Largeur de la cavite gaz', `${res.cavityWidthMm} mm`, `Requis min : ${res.minRecommendedCavityMm} mm (${res.isCavitySufficient ? 'CONFORME' : 'INSUFFISANT'})`],
+      ['Jeu lateral lamelle / verre', `${res.slatClearanceFrontMm} mm de chaque cote`, 'Jeu minimal de securite anti-frottement (>= 3.0 mm)'],
+      ['Encombrement paquet replie', `${res.stackHeightMm} mm en imposte`, 'Hauteur du rail et lamelles en position haute'],
+      ['Remplissage gaz isolant', 'Argon 90% certifie', 'Taux de fuite NF EN 1279-3 <= 1.0 % par an'],
+      ['Intercalaire thermique', 'Warm Edge composite noir', 'Rupture de pont thermique de bordure'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 5. Energetics & Thermal Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['PERFORMANCE ENERGETIQUE & SOLAIRE', 'VALEUR CALCULEE', 'GAIN & CONFORT CONSTATE']],
+    body: [
+      ['Facteur solaire global gtot', `${res.effectiveGtot.toFixed(2)}`, `Reduction de chaleur : ${res.solarHeatReductionPercent}%`],
+      ['Coefficient transmission Ug', `${res.effectiveUg.toFixed(2)} W/(m2.K)`, `Base vitrage clair : ${res.baseGlassUg.toFixed(2)} W/(m2.K)`],
+      ['Transmission lumineuse Tau_v', `${(res.lightTransmittanceTauV * 100).toFixed(0)} %`, 'Filtrage anti-eblouissement selon orientation'],
+      ['Indice de confort d ete', res.summerComfortRating, 'Conforme aux exigences de la reglementation DTR C3-2'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [180, 83, 9], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 6. Altitude & Barometric Safety Box
+  doc.setDrawColor(res.requiresAltimetricValve ? 217 : 203, res.requiresAltimetricValve ? 119 : 213, res.requiresAltimetricValve ? 6 : 225);
+  doc.setFillColor(res.requiresAltimetricValve ? 254 : 248, res.requiresAltimetricValve ? 242 : 250, res.requiresAltimetricValve ? 242 : 252);
+  doc.roundedRect(14, curY, 182, 16, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(res.requiresAltimetricValve ? 185 : 15, res.requiresAltimetricValve ? 28 : 23, res.requiresAltimetricValve ? 28 : 42);
+  doc.text('SECURITE BAROMETRIQUE & TRANSPORT EN ALTITUDE (CSTB / ALUPROM) :', 18, curY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    `Altitude chantier : ${res.altitudeDifferenceM >= 0 ? '+' : ''}${res.altitudeDifferenceM} m (ecart) • Delta P : ${res.estimatedPressureDeltaHPa} hPa • Fleche bombe : ${res.glassOutwardDeflectionMm} mm`,
+    18,
+    curY + 9.5
+  );
+  doc.text(res.altimetricSafetyAdvice, 18, curY + 13.5);
+
+  curY += 20;
+
+  // 7. Recommendations & Compliance Directives
+  if (res.recommendations.length > 0) {
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(255, 255, 255);
+    const boxHeight = Math.min(22, 6 + res.recommendations.length * 3.5);
+    doc.roundedRect(14, curY, 182, boxHeight, 1.5, 1.5, 'D');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(15, 23, 42);
+    doc.text('RECOMMANDATIONS PARTICULIERES DE MIROITERIE & COMMANDE :', 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    res.recommendations.slice(0, 4).forEach((rec, idx) => {
+      doc.text(`• ${rec}`, 20, curY + 8.5 + idx * 3.8);
+    });
+
+    curY += boxHeight + 4;
+  }
+
+  // 8. Signature Block
+  const signY = Math.min(curY, 258);
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 70, 22, 1.5, 1.5, 'D');
+  doc.roundedRect(126, signY, 70, 22, 1.5, 1.5, 'D');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Visa Responsable Miroiterie', 18, signY + 5.5);
+  doc.text('Bon pour Commande Vitrage & Store', 130, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Date & Cachet Atelier :', 18, signY + 11);
+  doc.text('Signature Client / Poseur :', 130, signY + 11);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|STORE_INTEGRE|${params.documentId}|REF=${params.projectRef}|TYPE=${res.blindSpec.id}|CAV=${res.cavityWidthMm}MM|GTOT=${res.effectiveGtot}|STATUS=${isOk ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 9. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Fiche technique officielle Baiti Atelier • ${params.documentId} • NF EN 1279 • NF DTU 39 P1-1 • Cahier CSTB 3677 • DTR C3-2`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Fiche_Store_Integre_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 
