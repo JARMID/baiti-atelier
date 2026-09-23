@@ -1,0 +1,52 @@
+[
+  {
+    "id": "persona_01",
+    "name": "Si Mohamed",
+    "role": "Master Aluminum Workshop Owner",
+    "location": "Kouba, Alger (16)",
+    "experience_years": 22,
+    "current_pain_points": "High waste loss on 6m Alugraf bars (18%), manual Excel calculation errors, clients doubting quote authenticity.",
+    "tech_literacy": "Moderate (uses WhatsApp, prefers offline laptop software without complex cloud accounts)",
+    "priorities": ["Zero margin leak to competitors", "Quick proforma printing with logo", "Accurate 45-degree miter cut lengths"]
+  },
+  {
+    "id": "persona_02",
+    "name": "Amine",
+    "role": "Modern PVC & Double Glazing Fabricator",
+    "location": "Es-Sénia, Oran (31)",
+    "experience_years": 8,
+    "current_pain_points": "Double-head saw operators making cut mistakes on 4-chamber profiles, argon gas filling waste.",
+    "tech_literacy": "High (comfortable with CNC G-Code, CAD DXF imports, QR labels)",
+    "priorities": ["Direct CNC saw file export (Elumatec/Emmegi)", "Mobile app for measurement taking on building sites", "Thermal break compliance certs"]
+  },
+  {
+    "id": "persona_03",
+    "name": "Brahim",
+    "role": "Cabinetmaker & Kitchen Interior Artisan",
+    "location": "El Khroub, Constantine (25)",
+    "experience_years": 15,
+    "current_pain_points": "Cutting 18mm MDF sheets with excessive scrap offcuts, difficult client dimension adjustments.",
+    "tech_literacy": "Moderate (relies on Android tablet in workshop, wary of online SaaS subscriptions)",
+    "priorities": ["2D sheet guillotine optimization", "Clear visual cutting diagrams", "Dinar pricing transparency"]
+  },
+  {
+    "id": "persona_04",
+    "name": "Karim",
+    "role": "Architect & General Building Contractor",
+    "location": "Sétif (19)",
+    "experience_years": 12,
+    "current_pain_points": "Local workshops delivering non-compliant cold aluminum frames failing CNERIB thermal checks.",
+    "tech_literacy": "Expert (Revit, AutoCAD, ISO standards)",
+    "priorities": ["DTR C3-2 thermal Uw audit reports", "Official technical notices with QR verification", "Precise wind load reaction calculations"]
+  },
+  {
+    "id": "persona_05",
+    "name": "Rachid",
+    "role": "Traditional Ironmonger & Security Grille Artisan",
+    "location": "Blida (09)",
+    "experience_years": 28,
+    "current_pain_points": "Fear of online data collection, prefers simple one-time desktop installs, dislikes complicated passwords or SMS codes.",
+    "tech_literacy": "Basic",
+    "priorities": ["100% offline capability", "Simple authenticator TOTP without SMS hassle", "Fast quote generation"]
+  }
+]

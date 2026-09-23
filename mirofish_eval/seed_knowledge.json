@@ -1,0 +1,35 @@
+{
+  "product_name": "Baiti Atelier | بيتي",
+  "version": "1.0.0-rc.1",
+  "target_market": "Algerian Joinery, Aluminum, PVC, Woodworking, Metalwork & Glazing Workshops (58 Wilayas)",
+  "core_value_propositions": [
+    {
+      "feature": "1D Linear Profile Optimization",
+      "capability": "Millimetric cutting yield optimization for 6-meter extruded bars with angle-dependent saw kerf compensation and reusable offcut rack inventory (casier CHT-ALU-01)."
+    },
+    {
+      "feature": "2D Sheet & Glass Guillotine Nesting",
+      "capability": "Rectangular sheet cutting for float glass, mirrors, double glazing (4/16/4) and MDF panels with guillotine cut sequences."
+    },
+    {
+      "feature": "Confidential Offline Costing in DZD",
+      "capability": "100% offline-first execution with local disk encryption. Workshop cost bases (wholesale profile rates, labor rates) remain strictly private on the artisan's computer."
+    },
+    {
+      "feature": "DTR C3-2 / CNERIB & ISO 10077 Thermal Auditor",
+      "capability": "Bioclimatic thermal compliance for Zones A, B, C in Algeria, calculating Uw, Sw, Uf, and surface condensation dew point thresholds."
+    },
+    {
+      "feature": "TOTP Authenticator 2FA Security",
+      "capability": "Pure RFC 6238 authenticator app multi-factor authentication (no SMS OTP, zero tracking, 8 offline backup recovery codes)."
+    },
+    {
+      "feature": "Multi-Platform Parity",
+      "capability": "Universal Web application, Tauri v2 native Windows desktop shell (.exe), and Flutter 3 mobile companion app."
+    },
+    {
+      "feature": "National 58 Wilaya Directory & Proforma Verification",
+      "capability": "Cryptographic 32-character quote verification tokens preventing margin leakage and client quote tampering."
+    }
+  ]
+}
