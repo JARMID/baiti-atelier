@@ -6944,6 +6944,244 @@ export async function generateIntegratedBlindNoticePdf(params: IntegratedBlindPd
   doc.save(safeFilename);
 }
 
+export interface WindowDrainagePdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName: string;
+  wilayaName: string;
+  workshopName: string;
+  result: import('./windowDrainageManager').WindowDrainageResult;
+}
+
+export async function generateWindowDrainageNoticePdf(params: WindowDrainagePdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const todayStr = new Date().toLocaleDateString('fr-DZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  const res = params.result;
+  const isOk = res.complianceStatus === 'CONFORME';
+  const isWarning = res.complianceStatus === 'ATTENTION';
+
+  // 1. Header Banner
+  doc.setFillColor(15, 23, 42); // Slate 900
+  doc.rect(0, 0, 210, 26, 'F');
+
+  doc.setFillColor(2, 132, 199); // Sky 600 accent bar
+  doc.rect(0, 26, 210, 2, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER ALGERIE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text('Bureau d Etudes Menuiserie Aluminium & PVC • Plan d Usinage et Note Hydrostatique', 14, 17);
+  doc.text('Normes : NF DTU 36.5 P1-1 • NF P 20-302 • NF EN 1027 • NF EN 12208 • CSTB 3529 • RNV 2013', 14, 22);
+
+  // Status Badge in Header
+  doc.setFillColor(isOk ? 16 : isWarning ? 217 : 225, isOk ? 185 : isWarning ? 119 : 29, isOk ? 129 : isWarning ? 6 : 72);
+  doc.roundedRect(146, 7, 50, 12, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(isOk ? 'DRAINAGE CONFORME' : isWarning ? 'AVEC RESERVES' : 'NON CONFORME', 171, 14.5, { align: 'center' });
+
+  // 2. Document Title Box
+  let curY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, curY, 182, 18, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('PLAN D USINAGE & NOTE TECHNIQUE : DRAINAGE & ETANCHEITE A L EAU', 18, curY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Doc N° : ${params.documentId}  |  Chantier : ${params.projectRef}  |  Wilaya : ${params.wilayaName}  |  Date : ${todayStr}`, 18, curY + 13);
+
+  curY += 22;
+
+  // 3. Identification & Water Tightness Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['PARAMETRE D ETANCHEITE', 'VALEUR RETENUE', 'EXIGENCE NORMATIVE']],
+    body: [
+      ['Dimensions de la traverse basse', `${res.widthMm} x ${res.heightMm} mm`, `Surface vitree : ${res.glazingAreaM2.toFixed(3)} m2`],
+      ['Classe d etancheite a l eau', res.targetClassSpec.name, `Pression d essai : ${res.testPressurePa} Pa`],
+      ['Vitesse de vent equivalente', `${res.targetClassSpec.equivalentWindSpeedKmH} km/h`, 'Essai sous pluie battante continue'],
+      ['Colonne d eau hydrostatique', `${res.hydrostaticHeadMm} mm`, 'Poussee d eau inversee dans la feuillure'],
+      ['Hauteur de remontee / gorge', `${res.upstandHeightMm} mm`, `Marge de garde : ${res.upstandSafetyMarginMm} mm (${res.isUpstandSufficient ? 'SUFFISANT' : 'CRITIQUE'})`],
+      ['Debit d evacuation global', `${res.totalDischargeCapacityLMin} L/min`, `Facteur de securite hydraulique : ${res.hydraulicSafetyFactor}`],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [2, 132, 199], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 4. Weep Hole Sizing & Machining Specs Table
+  autoTable(doc, {
+    startY: curY,
+    head: [['SPECIFICATION D USINAGE', 'VALEUR ATELIER', 'CONFORMITE NF DTU 36.5']],
+    body: [
+      ['Geometrie de la lumiere', res.slotSpec.name, `Dimensions : ${res.slotSpec.widthMm} x ${res.slotSpec.heightMm} mm`],
+      ['Section unitaire de passage', `${res.slotSpec.slotAreaMm2.toFixed(1)} mm2`, `Minimum exige : 50.0 mm2 (${res.isSectionAreaCompliant ? 'CONFORME' : 'INSUFFISANT'})`],
+      ['Nombre d orifices de drainage', `${res.actualHolesCount} trou(s)`, `Minimum requis : ${res.minimumRequiredHoles} trou(s) (${res.isHolesCountCompliant ? 'CONFORME' : 'NON CONFORME'})`],
+      ['Entraxe reel entre lumieres', `${res.actualSpacingMm} mm`, `Entraxe maximal autorise : ${res.maxSpacingMm} mm (${res.isSpacingCompliant ? 'CONFORME' : 'EXCESSIF'})`],
+      ['Events de decompression hauts', `${res.decompressionVentsCount} events obligatoires`, 'Evite l effet ventouse / retention d eau'],
+      ['Mode d usinage conseille', res.slotSpec.recommendedMachining, 'Fraise carbure sur centre CNC ou poinçonneuse'],
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold' },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 72, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 5. CNC Weep Hole Coordinates Table
+  const holeRows = res.weepHolePositions.map((h) => [
+    `Trou N° ${h.index}`,
+    `${h.coordinateXMm} mm`,
+    h.label,
+    `${res.slotSpec.widthMm} x ${res.slotSpec.heightMm} mm`,
+  ]);
+
+  autoTable(doc, {
+    startY: curY,
+    head: [['REPERE D USINAGE', 'COTE X (DEPUIS GAUCHE)', 'DESIGNATION & LOCALISATION', 'COTE LUMIERE']],
+    body: holeRows,
+    theme: 'grid',
+    headStyles: { fillColor: [15, 118, 110], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
+    styles: { fontSize: 7, cellPadding: 2, textColor: [15, 23, 42] },
+    columnStyles: {
+      0: { cellWidth: 35, fontStyle: 'bold' },
+      1: { cellWidth: 45, fontStyle: 'bold', textColor: [2, 132, 199] },
+      2: { cellWidth: 62 },
+      3: { cellWidth: 40, textColor: [71, 85, 105] },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  curY = (doc as any).lastAutoTable.finalY + 5;
+
+  // 6. Anti-Backflow & Deflector Protection Box
+  doc.setDrawColor(res.requiresAntiReturnFlap ? 217 : 203, res.requiresAntiReturnFlap ? 119 : 213, res.requiresAntiReturnFlap ? 6 : 225);
+  doc.setFillColor(res.requiresAntiReturnFlap ? 254 : 248, res.requiresAntiReturnFlap ? 242 : 250, res.requiresAntiReturnFlap ? 242 : 252);
+  doc.roundedRect(14, curY, 182, 16, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(res.requiresAntiReturnFlap ? 185 : 15, res.requiresAntiReturnFlap ? 28 : 23, res.requiresAntiReturnFlap ? 28 : 42);
+  doc.text('DISPOSITIFS ANTI-REFOULEMENT & PROTECTIONS EXTERIEURES (NF EN 12208) :', 18, curY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    `Clapet anti-retour silicone : ${res.requiresAntiReturnFlap ? 'OBLIGATOIRE (Pression >= 300 Pa ou gorge basse)' : 'Optionnel'} • Busettes déflectrices : ${res.requiresExteriorDeflector ? 'OBLIGATOIRES' : 'Non requises'}`,
+    18,
+    curY + 9.5
+  );
+  doc.text(
+    'Les clapets anti-retour à membrane empêchent l effet d écopage et la remontée de bulles d eau sous vent violent.',
+    18,
+    curY + 13.5
+  );
+
+  curY += 20;
+
+  // 7. Workshop Recommendations
+  if (res.recommendations.length > 0) {
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(255, 255, 255);
+    const boxHeight = Math.min(22, 6 + res.recommendations.length * 3.5);
+    doc.roundedRect(14, curY, 182, boxHeight, 1.5, 1.5, 'D');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(15, 23, 42);
+    doc.text('DIRECTIVES D USINAGE & CONTROLES ATELIER :', 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(71, 85, 105);
+    res.recommendations.slice(0, 4).forEach((rec, idx) => {
+      doc.text(`• ${rec}`, 20, curY + 8.5 + idx * 3.8);
+    });
+
+    curY += boxHeight + 4;
+  }
+
+  // 8. Signature Block
+  const signY = Math.min(curY, 258);
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 70, 22, 1.5, 1.5, 'D');
+  doc.roundedRect(126, signY, 70, 22, 1.5, 1.5, 'D');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Visa Responsable Usinage CNC', 18, signY + 5.5);
+  doc.text('Bon pour Montage & Controle Qualite', 130, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Date & Cachet Atelier :', 18, signY + 11);
+  doc.text('Signature Controleur :', 130, signY + 11);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|DRAINAGE|${params.documentId}|REF=${params.projectRef}|CLASS=${res.targetClassSpec.classId}|HOLES=${res.actualHolesCount}|STATUS=${isOk ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 9. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Fiche technique officielle Baiti Atelier • ${params.documentId} • NF DTU 36.5 • NF P 20-302 • NF EN 12208 • CSTB 3529`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Plan_Usinage_Drainage_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 

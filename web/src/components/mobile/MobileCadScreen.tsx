@@ -30,6 +30,7 @@ import {
   Lock,
   Box,
   Sun,
+  Droplets,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -55,6 +56,7 @@ import { LouverAerodynamicsModal } from './LouverAerodynamicsModal';
 import { SecurityLockingModal } from './SecurityLockingModal';
 import { StructuralGlazingModal } from './StructuralGlazingModal';
 import { IntegratedBlindModal } from './IntegratedBlindModal';
+import { WindowDrainageModal } from './WindowDrainageModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -238,6 +240,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showStructuralGlazingModal, setShowStructuralGlazingModal] = useState(false);
   const [showIntegratedBlindModal, setShowIntegratedBlindModal] = useState(false);
+  const [showDrainageModal, setShowDrainageModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1005,6 +1008,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Sun className="w-3 h-3" />
               <span>Store Intégré</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowDrainageModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-sky-500/10 dark:bg-sky-500/15 border border-sky-500/30 hover:bg-sky-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-sky-300 font-semibold"
+              title="Audit drainage et étanchéité à l'eau traverse basse NF DTU 36.5 / NF EN 12208"
+            >
+              <Droplets className="w-3 h-3" />
+              <span>Drainage Eau</span>
             </button>
 
             <button
@@ -2153,6 +2169,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           windowReference={`Store Intégré ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* WINDOW DRAINAGE & WATER EVACUATION MODAL */}
+      {showDrainageModal && (
+        <WindowDrainageModal
+          isOpen={showDrainageModal}
+          onClose={() => setShowDrainageModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          windowReference={`Drainage ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

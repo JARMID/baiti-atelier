@@ -29,6 +29,7 @@ import {
   Wind,
   Lock,
   Box,
+  Droplets,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -58,6 +59,7 @@ import { LouverAerodynamicsModal } from './LouverAerodynamicsModal';
 import { SecurityLockingModal } from './SecurityLockingModal';
 import { StructuralGlazingModal } from './StructuralGlazingModal';
 import { IntegratedBlindModal } from './IntegratedBlindModal';
+import { WindowDrainageModal } from './WindowDrainageModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -177,6 +179,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [isStructuralGlazingModalOpen, setIsStructuralGlazingModalOpen] = useState(false);
   const [isIntegratedBlindModalOpen, setIsIntegratedBlindModalOpen] = useState(false);
+  const [isDrainageModalOpen, setIsDrainageModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -838,6 +841,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Sun className="w-4 h-4" />
           <span>Store Vénitien Intégré Double Vitrage (NF EN 1279 / CSTB 3677)</span>
+        </button>
+
+        {/* Window Drainage & Water Evacuation Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsDrainageModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Droplets className="w-4 h-4" />
+          <span>Drainage & Étanchéité à l'Eau (NF DTU 36.5 / NF EN 12208)</span>
         </button>
       </div>
 
@@ -1987,6 +2003,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           windowReference={`Store Intégré ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* WINDOW DRAINAGE & WATER EVACUATION MODAL */}
+      {isDrainageModalOpen && (
+        <WindowDrainageModal
+          isOpen={isDrainageModalOpen}
+          onClose={() => setIsDrainageModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          windowReference={`Drainage ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />
