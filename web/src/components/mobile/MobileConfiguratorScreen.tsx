@@ -23,6 +23,7 @@ import {
   SlidersHorizontal,
   Zap,
   Disc,
+  Waves,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -44,6 +45,7 @@ import { DTR_ZONE_THRESHOLDS, getDtrZoneForWilaya } from '../../utils/dtrThermal
 import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
 import { RollerShutterMotorModal } from './RollerShutterMotorModal';
 import { RollerShutterWindingModal } from './RollerShutterWindingModal';
+import { AcousticInsulationModal } from './AcousticInsulationModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -155,6 +157,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
   const [isMotorModalOpen, setIsMotorModalOpen] = useState(false);
   const [isWindingModalOpen, setIsWindingModalOpen] = useState(false);
+  const [isAcousticModalOpen, setIsAcousticModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -908,14 +911,24 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
 
         {/* Live Glass Telemetry Badge Row */}
         <div className="grid grid-cols-3 gap-1.5 font-mono text-center">
-          <div className={`p-2 rounded-xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}>
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick();
+              setIsAcousticModalOpen(true);
+            }}
+            className={`p-2 rounded-xl border transition-all cursor-pointer hover:border-cyan-500/50 active:scale-95 ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10 hover:bg-cyan-500/10'
+            }`}
+            title="Ouvrir le calculateur d isolement acoustique DTR C3-3"
+          >
             <div className="flex items-center justify-center gap-1 text-[10px] text-zinc-500">
-              <Volume2 className="w-3 h-3 text-cyan-400" />
-              <span>Acoustique</span>
+              <Waves className="w-3 h-3 text-cyan-400" />
+              <span className="text-cyan-400 font-semibold">Acoustique</span>
             </div>
             <span className="text-xs font-bold text-cyan-400 block mt-0.5">{effectiveRw} dB</span>
             <span className="text-[9px] text-zinc-400 block truncate">{acousticRating.noiseDropRatio}</span>
-          </div>
+          </button>
 
           <div className={`p-2 rounded-xl border ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/10'}`}>
             <div className="flex items-center justify-center gap-1 text-[10px] text-zinc-500">
@@ -943,6 +956,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           <Shield className="w-3.5 h-3.5 shrink-0 mt-0.5 text-cyan-400" />
           <span>{currentGlassSpec.applicationTradeFr}</span>
         </div>
+
+        {/* Acoustic Simulator Quick Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsAcousticModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Waves className="w-4 h-4" />
+          <span>Étude Acoustique & Bruits de Voirie (DTR C3-3 / ISO 717-1)</span>
+        </button>
 
         {/* Intercalaire / Spacer Selection */}
         {currentGlassSpec.thicknessTotalMm > 8 && (
@@ -1744,6 +1770,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         <RollerShutterWindingModal
           isOpen={isWindingModalOpen}
           onClose={() => setIsWindingModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          windowReference={`Baie ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* ACOUSTIC SOUND INSULATION & TRAFFIC NOISE MODAL */}
+      {isAcousticModalOpen && (
+        <AcousticInsulationModal
+          isOpen={isAcousticModalOpen}
+          onClose={() => setIsAcousticModalOpen(false)}
           initialWidth={config.width}
           initialHeight={config.height}
           windowReference={`Baie ${config.width}x${config.height} ${config.profileSystem}`}

@@ -3,6 +3,7 @@ import {
   ShieldCheck,
   Flame,
   Volume2,
+  Waves,
   Sun,
   Check,
   MessageCircle,
@@ -28,6 +29,7 @@ export interface GlazingPerformanceMatrixProps {
   onExportDtrPdf?: () => void;
   isGeneratingPdf?: boolean;
   onOpenThermalStressModal?: () => void;
+  onOpenAcousticModal?: () => void;
 }
 
 interface BenchmarkCard {
@@ -55,6 +57,7 @@ export const GlazingPerformanceMatrix: React.FC<GlazingPerformanceMatrixProps> =
   onExportDtrPdf,
   isGeneratingPdf = false,
   onOpenThermalStressModal,
+  onOpenAcousticModal,
 }) => {
   const safeAreaM2 = Math.max(0.1, Number(totalGlassAreaM2.toFixed(2)));
 
@@ -364,6 +367,38 @@ export const GlazingPerformanceMatrix: React.FC<GlazingPerformanceMatrixProps> =
             >
               <Flame className="w-3.5 h-3.5" />
               <span>Simuler Choc Thermique</span>
+            </button>
+          </div>
+        )}
+
+        {onOpenAcousticModal && (
+          <div
+            className={`p-3 rounded-2xl border flex items-center justify-between gap-2 ${
+              isLight ? 'bg-cyan-50/60 border-cyan-200/80' : 'bg-cyan-950/20 border-cyan-500/20'
+            }`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <Waves className="w-4 h-4 text-cyan-400 shrink-0" />
+              <div className="min-w-0">
+                <span className={`font-bold block truncate ${isLight ? 'text-cyan-900' : 'text-cyan-200'}`}>
+                  Étude Acoustique & Bruits de Voirie (DTR C3-3)
+                </span>
+                <span className="text-[10px] text-cyan-600/80 dark:text-cyan-400/70 block truncate">
+                  Affaiblissement composite façade, spectre d octave et confort nocturne
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                onOpenAcousticModal();
+              }}
+              className="px-3 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1 cursor-pointer active:scale-95 transition-all shrink-0 shadow-xs"
+            >
+              <Waves className="w-3.5 h-3.5" />
+              <span>Simuler Acoustique</span>
             </button>
           </div>
         )}

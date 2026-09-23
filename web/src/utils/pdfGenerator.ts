@@ -4739,6 +4739,250 @@ export async function generateRollerShutterWindingPdf(params: ShutterWindingPdfP
   doc.save(safeFilename);
 }
 
+export interface AcousticNoticePdfParams {
+  documentId: string;
+  projectOrClientName: string;
+  locationWilaya: string;
+  windowReference: string;
+  glassLabelFr: string;
+  frameLabelFr: string;
+  result: import('./acousticInsulationManager').AcousticCalculationResult;
+  workshopName?: string;
+}
+
+/**
+ * Generates an official A4 technical notice for acoustic insulation and traffic noise reduction (NF EN ISO 717-1 / DTR C3-3).
+ */
+export async function generateAcousticInsulationNoticePdf(params: AcousticNoticePdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryNavy: [number, number, number] = [15, 23, 42]; // slate-900
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const amberOrange: [number, number, number] = [245, 158, 11];
+  const roseRed: [number, number, number] = [239, 68, 68];
+
+  const isCompliant = params.result.isCompliant;
+  const statusColor = isCompliant
+    ? emeraldGreen
+    : params.result.acousticMarginDb >= -3
+      ? amberOrange
+      : roseRed;
+
+  // 1. Header Banner
+  doc.setFillColor(...primaryNavy);
+  doc.rect(0, 0, 210, 28, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(255, 255, 255);
+  doc.text(params.workshopName || 'BAITI ATELIER ALGERIE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text('Note de Calcul d Isolement Acoustique & Bruits de Voirie', 14, 17);
+  doc.text('Conformite aux Normes NF EN ISO 717-1, NF EN 14351-1 et DTR C3-3 CNERIB', 14, 22);
+
+  // Document Badge
+  doc.setFillColor(30, 41, 59);
+  doc.roundedRect(145, 6, 51, 16, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`ACOUSTIQUE : ${params.documentId}`, 148, 12);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 148, 18);
+
+  // 2. Identification Block
+  const infoY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, infoY, 182, 24, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Chantier / Projet :', 18, infoY + 6);
+  doc.text('Wilaya / Localisation :', 18, infoY + 12);
+  doc.text('Zone de Bruit Exterieur :', 18, infoY + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(params.projectOrClientName || 'Projet Particulier', 55, infoY + 6);
+  doc.text(params.locationWilaya || 'Alger Centre', 55, infoY + 12);
+  doc.text(params.result.selectedNoiseZone.titleFr, 55, infoY + 18);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...primaryNavy);
+  doc.text('Repere Fenetre :', 125, infoY + 6);
+  doc.text('Dimensions Baie :', 125, infoY + 12);
+  doc.text('Exigence Façade DTR :', 125, infoY + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(71, 85, 105);
+  doc.text(params.windowReference, 158, infoY + 6);
+  doc.text(`${params.result.windowWidthMm} x ${params.result.windowHeightMm} mm (${params.result.totalAreaM2} m2)`, 158, infoY + 12);
+  doc.text(`${params.result.requiredFacadeIsolationDb} dB (DnT,w + Ctr)`, 158, infoY + 18);
+
+  // 3. Composite Acoustic Performance Table
+  const tableY = infoY + 28;
+  autoTable(doc, {
+    startY: tableY,
+    margin: { left: 14, right: 14 },
+    head: [['Composant / Grandeur Acoustique', 'Indice & Valeur', 'Observations Techniques & Normatives']],
+    body: [
+      ['Vitrage Installe', `${params.result.selectedGlassData.nameFr}`, `Rw: ${params.result.selectedGlassData.rwDb} dB (C: ${params.result.selectedGlassData.cDb}, Ctr: ${params.result.selectedGlassData.ctrDb} dB)`],
+      ['Chassis & Menuiserie', `${params.result.selectedFrameData.nameFr}`, `Rw cadre: ${params.result.selectedFrameData.frameRwDb} dB, etancheite classe ${params.result.selectedAirPermeability}`],
+      ['Entree d Air de Ventilation', `${params.result.selectedVentData.labelFr}`, `Isolement grille Dn,e,w: ${params.result.selectedVentData.dnewCtrDb === 99 ? 'Sans fuite' : `${params.result.selectedVentData.dnewCtrDb} dB`}`],
+      ['Coffre de Volet Roulant', `${params.result.selectedBoxData.labelFr}`, `Isolement coffre Dn,e,w: ${params.result.selectedBoxData.dnewCtrDb === 99 ? 'Sans coffre' : `${params.result.selectedBoxData.dnewCtrDb} dB`}`],
+      ['Indice Global Rw Fenetre', `${params.result.compositeRwDb} dB`, 'Affaiblissement acoustique composite global de la baie'],
+      ['Indice Bruits de Trafic (Rw + Ctr)', `${params.result.compositeRwPlusCtrDb} dB`, 'Indicateur officiel reglementaire de voirie urbaine'],
+      ['Atténuation Bruit Perçu', `-${params.result.perceivedNoiseReductionPercent}%`, 'Reduction psycho-acoustique ressentie par l occupant'],
+      ['Niveau Sonore Intérieur Estimé', `Jour: ${params.result.estimatedInteriorNoiseLdenDb} dB(A) • Nuit: ${params.result.estimatedInteriorNoiseNightDb} dB(A)`, 'Objectif confort nocturne admissible DTR C3-3 <= 35 dB(A)'],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, textColor: [30, 41, 59] },
+    headStyles: { fillColor: primaryNavy, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 55 },
+      1: { cellWidth: 55, fontStyle: 'bold' },
+      2: { cellWidth: 72 },
+    },
+  });
+
+  // 4. Octave Band Spectrum Table
+  const octTableY = (doc as any).lastAutoTable.finalY + 4;
+  const spec = params.result.soundSpectrumLevels;
+  autoTable(doc, {
+    startY: octTableY,
+    margin: { left: 14, right: 14 },
+    head: [['Bande d Octave (Hz)', '125 Hz', '250 Hz', '500 Hz', '1000 Hz', '2000 Hz', '4000 Hz']],
+    body: [
+      [
+        'Affaiblissement R (dB)',
+        `${spec.hz125} dB`,
+        `${spec.hz250} dB`,
+        `${spec.hz500} dB`,
+        `${spec.hz1000} dB`,
+        `${spec.hz2000} dB`,
+        `${spec.hz4000} dB`,
+      ],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, halign: 'center', textColor: [30, 41, 59] },
+    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', halign: 'left', cellWidth: 44 },
+      1: { cellWidth: 23 },
+      2: { cellWidth: 23 },
+      3: { cellWidth: 23 },
+      4: { cellWidth: 23 },
+      5: { cellWidth: 23 },
+      6: { cellWidth: 23 },
+    },
+  });
+
+  // 5. Verdict Banner
+  const verdictY = (doc as any).lastAutoTable.finalY + 5;
+  doc.setDrawColor(...statusColor);
+  doc.setFillColor(isCompliant ? 240 : 254, isCompliant ? 253 : 242, isCompliant ? 244 : 242);
+  doc.roundedRect(14, verdictY, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...statusColor);
+  const verdictTitle = isCompliant
+    ? 'ISOLEMENT ACOUSTIQUE CONFORME AU DTR C3-3'
+    : 'ISOLEMENT INSUFFISANT : AMELIORATION REQUISE';
+  doc.text(verdictTitle, 20, verdictY + 7);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(30, 41, 59);
+  doc.text(
+    `Indice calcule (Rw + Ctr) : ${params.result.compositeRwPlusCtrDb} dB • Exigence reglementaire : ${params.result.requiredFacadeIsolationDb} dB • Marge : ${params.result.acousticMarginDb >= 0 ? '+' : ''}${params.result.acousticMarginDb} dB.`,
+    20,
+    verdictY + 13
+  );
+  doc.text(
+    `Point faible acoustique dominant identifie : ${params.result.primaryAcousticWeakPointFr}.`,
+    20,
+    verdictY + 18
+  );
+
+  // 6. Engineering Recommendations
+  const directY = verdictY + 25;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, directY, 182, 24, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Prescriptions et Recommandations Acoustiques Atelier :', 18, directY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(71, 85, 105);
+  let curDirY = directY + 9.5;
+  for (const note of params.result.engineeringRecommendationsFr.slice(0, 3)) {
+    doc.text(`• ${note}`, 18, curDirY);
+    curDirY += 4.5;
+  }
+
+  // 7. Signatures & QR Code
+  const signY = directY + 27;
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 22, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 22, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Pour le Concepteur Menuiserie :', 18, signY + 5.5);
+  doc.text('Visa Acoustique & Reception :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Ingénieur bureau d études Baiti', 18, signY + 11);
+  doc.text('Signature & Date :', 18, signY + 17);
+  doc.text('Bureau de controle / Maître d œuvre', 135, signY + 11);
+  doc.text('Signature & Date :', 135, signY + 17);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|ACOUSTIC|${params.documentId}|REF=${params.windowReference}|RW=${params.result.compositeRwDb}|RW_CTR=${params.result.compositeRwPlusCtrDb}|ZONE=${params.result.selectedNoiseZone.id}|REQ=${params.result.requiredFacadeIsolationDb}|MARGIN=${params.result.acousticMarginDb}|STATUS=${isCompliant ? 'PASS' : 'FAIL'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Document technique officiel Baiti Atelier • ${params.documentId} • NF EN ISO 717-1 • NF EN 14351-1 • DTR C3-3 CNERIB`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Note_Acoustique_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 

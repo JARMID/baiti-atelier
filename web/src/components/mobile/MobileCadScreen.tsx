@@ -24,6 +24,7 @@ import {
   Flame,
   Wind,
   Disc,
+  Waves,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -41,6 +42,7 @@ import { GlazingBeadGuideModal } from './GlazingBeadGuideModal';
 import { GlazingThermalStressModal } from './GlazingThermalStressModal';
 import { FastenerSafetyModal } from './FastenerSafetyModal';
 import { RollerShutterWindingModal } from './RollerShutterWindingModal';
+import { AcousticInsulationModal } from './AcousticInsulationModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -216,6 +218,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showThermalStressModal, setShowThermalStressModal] = useState(false);
   const [showFastenersModal, setShowFastenersModal] = useState(false);
   const [showWindingModal, setShowWindingModal] = useState(false);
+  const [showAcousticModal, setShowAcousticModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -859,6 +862,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
               type="button"
               onClick={() => {
                 playTactileClick();
+                setShowAcousticModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/15 border border-cyan-500/30 hover:bg-cyan-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-cyan-400 font-semibold"
+              title="Calcul d isolement acoustique et bruits de voirie DTR C3-3"
+            >
+              <Waves className="w-3 h-3" />
+              <span>Acoustique</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
                 setShowFastenersModal(true);
               }}
               className="px-2 py-1 rounded-lg bg-sky-500/10 dark:bg-sky-500/15 border border-sky-500/30 hover:bg-sky-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-sky-400 font-semibold"
@@ -1350,6 +1366,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
                 onExportDtrPdf={handleExportDtrPdf}
                 isGeneratingPdf={isGeneratingDtrPdf}
                 onOpenThermalStressModal={() => setShowThermalStressModal(true)}
+                onOpenAcousticModal={() => setShowAcousticModal(true)}
               />
             ) : (
               <div className="space-y-2.5">
@@ -1444,7 +1461,18 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
 
               {/* Acoustic & Thermal helper badge */}
               <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400 pt-0.5">
-                <span className="text-cyan-400 truncate max-w-[65%]">{acousticRating.label}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playTactileClick();
+                    setShowAcousticModal(true);
+                  }}
+                  className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 flex items-center gap-1 truncate max-w-[65%] cursor-pointer"
+                  title="Ouvrir le calculateur d isolement acoustique DTR C3-3"
+                >
+                  <Waves className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{acousticRating.label}</span>
+                </button>
                 <span className="text-emerald-400 truncate">{thermalRating.energyGrade}</span>
               </div>
             </div>
@@ -1908,6 +1936,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
         <RollerShutterWindingModal
           isOpen={showWindingModal}
           onClose={() => setShowWindingModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          windowReference={`Baie ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* ACOUSTIC SOUND INSULATION & TRAFFIC NOISE MODAL */}
+      {showAcousticModal && (
+        <AcousticInsulationModal
+          isOpen={showAcousticModal}
+          onClose={() => setShowAcousticModal(false)}
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           windowReference={`Baie ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
