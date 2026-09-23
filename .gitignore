@@ -64,6 +64,8 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+__pycache__/
+*.pyc
 
 # Ensure installer binaries in public downloads are preserved
 !web/public/downloads/*.exe
