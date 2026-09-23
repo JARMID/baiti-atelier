@@ -117,6 +117,8 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                         Text(
                           'Mesure optique tableau & équerrage maçonnerie',
                           style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -340,13 +342,17 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              Text(
-                                '${_measuredWidth.toInt()} × ${_measuredHeight.toInt()} mm',
-                                style: const TextStyle(
-                                  fontFamily: 'monospace',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  ' ×  mm',
+                                  style: const TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ],
@@ -365,37 +371,46 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    'ÉQUERRAGE',
-                                    style: TextStyle(
-                                      fontFamily: 'monospace',
-                                      fontSize: 9,
-                                      color: Color(0xFF94A3B8),
-                                      fontWeight: FontWeight.bold,
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'ÉQUERRAGE',
+                                      style: TextStyle(
+                                        fontFamily: 'monospace',
+                                        fontSize: 9,
+                                        color: Color(0xFF94A3B8),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    _diagonalDiff <= 4.0 ? 'CONFORME' : 'FAUX-ÉQUERRE',
-                                    style: TextStyle(
-                                      fontFamily: 'monospace',
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.bold,
-                                      color: _diagonalDiff <= 4.0 ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      _diagonalDiff <= 4.0 ? 'CONFORME' : 'FAUX-ÉQUERRE',
+                                      style: TextStyle(
+                                        fontFamily: 'monospace',
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: _diagonalDiff <= 4.0 ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                               const SizedBox(height: 2),
-                              Text(
-                                'ΔD = ${_diagonalDiff.toStringAsFixed(1)} mm',
-                                style: TextStyle(
-                                  fontFamily: 'monospace',
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: _diagonalDiff <= 4.0 ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'ΔD =  mm',
+                                  style: TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: _diagonalDiff <= 4.0 ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                                  ),
                                 ),
                               ),
                             ],
@@ -406,20 +421,23 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Clearance Selector (Jeux de pose maçonnerie)
-                  Row(
-                    children: [
-                      const Text(
-                        'Jeu de pose:',
-                        style: TextStyle(fontSize: 11, color: Colors.white70),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildPlayChip('Standard (-10mm)', 0),
-                      const SizedBox(width: 4),
-                      _buildPlayChip('Rénov (-15mm)', 1),
-                      const SizedBox(width: 4),
-                      _buildPlayChip('Brut (0mm)', 2),
-                    ],
+                  // Clearance Selector (Jeux de pose maçonnerie) - Horizontally scrollable
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        const Text(
+                          'Jeu de pose:',
+                          style: TextStyle(fontSize: 11, color: Colors.white70),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildPlayChip('Standard (-10mm)', 0),
+                        const SizedBox(width: 4),
+                        _buildPlayChip('Rénov (-15mm)', 1),
+                        const SizedBox(width: 4),
+                        _buildPlayChip('Brut (0mm)', 2),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 8),
 
@@ -434,40 +452,52 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'COTE DE FABRICATION ATELIER',
-                              style: TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF38BDF8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'COTE DE FABRICATION ATELIER',
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF38BDF8),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            Text(
-                              '${_finalFabricationWidth.toInt()} × ${_finalFabricationHeight.toInt()} mm',
-                              style: const TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  '${_finalFabricationWidth.toInt()} × ${_finalFabricationHeight.toInt()} mm',
+                                  style: const TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF38BDF8),
                             foregroundColor: const Color(0xFF0F172A),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
-                          icon: const Icon(Icons.check_circle_outline, size: 16),
-                          label: const Text(
-                            'Appliquer au Devis',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                          icon: const Icon(Icons.check_circle_outline, size: 15),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Appliquer au Devis',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
                           ),
                           onPressed: () {
                             widget.onApplyDimensions(_finalFabricationWidth, _finalFabricationHeight);

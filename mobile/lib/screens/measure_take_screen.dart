@@ -224,46 +224,53 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0B0F17),
         elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Text(
-                  'BAITI ATELIER',
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFD4AF37),
-                    letterSpacing: 1.5,
+        titleSpacing: 12,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'BAITI ATELIER',
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFD4AF37),
+                      letterSpacing: 1.5,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'بيتي',
-                  textDirection: TextDirection.rtl,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFD4AF37),
+                  const SizedBox(width: 8),
+                  Text(
+                    'بيتي',
+                    textDirection: TextDirection.rtl,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFD4AF37),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            Text(
-              'Prise de Cotes & Chiffrage Multi-Métiers',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade400,
+                ],
               ),
-            ),
-          ],
+              Text(
+                'Prise de Cotes & Chiffrage',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade400,
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            margin: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: const Color(0xFF1E293B),
               borderRadius: BorderRadius.circular(20),
@@ -366,23 +373,31 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'PRESETS STANDARDS ATELIER (${_getTradeName(_spec.tradeType).toUpperCase()})',
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF64748B),
-                  letterSpacing: 1.0,
+              Expanded(
+                child: Text(
+                  'PRESETS STANDARDS ATELIER (${_getTradeName(_spec.tradeType).toUpperCase()})',
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF64748B),
+                    letterSpacing: 1.0,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Text(
-                '${_spec.widthMm.toInt()} × ${_spec.heightMm.toInt()} mm',
-                style: TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: tradeColor,
+              const SizedBox(width: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '${_spec.widthMm.toInt()} × ${_spec.heightMm.toInt()} mm',
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: tradeColor,
+                  ),
                 ),
               ),
             ],
@@ -411,7 +426,10 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Largeur Totale (L)', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                    const Expanded(
+                      child: Text('Largeur Totale (L)', style: TextStyle(fontSize: 12, color: Colors.white70), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                    const SizedBox(width: 8),
                     Text(
                       '${_spec.widthMm.toInt()} mm',
                       style: const TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
@@ -432,7 +450,10 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Hauteur Totale (H)', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                    const Expanded(
+                      child: Text('Hauteur Totale (H)', style: TextStyle(fontSize: 12, color: Colors.white70), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                    const SizedBox(width: 8),
                     Text(
                       '${_spec.heightMm.toInt()} mm',
                       style: const TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
@@ -454,7 +475,10 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Profondeur Caisson (P)', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                      const Expanded(
+                        child: Text('Profondeur Caisson (P)', style: TextStyle(fontSize: 12, color: Colors.white70), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
+                      const SizedBox(width: 8),
                       Text(
                         '${_spec.depthMm.toInt()} mm',
                         style: const TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
@@ -685,25 +709,32 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                     width: 1.2,
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      tab['icon'] as IconData,
-                      size: 14,
-                      color: isSelected ? color : const Color(0xFF64748B),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          tab['icon'] as IconData,
+                          size: 14,
+                          color: isSelected ? color : const Color(0xFF64748B),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          tab['label'] as String,
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 11,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 5),
-                    Text(
-                      tab['label'] as String,
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 11,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? Colors.white : const Color(0xFF94A3B8),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -1121,9 +1152,11 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildCadMetricItem('Cote Tableau', '${(_spec.widthMm + 10).toInt()} × ${(_spec.heightMm + 10).toInt()} mm', const Color(0xFF10B981)),
-                          _buildCadMetricItem('Clair de Jour', '${clairW.toInt()} × ${clairH.toInt()} mm', const Color(0xFF38BDF8)),
-                          _buildCadMetricItem('Vitrage Net', '$glassSurface m²', const Color(0xFFD4AF37)),
+                          Expanded(child: _buildCadMetricItem('Cote Tableau', '${(_spec.widthMm + 10).toInt()} × ${(_spec.heightMm + 10).toInt()} mm', const Color(0xFF10B981))),
+                          const SizedBox(width: 6),
+                          Expanded(child: _buildCadMetricItem('Clair de Jour', '${clairW.toInt()} × ${clairH.toInt()} mm', const Color(0xFF38BDF8))),
+                          const SizedBox(width: 6),
+                          Expanded(child: _buildCadMetricItem('Vitrage Net', '$glassSurface m²', const Color(0xFFD4AF37))),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -1182,9 +1215,18 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: Color(0xFF94A3B8))),
+        Text(
+          label,
+          style: const TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: Color(0xFF94A3B8)),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         const SizedBox(height: 2),
-        Text(val, style: TextStyle(fontFamily: 'monospace', fontSize: 11.5, fontWeight: FontWeight.bold, color: valColor)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(val, style: TextStyle(fontFamily: 'monospace', fontSize: 11.5, fontWeight: FontWeight.bold, color: valColor)),
+        ),
       ],
     );
   }

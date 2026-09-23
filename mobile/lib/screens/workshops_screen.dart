@@ -287,8 +287,11 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
                                         ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
+                                    const SizedBox(width: 6),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
@@ -312,10 +315,14 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
                                 Text(
                                   '${w.trade} • ${w.wilayaName} (${w.wilayaCode})',
                                   style: const TextStyle(fontSize: 11, color: Color(0xFFD4AF37), fontWeight: FontWeight.w600),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
                                   w.address,
                                   style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
@@ -328,44 +335,63 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Tarif profilé :', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
-                              Text(
-                                '${w.aluminumRateKg.toInt()} DZD / kg',
-                                style: const TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70),
-                              ),
-                            ],
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Tarif profilé :', style: TextStyle(fontSize: 10, color: Color(0xFF64748B)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    '${w.aluminumRateKg.toInt()} DZD / kg',
+                                    style: const TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Vitrage standard :', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
-                              Text(
-                                '${w.glassRateM2.toInt()} DZD / m²',
-                                style: const TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70),
-                              ),
-                            ],
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Vitrage standard :', style: TextStyle(fontSize: 10, color: Color(0xFF64748B)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    '${w.glassRateM2.toInt()} DZD / m²',
+                                    style: const TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 6),
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
                                 onPressed: () => _callPhone(w.phone),
-                                icon: const Icon(Icons.call_rounded, size: 18),
+                                icon: const Icon(Icons.call_rounded, size: 16),
                                 style: IconButton.styleFrom(
                                   backgroundColor: const Color(0xFF1E293B),
                                   foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.all(8),
+                                  minimumSize: const Size(36, 36),
                                 ),
                                 tooltip: 'Appeler',
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 4),
                               IconButton(
                                 onPressed: () => _openWhatsApp(w.whatsapp, w.name),
-                                icon: const Icon(Icons.chat_bubble_rounded, size: 18),
+                                icon: const Icon(Icons.chat_bubble_rounded, size: 16),
                                 style: IconButton.styleFrom(
                                   backgroundColor: const Color(0xFF059669),
                                   foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.all(8),
+                                  minimumSize: const Size(36, 36),
                                 ),
                                 tooltip: 'WhatsApp',
                               ),

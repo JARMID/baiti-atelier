@@ -261,19 +261,24 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              const Text(
-                                'Baiti Atelier',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'بيتي',
-                                textDirection: TextDirection.rtl,
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37)),
-                              ),
-                            ],
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  'Baiti Atelier',
+                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'بيتي',
+                                  textDirection: TextDirection.rtl,
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37)),
+                                ),
+                              ],
+                            ),
                           ),
                           Text(
                             '${widget.projectName} • $quoteId',
@@ -318,25 +323,32 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                               width: 1.2,
                             ),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.receipt_long_rounded,
-                                size: 14,
-                                color: _activeTab == 0 ? const Color(0xFFD4AF37) : const Color(0xFF64748B),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.receipt_long_rounded,
+                                    size: 14,
+                                    color: _activeTab == 0 ? const Color(0xFFD4AF37) : const Color(0xFF64748B),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Devis Proforma',
+                                    style: TextStyle(
+                                      fontFamily: 'monospace',
+                                      fontSize: 11,
+                                      fontWeight: _activeTab == 0 ? FontWeight.bold : FontWeight.normal,
+                                      color: _activeTab == 0 ? Colors.white : const Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Devis Proforma',
-                                style: TextStyle(
-                                  fontFamily: 'monospace',
-                                  fontSize: 11,
-                                  fontWeight: _activeTab == 0 ? FontWeight.bold : FontWeight.normal,
-                                  color: _activeTab == 0 ? Colors.white : const Color(0xFF94A3B8),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
@@ -359,25 +371,32 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                               width: 1.2,
                             ),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.content_cut_rounded,
-                                size: 14,
-                                color: _activeTab == 1 ? const Color(0xFF38BDF8) : const Color(0xFF64748B),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.content_cut_rounded,
+                                    size: 14,
+                                    color: _activeTab == 1 ? const Color(0xFF38BDF8) : const Color(0xFF64748B),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Débit Scie & Verre',
+                                    style: TextStyle(
+                                      fontFamily: 'monospace',
+                                      fontSize: 11,
+                                      fontWeight: _activeTab == 1 ? FontWeight.bold : FontWeight.normal,
+                                      color: _activeTab == 1 ? Colors.white : const Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Débit Scie & Verre',
-                                style: TextStyle(
-                                  fontFamily: 'monospace',
-                                  fontSize: 11,
-                                  fontWeight: _activeTab == 1 ? FontWeight.bold : FontWeight.normal,
-                                  color: _activeTab == 1 ? Colors.white : const Color(0xFF94A3B8),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
@@ -409,25 +428,32 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'BAITI ATELIER SARL | بيتي',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.white,
-                                        letterSpacing: 0.5,
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'BAITI ATELIER SARL | بيتي',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          letterSpacing: 0.5,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    const Text(
-                                      'Menuiserie Aluminium, PVC & Agencement',
-                                      style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                                    ),
-                                  ],
+                                      SizedBox(height: 2),
+                                      Text(
+                                        'Menuiserie Aluminium, PVC & Agencement',
+                                        style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                                const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
@@ -453,26 +479,31 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text('CLIENT & CHANTIER', style: TextStyle(fontSize: 9, color: Color(0xFF64748B), fontFamily: 'monospace')),
-                                    const SizedBox(height: 2),
-                                    Text(widget.projectName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
-                                    Text('Wilaya de $wilaya', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-                                  ],
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('CLIENT & CHANTIER', style: TextStyle(fontSize: 9, color: Color(0xFF64748B), fontFamily: 'monospace')),
+                                      const SizedBox(height: 2),
+                                      Text(widget.projectName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                                      Text('Wilaya de $wilaya', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                                    ],
+                                  ),
                                 ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    const Text('DATE EMISSION', style: TextStyle(fontSize: 9, color: Color(0xFF64748B), fontFamily: 'monospace')),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      DateTime.now().toLocal().toString().split(' ')[0],
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'monospace'),
-                                    ),
-                                    const Text('Validite: 30 jours', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
-                                  ],
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      const Text('DATE EMISSION', style: TextStyle(fontSize: 9, color: Color(0xFF64748B), fontFamily: 'monospace')),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        DateTime.now().toLocal().toString().split(' ')[0],
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'monospace'),
+                                      ),
+                                      const Text('Validite: 30 jours', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
@@ -667,21 +698,28 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Row(
-                                  children: [
-                                    Icon(Icons.content_cut_rounded, size: 18, color: Color(0xFF38BDF8)),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'RÉSUMÉ DÉBITS CHANTIER',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        fontFamily: 'monospace',
+                                const Expanded(
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.content_cut_rounded, size: 18, color: Color(0xFF38BDF8)),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'RÉSUMÉ DÉBITS CHANTIER',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                            fontFamily: 'monospace',
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
+                                const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
@@ -771,31 +809,38 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          ref,
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF38BDF8),
-                                            fontFamily: 'monospace',
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            ref,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF38BDF8),
+                                              fontFamily: 'monospace',
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        s.title,
-                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            s.title,
+                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
+                                  const SizedBox(width: 8),
                                   Text(
                                     '${s.widthMm.toInt()} × ${s.heightMm.toInt()} mm',
                                     style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Color(0xFFD4AF37), fontWeight: FontWeight.bold),

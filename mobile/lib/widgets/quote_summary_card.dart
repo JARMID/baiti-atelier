@@ -76,10 +76,10 @@ _Généré via Baiti Atelier Mobile_
 
     return Card(
       elevation: 0,
-      color: const Color(0xFF131926),
+      color: const Color(0xFF0F172A),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFF1E293B)),
+        side: const BorderSide(color: Color(0xFF1E293B), width: 1.2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -89,29 +89,35 @@ _Généré via Baiti Atelier Mobile_
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFD4AF37),
-                        shape: BoxShape.circle,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFD4AF37),
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'CHIFFRAGE DÉTAILLÉ EN DZD',
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF94A3B8),
-                        letterSpacing: 1.1,
+                      const SizedBox(width: 8),
+                      const Flexible(
+                        child: Text(
+                          'CHIFFRAGE DÉTAILLÉ EN DZD',
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF94A3B8),
+                            letterSpacing: 1.1,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   '${spec.quantity} unité(s)',
                   style: const TextStyle(
@@ -158,13 +164,20 @@ _Généré via Baiti Atelier Mobile_
                     ),
                   ],
                 ),
-                Text(
-                  _formatDzd(cost['grandTotal']!),
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFFD4AF37),
-                    letterSpacing: -0.5,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      _formatDzd(cost['grandTotal']!),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFFD4AF37),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -179,14 +192,17 @@ _Généré via Baiti Atelier Mobile_
                   child: ElevatedButton.icon(
                     onPressed: () => _dispatchWhatsApp(context),
                     icon: const Icon(Icons.send_rounded, size: 16, color: Colors.white),
-                    label: const Text(
-                      'Transmettre sur WhatsApp',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Transmettre sur WhatsApp',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF059669),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -200,22 +216,24 @@ _Généré via Baiti Atelier Mobile_
                     spec.projectName.isNotEmpty ? spec.projectName : spec.title,
                     [spec],
                   ),
-                  icon: const Icon(Icons.receipt_long_rounded, size: 20),
+                  icon: const Icon(Icons.receipt_long_rounded, size: 19),
                   style: IconButton.styleFrom(
                     backgroundColor: const Color(0xFF1E293B),
                     foregroundColor: const Color(0xFFD4AF37),
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
+                    minimumSize: const Size(40, 40),
                   ),
                   tooltip: 'Fiche Devis & Facture Proforma',
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 IconButton.filledTonal(
                   onPressed: onSaveLocally,
-                  icon: const Icon(Icons.bookmark_border_rounded, size: 20),
+                  icon: const Icon(Icons.bookmark_border_rounded, size: 19),
                   style: IconButton.styleFrom(
                     backgroundColor: const Color(0xFF1E293B),
                     foregroundColor: const Color(0xFFE2E8F0),
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
+                    minimumSize: const Size(40, 40),
                   ),
                   tooltip: 'Enregistrer dans l\'historique chantier',
                 ),
@@ -233,10 +251,15 @@ _Généré via Baiti Atelier Mobile_
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
+          const SizedBox(width: 8),
           Text(
             _formatDzd(amount),
             style: const TextStyle(

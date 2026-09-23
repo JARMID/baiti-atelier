@@ -19,13 +19,28 @@ class BaitiMobileApp extends StatelessWidget {
       title: 'Baiti Atelier | بيتي',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        useMaterial3: true,
         brightness: Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF040B16),
         primaryColor: const Color(0xFFD4AF37),
         colorScheme: const ColorScheme.dark(
           primary: Color(0xFFD4AF37),
           secondary: Color(0xFF38BDF8),
-          surface: Color(0xFF08182E),
+          surface: Color(0xFF0A1324),
+          surfaceContainerHighest: Color(0xFF131D33),
+        ),
+        cardTheme: CardThemeData(
+          color: const Color(0xFF0F172A),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFF1E293B), width: 1.2),
+          ),
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF040B16),
+          elevation: 0,
+          scrolledUnderElevation: 0,
         ),
         textTheme: GoogleFonts.interTextTheme(
           ThemeData.dark().textTheme,

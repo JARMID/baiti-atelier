@@ -292,38 +292,44 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0B0F17),
         elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Text(
-                  'BAITI ATELIER',
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFD4AF37),
-                    letterSpacing: 1.5,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'BAITI ATELIER',
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFD4AF37),
+                      letterSpacing: 1.5,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'بيتي',
-                  textDirection: TextDirection.rtl,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFD4AF37),
+                  const SizedBox(width: 8),
+                  Text(
+                    'بيتي',
+                    textDirection: TextDirection.rtl,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFD4AF37),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const Text(
-              'Carnet de Chantiers Multi-Ouvrages',
-              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-            ),
-          ],
+                ],
+              ),
+              const Text(
+                'Carnet de Chantiers Multi-Ouvrages',
+                style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              ),
+            ],
+          ),
         ),
         actions: [
           IconButton(
@@ -361,73 +367,90 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            'TOTAL PORTFOLIO CHANTIERS',
-                            style: TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF94A3B8),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '${grouped.length} Projet${grouped.length > 1 ? 's' : ''}',
-                              style: const TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFD4AF37),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Flexible(
+                              child: Text(
+                                'TOTAL PORTFOLIO CHANTIERS',
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '${grouped.length} Projet${grouped.length > 1 ? 's' : ''}',
+                                style: const TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFD4AF37),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            _formatDzd(_totalEstimatedAmount),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatDzd(_totalEstimatedAmount),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      const Text(
-                        'ACOMPTES 40%',
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF10B981),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text(
+                          'ACOMPTES 40%',
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF10B981),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatDzd(_totalEstimatedAmount * 0.4),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF10B981),
+                        const SizedBox(height: 4),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            _formatDzd(_totalEstimatedAmount * 0.4),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF10B981),
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -604,42 +627,57 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                                   fontWeight: FontWeight.bold,
                                                   color: Colors.white,
                                                 ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                               const SizedBox(height: 2),
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    wilaya,
-                                                    style: const TextStyle(
-                                                      fontSize: 10,
-                                                      color: Color(0xFF94A3B8),
+                                              FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                alignment: Alignment.centerLeft,
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      wilaya,
+                                                      style: const TextStyle(
+                                                        fontSize: 10,
+                                                        color: Color(0xFF94A3B8),
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
                                                     ),
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    '• ${pSpecs.length} ouvrage${pSpecs.length > 1 ? 's' : ''}',
-                                                    style: const TextStyle(
-                                                      fontSize: 10,
-                                                      color: Color(0xFF64748B),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      '•  ouv.',
+                                                      style: const TextStyle(
+                                                        fontSize: 10,
+                                                        color: Color(0xFF64748B),
+                                                      ),
                                                     ),
-                                                  ),
-                                                ],
+                                                  ],
+                                                ),
                                               ),
                                             ],
                                           ),
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.receipt_long_rounded, size: 18, color: Color(0xFFD4AF37)),
+                                          padding: const EdgeInsets.all(4),
+                                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                          icon: const Icon(Icons.receipt_long_rounded, size: 17, color: Color(0xFFD4AF37)),
                                           tooltip: 'Devis & Proforma Officiel',
                                           onPressed: () => DevisPreviewSheet.show(context, pName, pSpecs, initialTab: 0),
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.content_cut_rounded, size: 18, color: Color(0xFF38BDF8)),
+                                          padding: const EdgeInsets.all(4),
+                                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                          icon: const Icon(Icons.content_cut_rounded, size: 17, color: Color(0xFF38BDF8)),
                                           tooltip: 'Fiche Débit Scie & Verre',
                                           onPressed: () => DevisPreviewSheet.show(context, pName, pSpecs, initialTab: 1),
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.share_rounded, size: 18, color: Color(0xFF10B981)),
+                                          padding: const EdgeInsets.all(4),
+                                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                          icon: const Icon(Icons.share_rounded, size: 17, color: Color(0xFF10B981)),
                                           tooltip: 'Partager ce chantier WhatsApp',
                                           onPressed: () => _shareProjectViaWhatsApp(pName, pSpecs),
                                         ),
@@ -661,44 +699,70 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              const Text(
-                                                'TOTAL CHANTIER',
-                                                style: TextStyle(fontSize: 8, fontFamily: 'monospace', color: Color(0xFF64748B)),
-                                              ),
-                                              Text(
-                                                _formatDzd(pTotal),
-                                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                                              ),
-                                            ],
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                const Text(
+                                                  'TOTAL CHANTIER',
+                                                  style: TextStyle(fontSize: 8, fontFamily: 'monospace', color: Color(0xFF64748B)),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                FittedBox(
+                                                  fit: BoxFit.scaleDown,
+                                                  alignment: Alignment.centerLeft,
+                                                  child: Text(
+                                                    _formatDzd(pTotal),
+                                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.center,
-                                            children: [
-                                              const Text(
-                                                'ACOMPTE 40%',
-                                                style: TextStyle(fontSize: 8, fontFamily: 'monospace', color: Color(0xFF10B981)),
-                                              ),
-                                              Text(
-                                                _formatDzd(pAcompte),
-                                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
-                                              ),
-                                            ],
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              children: [
+                                                const Text(
+                                                  'ACOMPTE 40%',
+                                                  style: TextStyle(fontSize: 8, fontFamily: 'monospace', color: Color(0xFF10B981)),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                FittedBox(
+                                                  fit: BoxFit.scaleDown,
+                                                  alignment: Alignment.center,
+                                                  child: Text(
+                                                    _formatDzd(pAcompte),
+                                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.end,
-                                            children: [
-                                              const Text(
-                                                'SOLDE 60%',
-                                                style: TextStyle(fontSize: 8, fontFamily: 'monospace', color: Color(0xFF38BDF8)),
-                                              ),
-                                              Text(
-                                                _formatDzd(pSolde),
-                                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8)),
-                                              ),
-                                            ],
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              children: [
+                                                const Text(
+                                                  'SOLDE 60%',
+                                                  style: TextStyle(fontSize: 8, fontFamily: 'monospace', color: Color(0xFF38BDF8)),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                FittedBox(
+                                                  fit: BoxFit.scaleDown,
+                                                  alignment: Alignment.centerRight,
+                                                  child: Text(
+                                                    _formatDzd(pSolde),
+                                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8)),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -792,14 +856,23 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                                             fontWeight: FontWeight.bold,
                                                             color: Colors.white,
                                                           ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
                                                         ),
                                                       ),
-                                                      Text(
-                                                        _formatDzd(cost['grandTotal'] ?? 0.0),
-                                                        style: const TextStyle(
-                                                          fontSize: 12,
-                                                          fontWeight: FontWeight.bold,
-                                                          color: Color(0xFFD4AF37),
+                                                      const SizedBox(width: 6),
+                                                      Flexible(
+                                                        child: FittedBox(
+                                                          fit: BoxFit.scaleDown,
+                                                          alignment: Alignment.centerRight,
+                                                          child: Text(
+                                                            _formatDzd(cost['grandTotal'] ?? 0.0),
+                                                            style: const TextStyle(
+                                                              fontSize: 12,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: Color(0xFFD4AF37),
+                                                            ),
+                                                          ),
                                                         ),
                                                       ),
                                                     ],
@@ -808,6 +881,8 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                                   Text(
                                                     '${spec.widthMm.toInt()} × ${spec.heightMm.toInt()} mm • ${spec.quantity} u • ${spec.profileSystem}',
                                                     style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
                                                   ),
                                                   const SizedBox(height: 4),
                                                   // Interactive Status Pill
