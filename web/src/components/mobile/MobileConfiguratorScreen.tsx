@@ -28,6 +28,7 @@ import {
   Activity,
   Wind,
   Lock,
+  Box,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -55,6 +56,7 @@ import { SeismicJoineryModal } from './SeismicJoineryModal';
 import { BifoldDoorModal } from './BifoldDoorModal';
 import { LouverAerodynamicsModal } from './LouverAerodynamicsModal';
 import { SecurityLockingModal } from './SecurityLockingModal';
+import { StructuralGlazingModal } from './StructuralGlazingModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -172,6 +174,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isBifoldModalOpen, setIsBifoldModalOpen] = useState(false);
   const [isLouverModalOpen, setIsLouverModalOpen] = useState(false);
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
+  const [isStructuralGlazingModalOpen, setIsStructuralGlazingModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -807,6 +810,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Lock className="w-4 h-4" />
           <span>Audit Sécurité Anti-Effraction & Quincaillerie RC (NF EN 1627)</span>
+        </button>
+
+        {/* Structural Silicone Glazing VEC / VEP Joint Sizing Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsStructuralGlazingModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Box className="w-4 h-4" />
+          <span>Dimensionnement Silicone VEC / VEP (NF DTU 39 P4 / ETAG 002)</span>
         </button>
       </div>
 
@@ -1930,6 +1946,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           windowReference={`Châssis ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* STRUCTURAL SILICONE GLAZING (VEC / VEP) MODAL */}
+      {isStructuralGlazingModalOpen && (
+        <StructuralGlazingModal
+          isOpen={isStructuralGlazingModalOpen}
+          onClose={() => setIsStructuralGlazingModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          windowReference={`VEC ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />

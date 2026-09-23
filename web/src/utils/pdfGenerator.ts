@@ -6400,6 +6400,321 @@ export async function generateSecurityLockingPdf(params: SecurityLockingPdfParam
   doc.save(safeFilename);
 }
 
+export interface StructuralGlazingPdfParams {
+  documentId: string;
+  clientName: string;
+  wilayaName: string;
+  projectRef: string;
+  widthMm: number;
+  heightMm: number;
+  result: import('./structuralGlazingManager').StructuralGlazingResult;
+  workshopName?: string;
+}
+
+/**
+ * Generates an official A4 technical specification note for structural silicone glazing (VEC / VEP).
+ * References: NF DTU 39 P4 / EOTA ETAG 002 / ASTM C1401 / DTR BC 2-47.
+ * Humanizer invariant: exactly 0 em dashes, 0 en dashes.
+ */
+export async function generateStructuralGlazingPdf(params: StructuralGlazingPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryNavy: [number, number, number] = [15, 23, 42]; // slate-900
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const amberOrange: [number, number, number] = [245, 158, 11];
+  const roseRed: [number, number, number] = [239, 68, 68];
+
+  const isOk = params.result.overallVerdict === 'favorable';
+  const isWarn = params.result.overallVerdict === 'warning';
+  const statusColor = isOk ? emeraldGreen : isWarn ? amberOrange : roseRed;
+
+  // 1. Header & Title Block
+  doc.setFillColor(...primaryNavy);
+  doc.rect(14, 12, 182, 22, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER : NOTE TECHNIQUE VITRAGE VEC / VEP', 20, 21);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text('Dimensionnement Joint Silicone Structural & Contraintes (NF DTU 39 P4 / ETAG 002)', 20, 27);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(212, 175, 55);
+  doc.text(`Doc N: ${params.documentId}`, 150, 21);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 150, 27);
+
+  // 2. Project Metadata Card
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 38, 182, 20, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Reference Ouvrage :', 18, 44);
+  doc.text('Maitre d Ouvrage / Client :', 18, 50);
+  doc.text('Localisation / Wilaya :', 18, 55);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(51, 65, 85);
+  doc.text(`${params.projectRef} (${params.widthMm} x ${params.heightMm} mm)`, 60, 44);
+  doc.text(`${params.clientName || 'Client Façade'}`, 60, 50);
+  doc.text(`${params.wilayaName || 'Alger (16)'}`, 60, 55);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...primaryNavy);
+  doc.text('Systeme de Collage :', 115, 44);
+  doc.text('Mastic Structural :', 115, 50);
+  doc.text('Pression de Vent :', 115, 55);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(51, 65, 85);
+  doc.text(`${params.result.systemSpec.nameFr.split('(')[0].trim()}`, 148, 44, { maxWidth: 44 });
+  doc.text(`${params.result.sealantSpec.nameFr.split('(')[0].trim()}`, 148, 50, { maxWidth: 44 });
+  doc.text(`${params.result.input.windPressurePa} Pa (RNV 2013)`, 148, 55);
+
+  // 3. Technical Parameters Grid
+  const gridY = 62;
+  const colWidth = 43.5;
+  const colGap = 2.6;
+
+  // Box 1: Geometrie & Verre
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(14, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('1. Geometrie Panneau', 17, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Surface verre : ${params.result.panelAreaM2.toFixed(3)} m2`, 17, gridY + 12);
+  doc.text(`Poids verre : ${params.result.glassWeightKg} kg`, 17, gridY + 18);
+  doc.text(`Petit cote a : ${params.result.shortSideMm} mm`, 17, gridY + 24);
+  doc.text(`Grand cote b : ${params.result.longSideMm} mm`, 17, gridY + 30);
+  doc.text(`Perimetre colle : ${params.result.perimeterMm} mm`, 17, gridY + 36);
+
+  // Box 2: Bite Structural
+  const b2X = 14 + colWidth + colGap;
+  doc.roundedRect(b2X, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(b2X, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('2. Bite Structural hc', b2X + 3, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Bite calcule : ${params.result.calculatedBiteMm} mm`, b2X + 3, gridY + 12);
+  doc.text(`Bite recommande : ${params.result.recommendedBiteMm} mm`, b2X + 3, gridY + 18);
+  doc.text(`Minimum norme : ${params.result.minNormativeBiteMm} mm`, b2X + 3, gridY + 24);
+  doc.text(`Sigma dyn admissible : 0.14 MPa`, b2X + 3, gridY + 30);
+  doc.text(`Statut bite : ${params.result.isBiteSufficient ? 'Conforme ETAG' : 'Insuffisant'}`, b2X + 3, gridY + 36);
+
+  // Box 3: Epaisseur Joint e
+  const b3X = b2X + colWidth + colGap;
+  doc.roundedRect(b3X, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(b3X, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('3. Epaisseur Joint e', b3X + 3, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Delta L thermique : ${params.result.calculatedDifferentialExpansionMm} mm`, b3X + 3, gridY + 12);
+  doc.text(`Epaisseur calc. : ${params.result.calculatedGluelineThicknessMm} mm`, b3X + 3, gridY + 18);
+  doc.text(`Epaisseur reco. : ${params.result.recommendedGluelineThicknessMm} mm`, b3X + 3, gridY + 24);
+  doc.text(`Ratio hc / e : ${params.result.jointAspectRatio}`, b3X + 3, gridY + 30);
+  doc.text(`Optimal ratio : [1.0 a 3.0]`, b3X + 3, gridY + 36);
+
+  // Box 4: Securite & Mastic
+  const b4X = b3X + colWidth + colGap;
+  doc.roundedRect(b4X, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(b4X, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('4. Securite & Mastic', b4X + 3, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Tau poids propre : ${params.result.deadLoadStressMpa} MPa`, b4X + 3, gridY + 12);
+  doc.text(`Tau admissible : ${params.result.allowableDeadLoadStressMpa} MPa`, b4X + 3, gridY + 18);
+  doc.text(`Pattes de securite : ${params.result.minSafetyClipsCount} pattes`, b4X + 3, gridY + 24);
+  doc.text(`Volume mastic : ${params.result.sealantVolumeLiters} L`, b4X + 3, gridY + 30);
+  doc.text(`Poches 600 ml : ${params.result.sausage600mlPacksRequired} unites`, b4X + 3, gridY + 36);
+
+  // 4. Detailed Joint Sizing Table
+  const tableY = 109;
+  doc.setFillColor(...primaryNavy);
+  doc.rect(14, tableY, 182, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('PARAMETRE VEC / NORME ETAG 002', 18, tableY + 5);
+  doc.text('VALEUR CALCULEE', 90, tableY + 5);
+  doc.text('CRITERE / SEUIL NORMATIF', 140, tableY + 5);
+
+  const rows = [
+    {
+      label: 'Hauteur de contact de collage (Bite hc)',
+      val: `${params.result.recommendedBiteMm} mm (calcul dynamique ${params.result.calculatedBiteMm} mm)`,
+      crit: `Minimum ${params.result.minNormativeBiteMm} mm sous vent ${params.result.input.windPressurePa} Pa`,
+    },
+    {
+      label: 'Epaisseur du joint de colle (Glueline e)',
+      val: `${params.result.recommendedGluelineThicknessMm} mm (Delta L = ${params.result.calculatedDifferentialExpansionMm} mm)`,
+      crit: 'Minimum 6 mm (capacite de cisaillement 15%)',
+    },
+    {
+      label: 'Ratio de forme geometrique du joint (hc / e)',
+      val: `Ratio = ${params.result.jointAspectRatio}`,
+      crit: 'Plage recommandee : 1.0 <= hc/e <= 3.0',
+    },
+    {
+      label: 'Contrainte permanente sous poids propre (tau_dead)',
+      val: `${params.result.deadLoadStressMpa} MPa`,
+      crit: `Plafond ETAG 002 : ${params.result.allowableDeadLoadStressMpa} MPa`,
+    },
+    {
+      label: 'Dispositif mecanique anti-chute de securite',
+      val: `${params.result.minSafetyClipsCount} pattes inox laterales`,
+      crit: 'Obligatoire DTU 39 P4 au-dela de 2 etages',
+    },
+  ];
+
+  let curY = tableY + 7;
+  rows.forEach((r, idx) => {
+    doc.setFillColor(idx % 2 === 0 ? 255 : 248, idx % 2 === 0 ? 255 : 250, idx % 2 === 0 ? 255 : 252);
+    doc.rect(14, curY, 182, 6.5, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.line(14, curY + 6.5, 196, curY + 6.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(30, 41, 59);
+    doc.text(r.label, 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(r.val, 90, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    doc.text(r.crit, 140, curY + 4.5);
+
+    curY += 6.5;
+  });
+
+  // 5. Compliance Banner & Verdict Card
+  const verdictY = curY + 4;
+  doc.setDrawColor(...statusColor);
+  doc.setFillColor(isOk ? 240 : isWarn ? 254 : 254, isOk ? 253 : isWarn ? 243 : 242, isOk ? 244 : isWarn ? 199 : 242);
+  doc.roundedRect(14, verdictY, 182, 34, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...statusColor);
+  doc.text(`VERDICT TECHNIQUE : ${params.result.verdictTitleFr.toUpperCase()}`, 18, verdictY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(30, 41, 59);
+  let vY = verdictY + 12;
+  for (const det of params.result.verdictDetailsFr) {
+    doc.text(`• ${det}`, 18, vY);
+    vY += 4.5;
+  }
+
+  // 6. Workshop Directives & Quality Control
+  const directY = verdictY + 37;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, directY, 182, 30, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Prescriptions Atelier et Controle Qualite VEC (NF DTU 39 P4 / ETAG 002) :', 18, directY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(71, 85, 105);
+  let dY = directY + 10;
+  for (const rec of params.result.recommendationsFr) {
+    doc.text(`• ${rec}`, 18, dY, { maxWidth: 174 });
+    dY += 4.5;
+  }
+
+  // 7. Signatures & QR Code
+  const signY = directY + 33;
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 21, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 21, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Pour le Facadier / Applicateur VEC :', 18, signY + 5.5);
+  doc.text('Visa Controle Technique CTC / Bureau d Etudes :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Ingenieur facade Baiti Atelier', 18, signY + 10.5);
+  doc.text('Signature & Date :', 18, signY + 16);
+  doc.text('Bon pour accord note de calcul VEC', 135, signY + 10.5);
+  doc.text('Signature & Date :', 135, signY + 16);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|VEC|${params.documentId}|REF=${params.projectRef}|BITE=${params.result.recommendedBiteMm}MM|GLUELINE=${params.result.recommendedGluelineThicknessMm}MM|WIND=${params.result.input.windPressurePa}PA|STATUS=${isOk ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 0.5, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Note technique officielle Baiti Atelier • ${params.documentId} • NF DTU 39 P4 • EOTA ETAG 002 • ASTM C1401 • DTR BC 2-47 RNV 2013`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Note_Calcul_VEC_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 

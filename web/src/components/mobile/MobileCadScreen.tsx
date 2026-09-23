@@ -28,6 +28,7 @@ import {
   Building2,
   Activity,
   Lock,
+  Box,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -51,6 +52,7 @@ import { SeismicJoineryModal } from './SeismicJoineryModal';
 import { BifoldDoorModal } from './BifoldDoorModal';
 import { LouverAerodynamicsModal } from './LouverAerodynamicsModal';
 import { SecurityLockingModal } from './SecurityLockingModal';
+import { StructuralGlazingModal } from './StructuralGlazingModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -232,6 +234,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showBifoldModal, setShowBifoldModal] = useState(false);
   const [showLouverModal, setShowLouverModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [showStructuralGlazingModal, setShowStructuralGlazingModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -973,6 +976,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Lock className="w-3 h-3" />
               <span>Sécurité RC</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowStructuralGlazingModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-indigo-500/10 dark:bg-indigo-500/15 border border-indigo-500/30 hover:bg-indigo-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-indigo-300 font-semibold"
+              title="Dimensionnement collage structural VEC / VEP selon NF DTU 39 P4 et ETAG 002"
+            >
+              <Box className="w-3 h-3" />
+              <span>VEC Silicone</span>
             </button>
 
             <button
@@ -2095,6 +2111,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           windowReference={`Châssis ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* STRUCTURAL SILICONE GLAZING (VEC / VEP) MODAL */}
+      {showStructuralGlazingModal && (
+        <StructuralGlazingModal
+          isOpen={showStructuralGlazingModal}
+          onClose={() => setShowStructuralGlazingModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          windowReference={`VEC ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />
