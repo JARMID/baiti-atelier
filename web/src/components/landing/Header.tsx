@@ -20,7 +20,9 @@ import {
   Layers,
   Download,
   Smartphone,
+  KeyRound,
 } from 'lucide-react';
+import { Setup2FAModal } from '../auth/Setup2FAModal';
 import {
   isSoundEnabled,
   toggleSound,
@@ -60,6 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
   const [isToolboxOpen, setIsToolboxOpen] = useState(false);
+  const [is2FaOpen, setIs2FaOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const toolboxRef = useRef<HTMLDivElement>(null);
@@ -450,6 +453,22 @@ export const Header: React.FC<HeaderProps> = ({
                       <span className="text-[10px] font-mono text-zinc-500">Relevé Photo</span>
                     </button>
                   )}
+
+                  {/* 2FA TOTP Authenticator Configuration */}
+                  <button
+                    onClick={() => {
+                      playTactileClick();
+                      setIsToolboxOpen(false);
+                      setIs2FaOpen(true);
+                    }}
+                    className="flex items-center justify-between p-2 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left rtl:text-right"
+                  >
+                    <div className="flex items-center gap-2">
+                      <KeyRound className="w-4 h-4 text-emerald-400" />
+                      <span>{language === 'ar' ? 'المصادقة الثنائية 2FA' : 'Sécurité & 2FA TOTP'}</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-emerald-400">TOTP</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -656,6 +675,9 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
       )}
+
+      {/* 2FA Authenticator Modal */}
+      <Setup2FAModal isOpen={is2FaOpen} onClose={() => setIs2FaOpen(false)} />
     </header>
   );
 };
