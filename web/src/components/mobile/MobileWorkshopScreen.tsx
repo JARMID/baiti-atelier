@@ -35,6 +35,7 @@ import {
   CreditCard,
   Truck,
   Wrench,
+  Wind,
 } from 'lucide-react';
 import { playTactileClick, playClampSound, playSwitchSound } from '../../utils/audioFeedback';
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
@@ -46,6 +47,7 @@ import { OffcutScrapBinModal } from './OffcutScrapBinModal';
 import { BaridiMobReconciliationModal } from './BaridiMobReconciliationModal';
 import { SiteDeliveryManifestModal } from './SiteDeliveryManifestModal';
 import { MachineMaintenanceModal } from './MachineMaintenanceModal';
+import { FastenerSafetyModal } from './FastenerSafetyModal';
 import { getWorkshopMachines, type WorkshopMachine } from '../../utils/machineMaintenanceManager';
 import { getJobQualityInspection, computeQualityScore } from '../../utils/qualityControlManager';
 import { getJobInstallationAcceptance } from '../../utils/installationAcceptanceManager';
@@ -330,6 +332,16 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
     playTactileClick();
     setDeliveryJob(job);
     setIsDeliveryModalOpen(true);
+  };
+
+  // Fastener Safety Modal state
+  const [fastenerJob, setFastenerJob] = useState<WorkshopJob | null>(null);
+  const [isFastenerModalOpen, setIsFastenerModalOpen] = useState<boolean>(false);
+
+  const handleOpenFastenerModal = (job: WorkshopJob) => {
+    playTactileClick();
+    setFastenerJob(job);
+    setIsFastenerModalOpen(true);
   };
 
   // Stock Receiving modal state
@@ -985,6 +997,16 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
                   >
                     <Truck className="w-3.5 h-3.5 shrink-0" />
                     <span>Livraison</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenFastenerModal(job)}
+                    className="py-2 px-2 rounded-xl bg-sky-500/10 border border-sky-500/25 text-sky-400 font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer min-h-[38px] hover:bg-sky-500/20 active:scale-98 transition-all"
+                    title="Calcul des chevilles et résistance à l'arrachement DTU 36.5"
+                  >
+                    <Wind className="w-3.5 h-3.5 shrink-0" />
+                    <span>Fixations</span>
                   </button>
 
                   <button
@@ -2057,6 +2079,22 @@ export const MobileWorkshopScreen: React.FC<MobileWorkshopScreenProps> = () => {
           isOpen={isMachineModalOpen}
           onClose={() => setIsMachineModalOpen(false)}
           onMachinesUpdated={(updated) => setMachinesList([...updated])}
+        />
+      )}
+
+      {/* Fastener Safety & Wind Pullout Modal */}
+      {isFastenerModalOpen && fastenerJob && (
+        <FastenerSafetyModal
+          isOpen={isFastenerModalOpen}
+          onClose={() => {
+            setIsFastenerModalOpen(false);
+            setFastenerJob(null);
+          }}
+          widthMm={1400}
+          heightMm={1500}
+          windowReference={fastenerJob.description || `Affaire ${fastenerJob.id}`}
+          wilayaName={fastenerJob.wilaya || 'Alger (16)'}
+          clientName={fastenerJob.clientName || 'Client Chantier'}
         />
       )}
 

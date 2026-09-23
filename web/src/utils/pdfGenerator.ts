@@ -4271,5 +4271,252 @@ export async function generateThermalStressNoticePdf(params: ThermalStressPdfPar
   doc.save(safeFilename);
 }
 
+export interface FastenerPdfParams {
+  documentId: string;
+  projectOrClientName: string;
+  locationWilaya: string;
+  windowReference: string;
+  widthMm: number;
+  heightMm: number;
+  result: import('./fastenerSafetyManager').FastenerSafetyResult;
+  workshopName?: string;
+}
+
+/**
+ * Generates an official A4 technical calculation note for window fasteners and wind load pullout safety.
+ * References: NF DTU 36.5 / Eurocode 9 / DTR BC 2-47.
+ */
+export async function generateFastenerCalculationPdf(params: FastenerPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryBlue: [number, number, number] = [15, 23, 42]; // slate-900
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const roseRed: [number, number, number] = [239, 68, 68];
+  const isSafe = params.result.isPulloutSafe;
+  const statusColor = isSafe ? emeraldGreen : roseRed;
+
+  // 1. Header Banner
+  doc.setFillColor(...primaryBlue);
+  doc.rect(0, 0, 210, 28, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(255, 255, 255);
+  doc.text(params.workshopName || 'BAITI ATELIER ALGERIE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text('Note de Calcul Fixations & Resistance a l Arrachement au Vent • NF DTU 36.5', 14, 17);
+  doc.text('Actions du Vent sur les Parois selon DTR BC 2-47 (RNV 1999/2013) & Eurocode 9', 14, 22);
+
+  // Document Badge
+  doc.setFillColor(30, 41, 59);
+  doc.roundedRect(145, 6, 51, 16, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`NOTE : ${params.documentId}`, 148, 12);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 148, 18);
+
+  // 2. Identification Block
+  const infoY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, infoY, 182, 22, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Projet / Chantier :', 18, infoY + 6);
+  doc.text('Wilaya d implantation :', 18, infoY + 12);
+  doc.text('Support Maconnerie :', 18, infoY + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text(params.projectOrClientName || 'Chantier Client', 55, infoY + 6);
+  doc.text(params.locationWilaya, 55, infoY + 12);
+  doc.text(params.result.substrateData.labelFr, 55, infoY + 18);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Repere Ouvrage :', 115, infoY + 6);
+  doc.text('Dimensions Baie :', 115, infoY + 12);
+  doc.text('Modele Fixation :', 115, infoY + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text(params.windowReference, 145, infoY + 6);
+  doc.text(`${params.widthMm} x ${params.heightMm} mm (${params.result.windowAreaM2} m2)`, 145, infoY + 12);
+  doc.text(params.result.fastenerData.labelFr, 145, infoY + 18);
+
+  // 3. Wind Load & Aerodynamic Actions Table
+  const windTableY = infoY + 26;
+  autoTable(doc, {
+    startY: windTableY,
+    margin: { left: 14, right: 14 },
+    head: [['Parametre Eolien & Exposition', 'Valeur Calculee', 'Norme DTR BC 2-47 (RNV 1999/2013)']],
+    body: [
+      ['Zone de Vent RNV', params.result.windZoneData.nameFr, `Vitesse de reference v = ${params.result.windZoneData.referenceVelocityKmPerH} km/h`],
+      ['Pression de Base (qref)', `${params.result.windZoneData.referencePressureNPerM2} N/m2`, 'Pression dynamique de reference normale'],
+      ['Rugosite & Categorie Terrain', params.result.terrainData.labelFr, params.result.terrainData.subFr],
+      ['Hauteur au-dessus du sol (z)', `${params.result.buildingHeightM} m`, 'Coefficient d exposition Ce(z)'],
+      ['Pression Dynamique de Succion (qdyn)', `${params.result.dynamicPressureNPerM2} N/m2`, 'Coefficient net Cnet = 1.35 sous le vent'],
+      ['Charge Totale du Vent sur la Baie', `${params.result.totalWindLoadDaN} daN (~${params.result.totalWindLoadDaN * 10} kgf)`, 'Effort d arrachement perpendiculaire a la baie'],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, textColor: [30, 41, 59] },
+    headStyles: { fillColor: primaryBlue, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 55 },
+      1: { cellWidth: 50, fontStyle: 'bold' },
+      2: { cellWidth: 77 },
+    },
+  });
+
+  // 4. Fastener Layout & Pitch Table (DTU 36.5)
+  const pitchTableY = (doc as any).lastAutoTable.finalY + 4;
+  autoTable(doc, {
+    startY: pitchTableY,
+    margin: { left: 14, right: 14 },
+    head: [['Localisation sur le Cadre Dormant', 'Nombre de Fixations', 'Espacement & Regles NF DTU 36.5']],
+    body: [
+      ['Montant Gauche', `${params.result.pitchResult.uprightsCountPerSide} points`, `Espacement ~${params.result.pitchResult.spacingMontantsMm} mm (max autorise 800 mm)`],
+      ['Montant Droit', `${params.result.pitchResult.uprightsCountPerSide} points`, `Espacement ~${params.result.pitchResult.spacingMontantsMm} mm (depart a 120 mm des angles)`],
+      ['Traverse Haute (Linteau)', `${params.result.pitchResult.transomHeadCount} points`, `Espacement ~${params.result.pitchResult.spacingTraversesMm} mm`],
+      ['Traverse Basse (Seuil/Rejingot)', `${params.result.pitchResult.transomSillCount} points`, 'Etancheite sous tete par rondelle EPDM ou silicone neutre'],
+      ['TOTAL FIXATIONS DU CHASSIS', `${params.result.pitchResult.totalFastenersCount} POINTS D ANCRAGE`, 'Repartition conforme au perimetre de la baie'],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, textColor: [30, 41, 59] },
+    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 55 },
+      1: { cellWidth: 40, fontStyle: 'bold' },
+      2: { cellWidth: 87 },
+    },
+  });
+
+  // 5. Verification & Safety Margin Table
+  const verifTableY = (doc as any).lastAutoTable.finalY + 4;
+  autoTable(doc, {
+    startY: verifTableY,
+    margin: { left: 14, right: 14 },
+    head: [['Grandeur Mecanique d Ancrage', 'Valeur', 'Condition de Securite Eurocode 9 / DTU 36.5']],
+    body: [
+      ['Effort d Arrachement par Cheville (Traction)', `${params.result.windPulloutForcePerFastenerDaN} daN`, 'Effort de pointe majore aux angles (+15%)'],
+      ['Resistance Admissible du Support (Traction)', `${params.result.substrateData.pulloutAdmissibleDaN} daN`, 'Capacite utile admissible dans la maconnerie'],
+      ['Facteur de Securite a l Arrachement (Sf)', `${params.result.pulloutSafetyFactor}`, 'Seuil reglementaire minimum : Sf >= 1.50'],
+      ['Effort de Cisaillement par Cheville (Poids)', `${params.result.deadLoadShearForcePerFastenerDaN} daN`, 'Transmis aux fixations et cales d assise'],
+      ['Facteur de Securite au Cisaillement', `${params.result.shearSafetyFactor}`, 'Seuil reglementaire minimum : Sf >= 1.50'],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, textColor: [30, 41, 59] },
+    headStyles: { fillColor: [71, 85, 105], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 65 },
+      1: { cellWidth: 35, fontStyle: 'bold' },
+      2: { cellWidth: 82 },
+    },
+  });
+
+  // 6. Verdict Banner
+  const verdictY = (doc as any).lastAutoTable.finalY + 5;
+  doc.setDrawColor(...statusColor);
+  doc.setFillColor(isSafe ? 240 : 254, isSafe ? 253 : 242, isSafe ? 244 : 242);
+  doc.roundedRect(14, verdictY, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...statusColor);
+  const verdictTitle = isSafe
+    ? 'ANCRAGE VALIDE : RESISTANCE A L ARRACHEMENT CONFORME'
+    : 'DANGER ARRACHEMENT : RESISTANCE INSUFFISANTE AU VENT';
+  doc.text(verdictTitle, 20, verdictY + 7);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(30, 41, 59);
+  doc.text(
+    `Profondeur de percage preconisee : ${params.result.recommendedMinimumDrillDepthMm} mm • Distance min a l arete : ${params.result.recommendedEdgeDistanceMm} mm`,
+    20,
+    verdictY + 13
+  );
+  doc.text(
+    `Mode de percage obligatoire : ${params.result.substrateData.drillingTechniqueFr}.`,
+    20,
+    verdictY + 18
+  );
+
+  // 7. Site Installation Directives
+  const directY = verdictY + 25;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, directY, 182, 25, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Prescriptions de Pose et Calage sur Chantier (NF DTU 36.5) :', 18, directY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(71, 85, 105);
+  let curDirY = directY + 9.5;
+  for (const dir of params.result.masonryShimmingAdviceFr.slice(0, 3)) {
+    doc.text(`• ${dir}`, 18, curDirY);
+    curDirY += 4.5;
+  }
+
+  // 8. Signatures Block & QR Code
+  const signY = directY + 28;
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 22, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 22, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Pour l Entreprise de Pose / Atelier :', 18, signY + 5.5);
+  doc.text('Controleur Technique / Bureau d Etudes :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Visa Poseur Qualifie DTU 36.5', 18, signY + 11);
+  doc.text('Signature & Date :', 18, signY + 17);
+  doc.text('Bon pour execution fixations gros oeuvre', 135, signY + 11);
+  doc.text('Signature & Date :', 135, signY + 17);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|FASTENERS|${params.documentId}|REF=${params.windowReference}|PULLOUT=${params.result.windPulloutForcePerFastenerDaN}daN|SF=${params.result.pulloutSafetyFactor}|PTS=${params.result.pitchResult.totalFastenersCount}|STATUS=${isSafe ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 9. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Note technique officielle Baiti Atelier • ${params.documentId} • NF DTU 36.5 • Eurocode 9 • CNERIB DTR BC 2-47`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Note_Calcul_Fixations_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 

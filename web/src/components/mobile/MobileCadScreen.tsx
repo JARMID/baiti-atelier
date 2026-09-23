@@ -22,6 +22,7 @@ import {
   Wrench,
   Sparkles,
   Flame,
+  Wind,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -37,6 +38,7 @@ import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
 import { GlazingPerformanceMatrix } from './GlazingPerformanceMatrix';
 import { GlazingBeadGuideModal } from './GlazingBeadGuideModal';
 import { GlazingThermalStressModal } from './GlazingThermalStressModal';
+import { FastenerSafetyModal } from './FastenerSafetyModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -210,6 +212,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
   const [showParcloseModal, setShowParcloseModal] = useState(false);
   const [showThermalStressModal, setShowThermalStressModal] = useState(false);
+  const [showFastenersModal, setShowFastenersModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -847,6 +850,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Flame className="w-3 h-3" />
               <span>Choc Thermique</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowFastenersModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-sky-500/10 dark:bg-sky-500/15 border border-sky-500/30 hover:bg-sky-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-sky-400 font-semibold"
+              title="Calcul des fixations maçonnerie et résistance au vent DTU 36.5"
+            >
+              <Wind className="w-3 h-3" />
+              <span>Fixations</span>
             </button>
 
             <button
@@ -1593,6 +1609,23 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
                 <PackageCheck className="w-4 h-4 text-amber-400" />
                 <span>{isGeneratingHardwarePdf ? 'Génération...' : 'Bon Quincaillerie PDF'}</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick();
+                  setShowFastenersModal(true);
+                }}
+                className={`py-3 rounded-2xl border font-mono font-bold text-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px] active:scale-98 transition-all ${
+                  isLight
+                    ? 'bg-sky-50 border-sky-300 text-sky-900 hover:bg-sky-100 shadow-xs'
+                    : 'bg-sky-500/15 border-sky-500/30 text-sky-300 hover:bg-sky-500/25'
+                }`}
+                title="Calculer les fixations maçonnerie et chevilles selon DTU 36.5"
+              >
+                <Wind className="w-4 h-4 text-sky-400" />
+                <span>Fixations DTU 36.5</span>
+              </button>
             </>
           ) : (
             <>
@@ -1833,6 +1866,24 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           windowReference={`Baie ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Chantier"
+        />
+      )}
+
+      {/* FASTENER ANCHOR DEPTH & WIND LOAD PULLOUT MODAL */}
+      {showFastenersModal && (
+        <FastenerSafetyModal
+          isOpen={showFastenersModal}
+          onClose={() => setShowFastenersModal(false)}
+          widthMm={cadStructure.width}
+          heightMm={cadStructure.height}
+          windowReference={`Baie ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+          isDarkProfile={
+            config.finishColor === 'ral_7016' ||
+            config.finishColor === 'ral_9005' ||
+            config.finishColor.includes('faux_bois')
+          }
         />
       )}
     </div>
