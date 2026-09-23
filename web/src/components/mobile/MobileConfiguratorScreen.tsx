@@ -22,6 +22,7 @@ import {
   Palette,
   SlidersHorizontal,
   Zap,
+  Disc,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -42,6 +43,7 @@ import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
 import { DTR_ZONE_THRESHOLDS, getDtrZoneForWilaya } from '../../utils/dtrThermal';
 import { ProfileCrossSectionViewer } from '../cad/ProfileCrossSectionViewer';
 import { RollerShutterMotorModal } from './RollerShutterMotorModal';
+import { RollerShutterWindingModal } from './RollerShutterWindingModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -152,6 +154,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [showCrossSectionModal, setShowCrossSectionModal] = useState(false);
   const [isMotorModalOpen, setIsMotorModalOpen] = useState(false);
+  const [isWindingModalOpen, setIsWindingModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -1222,6 +1225,23 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
               </div>
             </div>
 
+            {/* Roller Shutter Winding Diameter & Box Clearance Sizing Button */}
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setIsWindingModalOpen(true);
+              }}
+              className="w-full py-2.5 px-3 rounded-2xl bg-sky-500/15 border border-sky-500/30 text-sky-400 font-bold text-xs flex items-center justify-between cursor-pointer hover:bg-sky-500/25 active:scale-98 transition-all min-h-[44px]"
+              title="Calcul du diamètre d'enroulement spiralé et vérification de la garde au caisson"
+            >
+              <div className="flex items-center gap-2">
+                <Disc className="w-4 h-4 text-sky-400 shrink-0" />
+                <span>Calcul Enroulement & Garde au Caisson</span>
+              </div>
+              <span className="text-[10px] text-sky-400/80 font-mono">Spirale & Débit →</span>
+            </button>
+
             {/* Roller Shutter Motor Wiring & Limit Switch Guide Button */}
             {config.shutterType === 'motorized' && (
               <button
@@ -1716,6 +1736,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           onClose={() => setIsMotorModalOpen(false)}
           initialWidth={config.width}
           initialHeight={config.height}
+        />
+      )}
+
+      {/* ROLLER SHUTTER WINDING & BOX CLEARANCE MODAL */}
+      {isWindingModalOpen && (
+        <RollerShutterWindingModal
+          isOpen={isWindingModalOpen}
+          onClose={() => setIsWindingModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          windowReference={`Baie ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
         />
       )}
     </div>

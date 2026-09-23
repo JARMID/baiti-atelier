@@ -4517,6 +4517,229 @@ export async function generateFastenerCalculationPdf(params: FastenerPdfParams):
   doc.save(safeFilename);
 }
 
+export interface ShutterWindingPdfParams {
+  documentId: string;
+  projectOrClientName: string;
+  locationWilaya: string;
+  windowReference: string;
+  slatLabelFr: string;
+  boxLabelFr: string;
+  result: import('./rollerShutterWindingManager').WindingCalculationResult;
+  workshopName?: string;
+}
+
+/**
+ * Generates an official A4 technical calculation sheet for roller shutter winding diameter and box clearance.
+ */
+export async function generateRollerShutterWindingPdf(params: ShutterWindingPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryBlue: [number, number, number] = [15, 23, 42]; // slate-900
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const roseRed: [number, number, number] = [239, 68, 68];
+  const isOk = params.result.clearanceStatus !== 'oversized_block';
+  const statusColor = isOk ? emeraldGreen : roseRed;
+
+  // 1. Header Banner
+  doc.setFillColor(...primaryBlue);
+  doc.rect(0, 0, 210, 28, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(255, 255, 255);
+  doc.text(params.workshopName || 'BAITI ATELIER ALGERIE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text('Calcul d Enroulement & Dimensionnement Caisson Volet Roulant', 14, 17);
+  doc.text('Garde au Caisson, Spirale d Enroulement & Couple Moteur Tubulaire', 14, 22);
+
+  // Document Badge
+  doc.setFillColor(30, 41, 59);
+  doc.roundedRect(145, 6, 51, 16, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`VOLET : ${params.documentId}`, 148, 12);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 148, 18);
+
+  // 2. Identification Block
+  const infoY = 33;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, infoY, 182, 22, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Client / Chantier :', 18, infoY + 6);
+  doc.text('Wilaya de pose :', 18, infoY + 12);
+  doc.text('Repere Ouvrage :', 18, infoY + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text(params.projectOrClientName || 'Chantier Client', 55, infoY + 6);
+  doc.text(params.locationWilaya, 55, infoY + 12);
+  doc.text(params.windowReference, 55, infoY + 18);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Dimensions Baie :', 115, infoY + 6);
+  doc.text('Modele de Lame :', 115, infoY + 12);
+  doc.text('Modele Caisson :', 115, infoY + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${params.result.apronWidthMm} x ${params.result.apronHeightMm} mm`, 145, infoY + 6);
+  doc.text(params.slatLabelFr, 145, infoY + 12);
+  doc.text(params.boxLabelFr, 145, infoY + 18);
+
+  // 3. Winding Geometry & Clearance Table
+  const windTableY = infoY + 26;
+  autoTable(doc, {
+    startY: windTableY,
+    margin: { left: 14, right: 14 },
+    head: [['Parametre d Enroulement Tablier', 'Valeur Calculee', 'Tolerance & Observations Atelier']],
+    body: [
+      ['Diametre Exterieur Enroule (D)', `${params.result.woundRollDiameterMm} mm`, 'Diametre maximal tablier totalement releve'],
+      ['Diametre Utile Interieur Caisson', `${params.result.selectedBoxData.maxUsefulWindingDiameterMm} mm`, `Espace net sous ${params.result.selectedBoxData.labelFr}`],
+      ['Garde Radiale au Caisson (Jeu)', `${params.result.radialClearanceMm} mm`, 'Jeu peripherique minimal recommande : 8 mm'],
+      ['Nombre de Spires Enroulees', `${params.result.spiralLayersCount} tours`, 'Nombre de couches concentriques sur axe'],
+      ['Nombre Total de Lames', `${params.result.totalSlatCount} lames`, `${params.result.totalSlatCount - params.result.securitySlatsInBox} visibles + ${params.result.securitySlatsInBox} de securite dans coffre`],
+      ['Axe d Enroulement Octogonal', `Octo ${params.result.tubeDiameterMm} mm`, 'Tube acier galvanise profile anti fleche'],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, textColor: [30, 41, 59] },
+    headStyles: { fillColor: primaryBlue, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 60 },
+      1: { cellWidth: 45, fontStyle: 'bold' },
+      2: { cellWidth: 77 },
+    },
+  });
+
+  // 4. Weight, Torque and Workshop Cut Sheet Table
+  const cutTableY = (doc as any).lastAutoTable.finalY + 4;
+  autoTable(doc, {
+    startY: cutTableY,
+    margin: { left: 14, right: 14 },
+    head: [['Composant / Grandeur Atelier', 'Cote de Debit / Valeur', 'Recommandation Fabrication']],
+    body: [
+      ['Poids Total du Tablier', `${params.result.curtainWeightKg} kg`, 'Poids des lames avec lame finale leste'],
+      ['Couple Moteur Calcule', `${params.result.motorTorqueRequiredNm} Nm`, 'Couple nominal avec coefficient de securite'],
+      ['Moteur Tubulaire Preconise', `${params.result.recommendedMotorRatingNm} Nm`, 'Gamme moteur standard Somfy / Cherubini 45mm'],
+      ['Debit Lames Volet', `${params.result.cutLengths.slatCutLengthMm} mm (${params.result.totalSlatCount} pcs)`, 'Deduisant le jeu de penetration des coulisses'],
+      ['Debit Axe Octogonal Acier', `${params.result.cutLengths.octagonalAxleLengthMm} mm`, 'Prevoir embout telescopique reglable'],
+      ['Debit Coulisses Laterales', `${params.result.cutLengths.guideRailsLengthMm} mm (2 pcs)`, 'Avec tulipes de guidage PVC en partie haute'],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 2, textColor: [30, 41, 59] },
+    headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 60 },
+      1: { cellWidth: 45, fontStyle: 'bold' },
+      2: { cellWidth: 77 },
+    },
+  });
+
+  // 5. Verdict Banner
+  const verdictY = (doc as any).lastAutoTable.finalY + 5;
+  doc.setDrawColor(...statusColor);
+  doc.setFillColor(isOk ? 240 : 254, isOk ? 253 : 242, isOk ? 244 : 242);
+  doc.roundedRect(14, verdictY, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...statusColor);
+  const verdictTitle = isOk
+    ? 'ENROULEMENT CONFORME : JEU PERIPHERIQUE SECURISE'
+    : 'CAISSON TROP PETIT : RISQUE DE BLOCAGE DU TABLIER';
+  doc.text(verdictTitle, 20, verdictY + 7);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(30, 41, 59);
+  doc.text(
+    `Diametre enroule : ${params.result.woundRollDiameterMm} mm • Jeu radial restant : ${params.result.radialClearanceMm} mm.`,
+    20,
+    verdictY + 13
+  );
+  const recLine = isOk
+    ? 'Le caisson selectionne offre un espace suffisant sans risque de rayure ni frottement.'
+    : `Preconisation imperative : Remplacer par un coffre plus volumineux (minimum 180 ou 205 mm).`;
+  doc.text(recLine, 20, verdictY + 18);
+
+  // 6. Workshop Directives
+  const directY = verdictY + 25;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, directY, 182, 25, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Directives d Assemblage et Montage en Atelier :', 18, directY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(71, 85, 105);
+  let curDirY = directY + 9.5;
+  for (const note of params.result.workshopFabricationNotesFr.slice(0, 3)) {
+    doc.text(`• ${note}`, 18, curDirY);
+    curDirY += 4.5;
+  }
+
+  // 7. Signatures & QR Code
+  const signY = directY + 28;
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 22, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 22, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text('Pour l Atelier Volet Roulant :', 18, signY + 5.5);
+  doc.text('Visa Controle Qualite & Reception :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Chef d atelier menuiserie', 18, signY + 11);
+  doc.text('Signature & Date :', 18, signY + 17);
+  doc.text('Controle bon d enroulement valide', 135, signY + 11);
+  doc.text('Signature & Date :', 135, signY + 17);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|SHUTTER_WINDING|${params.documentId}|REF=${params.windowReference}|ROLL_DIA=${params.result.woundRollDiameterMm}MM|BOX=${params.result.selectedBoxData.id}|CLEARANCE=${params.result.radialClearanceMm}MM|STATUS=${isOk ? 'OK' : 'BLOCK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 1, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Document technique officiel Baiti Atelier • ${params.documentId} • Fiche d enroulement et debit volet roulant`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Enroulement_Volet_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 
