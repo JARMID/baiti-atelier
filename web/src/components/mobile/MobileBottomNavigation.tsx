@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Grid,
@@ -20,31 +20,57 @@ interface MobileBottomNavigationProps {
 }
 
 export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
-  isWorkshopMode: _isWorkshopMode = false,
-  onToggleWorkshopMode: _onToggleWorkshopMode,
-  onOpenOfflineQuotes: _onOpenOfflineQuotes,
+  isWorkshopMode = false,
+  onToggleWorkshopMode,
+  onOpenOfflineQuotes,
   activeTab = 'configurator',
   onSelectTab,
 }) => {
   const { theme, language } = useConfigStore();
   const isLight = theme === 'light';
   const isRtl = language === 'ar';
+  const isDedicatedApp = Boolean(onSelectTab);
+
+  const [scrollYPastHero, setScrollYPastHero] = useState(() =>
+    typeof window !== 'undefined' ? window.scrollY > 350 : false
+  );
+
+  useEffect(() => {
+    if (isDedicatedApp) return;
+
+    const handleScroll = () => {
+      setScrollYPastHero(window.scrollY > 350);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isDedicatedApp]);
+
+  const isVisible = isDedicatedApp || scrollYPastHero;
 
   const handleTabClick = (tab: MobileNavTab, fallbackSectionId: string) => {
     playTactileClick();
     if (onSelectTab) {
       onSelectTab(tab);
     } else {
+      if (tab === 'field_quotes' && onOpenOfflineQuotes) {
+        onOpenOfflineQuotes();
+        return;
+      }
+      if (tab === 'workshop' && onToggleWorkshopMode) {
+        onToggleWorkshopMode();
+        return;
+      }
       const el = document.getElementById(fallbackSectionId);
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
-  const isDedicatedApp = Boolean(onSelectTab);
-
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-50 pointer-events-auto ${
+      className={`fixed bottom-0 left-0 right-0 z-50 pointer-events-auto transition-all duration-300 ease-in-out ${
+        !isVisible ? 'translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'
+      } ${
         isDedicatedApp ? 'flex justify-center px-2 md:px-4' : 'md:hidden'
       }`}
       dir={isRtl ? 'rtl' : 'ltr'}
@@ -115,7 +141,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
         <button
           onClick={() => handleTabClick('workshop', 'workshop')}
           className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl text-[10px] font-mono transition-all min-w-[56px] min-h-[44px] cursor-pointer ${
-            activeTab === 'workshop'
+            activeTab === 'workshop' || isWorkshopMode
               ? 'bg-purple-500 text-white font-bold shadow-xs'
               : 'hover:text-purple-400'
           }`}

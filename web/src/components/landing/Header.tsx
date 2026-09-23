@@ -36,7 +36,6 @@ interface HeaderProps {
   onOpenMaterialMarket?: () => void;
   onToggleWorkshopMode?: () => void;
   isWorkshopMode?: boolean;
-  onToggleMobileMode?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -45,7 +44,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenMaterialMarket,
   onToggleWorkshopMode,
   isWorkshopMode = false,
-  onToggleMobileMode,
 }) => {
   const {
     language,
@@ -342,24 +340,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span>App Desktop</span>
           </a>
 
-          {/* Mode Mobile / Tablette Switcher Button */}
-          {onToggleMobileMode && (
-            <button
-              onClick={() => {
-                playTactileClick();
-                onToggleMobileMode();
-              }}
-              className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono transition-all hover-lift cursor-pointer ${
-                isLight
-                  ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 hover:border-[#D4AF37]'
-                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300 hover:border-white/20'
-              }`}
-              title="Passer en vue Mobile & Tablette (App smartphone pour ateliers)"
-            >
-              <Smartphone className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>Mode Mobile</span>
-            </button>
-          )}
+
 
           {/* PWA Install Button (Promptable) */}
           {deferredPrompt && (
@@ -648,19 +629,7 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {onToggleMobileMode && (
-              <button
-                onClick={() => {
-                  playTactileClick();
-                  setIsMobileMenuOpen(false);
-                  onToggleMobileMode();
-                }}
-                className="flex items-center justify-center gap-2 p-2.5 min-h-[44px] rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] text-xs font-mono font-bold cursor-pointer"
-              >
-                <Smartphone className="w-4 h-4" />
-                <span>Passer en Mode Mobile Dédié</span>
-              </button>
-            )}
+
 
             <a
               href="/downloads/baiti-atelier-desktop-setup.exe"

@@ -93,7 +93,7 @@ export const WindowCanvas: React.FC = () => {
 
   return (
     <div
-      className={`relative w-full h-full min-h-[320px] rounded-2xl overflow-hidden glass-panel border transition-all duration-300 shadow-2xl ${
+      className={`relative w-full h-[400px] sm:h-[480px] lg:h-[580px] min-h-[380px] rounded-2xl overflow-hidden glass-panel border transition-all duration-300 shadow-2xl ${
         isLight
           ? 'bg-gradient-to-b from-[#FFFFFF] via-[#F8FAFC] to-[#EDF2F7] border-slate-200 text-slate-800 shadow-slate-200/60'
           : 'bg-gradient-to-b from-[#13161F] via-[#0E1017] to-[#0A0C10] border-white/10 text-white'

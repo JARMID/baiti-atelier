@@ -478,7 +478,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
         </div>
 
         {/* FLOATING LUXURY CUSTOMIZER DOCK */}
-        <div className="absolute bottom-28 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-full max-w-[96vw] sm:max-w-max flex justify-center">
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto w-full max-w-[96vw] sm:max-w-max flex justify-center">
           <div
             className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 rounded-full border backdrop-blur-2xl transition-colors shadow-2xl overflow-x-auto no-scrollbar max-w-full whitespace-nowrap scroll-smooth ${
               isLight

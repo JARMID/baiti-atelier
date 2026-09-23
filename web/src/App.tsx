@@ -23,8 +23,6 @@ import { OfflineQuotesModal } from './components/offline/OfflineQuotesModal';
 import { MaterialMarketModal } from './components/materials/MaterialMarketModal';
 import { WorkshopProWorkspace } from './components/workshop/WorkshopProWorkspace';
 import { MobileBottomNavigation } from './components/mobile/MobileBottomNavigation';
-import { MobilePriceStickyBar } from './components/mobile/MobilePriceStickyBar';
-import { DedicatedMobileApp } from './components/mobile/DedicatedMobileApp';
 import { isTauriDesktop } from './services/desktopBridge';
 import { useConfigStore } from './store/configStore';
 import { getTranslation } from './utils/i18n';
@@ -42,7 +40,6 @@ export function App() {
     toggleExplodedView,
     isMaterialMarketOpen,
     setMaterialMarketOpen,
-    setQuoteModalOpen,
   } = useConfigStore();
   const t = getTranslation(language);
   const isLight = theme === 'light';
@@ -52,40 +49,12 @@ export function App() {
   const [selectedTrade, setSelectedTrade] = useState<TradeCategory>('aluminum');
   const [view3DMode, setView3DMode] = useState<'single' | 'facade'>('single');
 
-  // Dedicated Mobile & Tablet application suite (auto-detected on phones/tablets or user-toggled)
-  const [isMobileMode, setIsMobileMode] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('baiti_mobile_mode');
-      if (saved !== null) {
-        return saved === 'true';
-      }
-      const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      return window.innerWidth < 768 || (isTouch && window.innerWidth <= 1024);
-    }
-    return false;
-  });
-
+  // Purge legacy mobile toggle flag so the full responsive site is dynamically rendered on all devices
   useEffect(() => {
-    const handleResize = () => {
-      if (typeof window !== 'undefined' && localStorage.getItem('baiti_mobile_mode') === null) {
-        const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        const shouldBeMobile = window.innerWidth < 768 || (isTouch && window.innerWidth <= 1024);
-        setIsMobileMode(shouldBeMobile);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('baiti_mobile_mode');
+    }
   }, []);
-
-  const handleToggleMobileMode = (val?: boolean) => {
-    setIsMobileMode((prev) => {
-      const next = typeof val === 'boolean' ? val : !prev;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('baiti_mobile_mode', String(next));
-      }
-      return next;
-    });
-  };
 
   // Workshop owners in desktop app start directly in Workshop Pro Workspace
   const [isWorkshopMode, setIsWorkshopMode] = useState<boolean>(() => {
@@ -107,15 +76,6 @@ export function App() {
       return next;
     });
   };
-
-  // If in dedicated mobile mode, render tailored phone & tablet suite
-  if (isMobileMode) {
-    return (
-      <DedicatedMobileApp
-        onSwitchToDesktopView={() => handleToggleMobileMode(false)}
-      />
-    );
-  }
 
   // If in dedicated workshop mode, render pro workstation
   if (isWorkshopMode) {
@@ -177,7 +137,6 @@ export function App() {
           onOpenMaterialMarket={() => setMaterialMarketOpen(true)}
           onToggleWorkshopMode={handleToggleWorkshopMode}
           isWorkshopMode={isWorkshopMode}
-          onToggleMobileMode={() => handleToggleMobileMode(true)}
         />
 
         {/* Main Content */}
@@ -474,10 +433,7 @@ export function App() {
         {/* Footer */}
         <Footer />
 
-        {/* Mobile Sticky Price & Fast Quote Bar (Phone only) */}
-        <MobilePriceStickyBar
-          onOpenQuoteModal={() => setQuoteModalOpen(true)}
-        />
+
 
         {/* Mobile Bottom Thumb Dock for Phone & Tablet */}
         <MobileBottomNavigation
