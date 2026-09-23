@@ -37,6 +37,16 @@ void main() {
 
     expect(find.text('BAITI ATELIER'), findsOneWidget);
     expect(tester.takeException(), isNull);
+
+    // Switch to Débit Scie tab on narrow screen
+    await tester.tap(find.text('Débit Scie'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    // Switch to Quincaillerie tab on narrow screen
+    await tester.tap(find.text('Quincaillerie'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('MeasureTakeScreen renders with 1.3x font scaling on 360x640 without overflow', (WidgetTester tester) async {

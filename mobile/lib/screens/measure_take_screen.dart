@@ -1250,21 +1250,28 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.content_cut_rounded, size: 15, color: color),
-                  const SizedBox(width: 6),
-                  Text(
-                    'DÉBIT ATELIER [${_spec.openingReference}]',
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.content_cut_rounded, size: 15, color: color),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'DÉBIT ATELIER [${_spec.openingReference}]',
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: _copyWorkshopCutList,
                 child: Container(
@@ -1390,13 +1397,23 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Profil: ${_spec.profileSystem}',
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: Color(0xFF64748B)),
+                Expanded(
+                  child: Text(
+                    'Profil: ${_spec.profileSystem}',
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: Color(0xFF64748B)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                Text(
-                  'Estim. Barres 6.00m: $totalBars',
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Estim. Barres 6.00m: $totalBars',
+                      style: const TextStyle(fontFamily: 'monospace', fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1430,13 +1447,17 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
             children: [
               Icon(Icons.tune_rounded, size: 15, color: color),
               const SizedBox(width: 6),
-              const Text(
-                'VITRAGE & ACCESSOIRES ATELIER',
-                style: TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              const Expanded(
+                child: Text(
+                  'VITRAGE & ACCESSOIRES ATELIER',
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -1526,13 +1547,20 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          Text(
-            qty,
-            style: const TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFFC5A880),
+          const SizedBox(width: 8),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                qty,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFC5A880),
+                ),
+              ),
             ),
           ),
         ],
