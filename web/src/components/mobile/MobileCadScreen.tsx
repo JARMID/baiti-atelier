@@ -33,6 +33,7 @@ import {
   Droplets,
   Hand,
   Anchor,
+  Compass,
   Scale,
   SplitSquareVertical,
 } from 'lucide-react';
@@ -76,6 +77,7 @@ import { TransomDeadLoadModal } from './TransomDeadLoadModal';
 import { SillFlashingModal } from './SillFlashingModal';
 import { GasketVulcanizationModal } from './GasketVulcanizationModal';
 import { PerimeterAnchorModal } from './PerimeterAnchorModal';
+import { CasementHingeModal } from './CasementHingeModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -275,6 +277,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showSillFlashingModal, setShowSillFlashingModal] = useState(false);
   const [showGasketModal, setShowGasketModal] = useState(false);
   const [showAnchorModal, setShowAnchorModal] = useState(false);
+  const [showCasementHingeModal, setShowCasementHingeModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1250,6 +1253,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Anchor className="w-3 h-3" />
               <span>Ancrage DTU</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowCasementHingeModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-indigo-500/10 dark:bg-indigo-500/15 border border-indigo-500/30 hover:bg-indigo-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-indigo-300 font-semibold min-h-[44px]"
+              title="Audit ferrure ouvrant, traction compas et calage d équerrage (NF EN 13126-8 / NF DTU 39)"
+            >
+              <Compass className="w-3 h-3" />
+              <span>Ferrure DTU</span>
             </button>
 
             <button
@@ -2604,6 +2620,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           projectReference={`Ancrage ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* HEAVY CASEMENT & TILT-TURN HINGE LOAD & SAGGING AUDITOR MODAL */}
+      {showCasementHingeModal && (
+        <CasementHingeModal
+          isOpen={showCasementHingeModal}
+          onClose={() => setShowCasementHingeModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          projectReference={`Ferrure ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

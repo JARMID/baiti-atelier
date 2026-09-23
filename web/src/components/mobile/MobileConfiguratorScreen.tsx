@@ -82,6 +82,7 @@ import { TransomDeadLoadModal } from './TransomDeadLoadModal';
 import { SillFlashingModal } from './SillFlashingModal';
 import { GasketVulcanizationModal } from './GasketVulcanizationModal';
 import { PerimeterAnchorModal } from './PerimeterAnchorModal';
+import { CasementHingeModal } from './CasementHingeModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -217,6 +218,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isSillFlashingModalOpen, setIsSillFlashingModalOpen] = useState(false);
   const [isGasketModalOpen, setIsGasketModalOpen] = useState(false);
   const [isAnchorModalOpen, setIsAnchorModalOpen] = useState(false);
+  const [isCasementHingeModalOpen, setIsCasementHingeModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -1086,6 +1088,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Anchor className="w-4 h-4" />
           <span>Fixations au Gros Œuvre & Entraxe (NF DTU 36.5 / CSTB 3529)</span>
+        </button>
+
+        {/* Casement Hinge Load, Stay Arm & DTU 39 Sagging Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsCasementHingeModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Compass className="w-4 h-4" />
+          <span>Ferrure Ouvrant & Calage d Équerrage (NF EN 13126-8 / NF DTU 39)</span>
         </button>
       </div>
 
@@ -2441,6 +2456,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           projectReference={`Ancrage ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* HEAVY CASEMENT & TILT-TURN HINGE LOAD & SAGGING AUDITOR MODAL */}
+      {isCasementHingeModalOpen && (
+        <CasementHingeModal
+          isOpen={isCasementHingeModalOpen}
+          onClose={() => setIsCasementHingeModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          projectReference={`Ferrure ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />

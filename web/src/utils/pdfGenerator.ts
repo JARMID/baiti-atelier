@@ -19,6 +19,8 @@ import type { GasketAuditInput, GasketAuditResult } from './gasketVulcanizationM
 import { GASKET_MATERIAL_SPECS, CORNER_TECHNOLOGY_SPECS, GASKET_PROFILE_SPECS } from './gasketVulcanizationManager';
 import type { PerimeterAnchorInput, PerimeterAnchorResult } from './perimeterAnchorManager';
 import { SUBSTRATE_SPECS, FASTENER_SPECS } from './perimeterAnchorManager';
+import type { CasementHingeInput, CasementHingeResult } from './casementHingeManager';
+import { HINGE_MODEL_SPECS, GLAZING_WEIGHT_CATALOG } from './casementHingeManager';
 
 export interface DevisOpeningItem {
   id: string;
@@ -11511,6 +11513,313 @@ export async function generatePerimeterAnchorNoticePdf(params: PerimeterAnchorNo
   const safeFilename = `Attestation_Ancrage_Gros_Oeuvre_${params.documentId}.pdf`;
   doc.save(safeFilename);
 }
+
+export interface CasementHingeNoticePdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName?: string;
+  wilaya?: string;
+  auditInput: CasementHingeInput;
+  auditResult: CasementHingeResult;
+}
+
+export async function generateCasementHingeNoticePdf(params: CasementHingeNoticePdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const bluePrimary: [number, number, number] = [15, 76, 129];
+  const slateDark: [number, number, number] = [30, 41, 59];
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const amberWarning: [number, number, number] = [245, 158, 11];
+  const roseRed: [number, number, number] = [225, 29, 72];
+
+  const input = params.auditInput;
+  const audit = params.auditResult;
+  const hinge = HINGE_MODEL_SPECS[input.hingeModel];
+  const glazing = GLAZING_WEIGHT_CATALOG[input.glazingKey] || GLAZING_WEIGHT_CATALOG['double_4_16_4'];
+
+  // 1. Header Banner
+  doc.setFillColor(...bluePrimary);
+  doc.rect(0, 0, 210, 32, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text('BAITI ATELIER • AUDIT CHARGE FERRURE & CALAGE D ÉQUERRAGE', 14, 13);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(226, 232, 240);
+  doc.text('Conforme NF EN 13126-8 • NF EN 1191 • NF DTU 39 P1-1 • CSTB e-Cahier 3698', 14, 19);
+  doc.text(`Réf Dossier : ${params.projectRef} • Wilaya : ${params.wilaya || 'Alger'} • Réf Doc : ${params.documentId}`, 14, 25);
+
+  // Status Badge
+  const isApproved = audit.capacityStatus === 'optimal' && audit.dtu39CalageCompliant && audit.isSaggingAcceptable;
+  const isWarning = audit.capacityStatus === 'acceptable' || !audit.isSaggingAcceptable;
+  const badgeColor = isApproved ? emeraldGreen : isWarning ? amberWarning : roseRed;
+  const badgeText = isApproved ? 'CONFORME DTU 39' : isWarning ? 'RÉGLAGE ATTENTION' : 'SURCHARGE FERRURE';
+
+  doc.setFillColor(badgeColor[0], badgeColor[1], badgeColor[2]);
+  doc.roundedRect(144, 8, 52, 16, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(badgeText, 170, 18, { align: 'center' });
+
+  // 2. Project Metadata Card
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, 36, 182, 20, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('1. CONTEXTE OUVRAGE & GÉOMÉTRIE DU VANTAIL', 18, 42);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Largeur ouvrant : ${audit.sashWidthMm} mm`, 18, 48);
+  doc.text(`Hauteur ouvrant : ${audit.sashHeightMm} mm`, 70, 48);
+  doc.text(`Ratio élancement L/H : ${audit.aspectRatioWidthToHeight}`, 124, 48);
+  doc.text(`Surface vitrée : ${audit.glassSurfaceM2} m²`, 164, 48);
+
+  doc.text(`Masse totale vantail : ${audit.totalSashMassKg} kg`, 18, 53);
+  doc.text(`Vitrage : ${audit.glassMassKg} kg (${glazing.labelFr.slice(0, 30)})`, 70, 53);
+  doc.text(`Profilés alu : ${audit.frameAluminumMassKg} kg`, 124, 53);
+  doc.text(`Quincaillerie : ${audit.hardwareMassKg} kg`, 164, 53);
+
+  // 3. Technical Specifications Card
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, 59, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('2. SPÉCIFICATIONS FERRURE & CALAGE D ÉQUERRAGE DTU 39', 18, 65);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...slateDark);
+  doc.text(`Ferrure : ${hinge.labelFr}`, 18, 70);
+  doc.text(`Capacité maximale : ${hinge.maxRatedSashWeightKg} kg`, 118, 70);
+  doc.text(`Endurance certifiée : ${hinge.testedEnduranceCycles.toLocaleString('fr-FR')} cycles`, 154, 70);
+
+  const bracingLabel = input.bracingMethod === 'triangulated_dtu39'
+    ? 'Calage d équerrage diagonal NF DTU 39 (Conforme)'
+    : input.bracingMethod === 'structural_bonding'
+    ? 'Collage structurel verre/ouvrant (Haute rigidité)'
+    : 'Calage périphérique simple non triangulé (Déconseillé)';
+
+  doc.text(`Méthode de calage : ${bracingLabel}`, 18, 75);
+  doc.text(`Réglage hauteur 3D : +/- ${hinge.heightAdjustmentMm} mm`, 118, 75);
+  doc.text(`Réglage latéral : +/- ${hinge.lateralAdjustmentMm} mm`, 154, 75);
+
+  // 4. Performance KPI Cards
+  const kpiY = 84;
+  const tileW = 43.5;
+  const tileH = 22;
+
+  interface KpiItem {
+    title: string;
+    val: string;
+    sub: string;
+    status: string;
+    color: [number, number, number];
+  }
+
+  const kpis: KpiItem[] = [
+    {
+      title: 'Taux de Charge Ferrure',
+      val: `${audit.capacityUtilizationPercent}%`,
+      sub: `${audit.totalSashMassKg} kg / ${hinge.maxRatedSashWeightKg} kg max`,
+      status: audit.capacityStatus === 'optimal' ? 'Optimal (<80%)' : audit.capacityStatus === 'acceptable' ? 'Acceptable' : 'Surcharge',
+      color: audit.capacityStatus === 'optimal' ? emeraldGreen : audit.capacityStatus === 'acceptable' ? amberWarning : roseRed,
+    },
+    {
+      title: 'Traction sur Compas',
+      val: `${audit.topStayTensileForceN} N`,
+      sub: `Admissible : ${hinge.maxAllowableStayTensileForceN} N (S=${audit.staySafetyFactor})`,
+      status: audit.staySafetyFactor >= 1.25 ? 'Sécuritaire' : 'Compas sous charge',
+      color: audit.staySafetyFactor >= 1.25 ? emeraldGreen : amberWarning,
+    },
+    {
+      title: 'Charge Pivot Inférieur',
+      val: `${audit.bottomPivotResultantForceN} N`,
+      sub: `Vertical : ${audit.bottomPivotVerticalForceN} N • Admis : ${hinge.maxAllowablePivotResultantLoadN} N`,
+      status: audit.pivotSafetyFactor >= 1.25 ? 'Résistance certifiée' : 'Contrôle palier',
+      color: audit.pivotSafetyFactor >= 1.25 ? emeraldGreen : amberWarning,
+    },
+    {
+      title: 'Affaissement Diagonal',
+      val: `${audit.estimatedDiagonalDroopMm} mm`,
+      sub: `Seuil limite DTU : ${audit.maxAllowableDroopMm} mm`,
+      status: audit.isSaggingAcceptable ? 'Jeu respecté' : 'Risque de frottement',
+      color: audit.isSaggingAcceptable ? emeraldGreen : roseRed,
+    },
+  ];
+
+  kpis.forEach((kpi, idx) => {
+    const x = 14 + idx * (tileW + 2.6);
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(x, kpiY, tileW, tileH, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(100, 116, 139);
+    doc.text(kpi.title, x + 3, kpiY + 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.text(kpi.val, x + 3, kpiY + 11);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.8);
+    doc.setTextColor(...slateDark);
+    doc.text(kpi.sub, x + 3, kpiY + 16);
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(5.5);
+    doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+    doc.text(kpi.status, x + 3, kpiY + 19.5);
+  });
+
+  // 5. Hardware Bill of Materials Table
+  const tableData = [
+    [
+      'Garniture oscillo-battante / frappe',
+      hinge.labelFr,
+      '1 ensemble complet',
+      `Palier d angle bas, compas haut, compas d aération, crémone`,
+      'NF EN 13126-8 Grade 5 (25 000 cycles)',
+      'Ferrure certifiée',
+    ],
+    [
+      'Cales d équerrage élastomère',
+      'Cales d assise et d équerrage EPDM 80 Shore A',
+      `${audit.billOfMaterials.settingBlocksCount} cales`,
+      'Épaisseur 4 à 6 mm selon jeu de feuillure',
+      'Positionnement obligatoire en diagonale selon NF DTU 39',
+      'Accessoires vitrage',
+    ],
+    [
+      'Outillage de calibrage 3D',
+      audit.billOfMaterials.recommendedAdjustmentKey,
+      '1 jeu d outils',
+      'Réglage micrométrique de l écrasement et de la rehausse',
+      'Vérifier le jeu d ouvrant de 11.5 mm constant',
+      'Outillage atelier',
+    ],
+    [
+      'Programme de maintenance',
+      audit.billOfMaterials.maintenanceScheduleFr,
+      '1 intervention / an',
+      'Contrôle visuel du serrage des vis de compas et lubrification',
+      'Garantie de longévité mécanique',
+      'Maintenance',
+    ],
+  ];
+
+  autoTable(doc, {
+    startY: kpiY + 26,
+    head: [['Composant', 'Désignation Technique', 'Quantité', 'Spécifications Atelier', 'Prescription Normative', 'Catégorie']],
+    body: tableData,
+    theme: 'grid',
+    styles: {
+      fontSize: 6.5,
+      cellPadding: 1.8,
+      textColor: [15, 23, 42],
+    },
+    headStyles: {
+      fillColor: [15, 76, 129],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'left',
+    },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 32 },
+      1: { cellWidth: 46 },
+      2: { cellWidth: 18 },
+      3: { fontStyle: 'bold', cellWidth: 26 },
+      4: { cellWidth: 44 },
+      5: { halign: 'right', cellWidth: 16 },
+    },
+  });
+
+  // 6. Synthesis Recommendations Card
+  const finalTable = (doc as any).lastAutoTable;
+  const synthY = finalTable.finalY + 4;
+
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, synthY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('5. PRESCRIPTIONS DE POSE & CALAGE D ÉQUERRAGE DTU 39', 18, synthY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...slateDark);
+
+  let recoLineY = synthY + 10;
+  audit.auditRecommendations.slice(0, 3).forEach((reco) => {
+    doc.text(`• ${reco}`, 18, recoLineY);
+    recoLineY += 4.2;
+  });
+
+  // 7. Signature & QR Code Block
+  const signY = synthY + 28;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, signY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('VISA TECHNIQUE FABRICANT & CALAGE', 18, signY + 6);
+  doc.text('RÉCEPTION QUALITÉ CHANTIER', 128, signY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.2);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Atelier de Menuiserie Aluminium Baiti', 18, signY + 11);
+  doc.text('Signature & Cachet :', 18, signY + 16);
+
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 128, signY + 11);
+  doc.text('Date & Signature :', 128, signY + 16);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|HINGE|${params.documentId}|REF=${params.projectRef}|WEIGHT=${audit.totalSashMassKg}KG|UTIL=${audit.capacityUtilizationPercent}%|DROOP=${audit.estimatedDiagonalDroopMm}MM|STATUS=${audit.isSaggingAcceptable ? 'CONFORME' : 'ATTENTION'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer Legal Line
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.2);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Attestation officielle Baiti Atelier • ${params.documentId} • NF EN 13126-8 • NF EN 1191 • NF DTU 39 • CSTB 3698`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Attestation_Charge_Ferrure_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
 
 
 
