@@ -1,6 +1,7 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useConfigStore } from '../../store/configStore';
 import type { FinishColor } from '../../types/window';
 import type { TradeCategory } from '../../types/trades';
 import { FINISH_PALETTES } from '../../utils/finishSpecifications';
@@ -15,6 +16,7 @@ interface Hero3DWorkpieceProps {
   isOpen?: boolean;
   windowModel?: WindowModelType;
   clippingPlane?: THREE.Plane | null;
+  isLight?: boolean;
 }
 
 export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
@@ -25,12 +27,16 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
   isOpen = false,
   windowModel = 'sliding',
   clippingPlane = null,
+  isLight,
 }) => {
   const rootRef = useRef<THREE.Group>(null);
   const leftSashRef = useRef<THREE.Group>(null);
   const rightSashRef = useRef<THREE.Group>(null);
   const leftDoorRef = useRef<THREE.Group>(null);
   const rightDoorRef = useRef<THREE.Group>(null);
+
+  const { theme } = useConfigStore();
+  const isLightMode = isLight !== undefined ? isLight : theme === 'light';
 
   const palette = FINISH_PALETTES[finishColor] || FINISH_PALETTES.ral_7016;
 
@@ -50,13 +56,13 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
     return mat;
   }, [palette, clippingPlane]);
 
-  // Pure white monobloc roller shutter caisson (standard in Algerian construction RAL 9016)
-  const whiteShutterMaterial = useMemo(() => {
+  // Monobloc roller shutter caisson (dynamic: Deep Sleek Black in dark mode, Pure Architectural White in light mode)
+  const shutterMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
-      color: '#FFFFFF',
-      roughness: 0.25,
-      metalness: 0.08,
-      envMapIntensity: 1.2,
+      color: isLightMode ? '#FFFFFF' : '#0B0F19',
+      roughness: isLightMode ? 0.25 : 0.45,
+      metalness: isLightMode ? 0.08 : 0.65,
+      envMapIntensity: isLightMode ? 1.2 : 1.6,
       side: THREE.DoubleSide,
     });
     if (clippingPlane) {
@@ -64,7 +70,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
       mat.clipShadows = true;
     }
     return mat;
-  }, [clippingPlane]);
+  }, [isLightMode, clippingPlane]);
 
 
 
@@ -236,7 +242,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
           {/* Top Roller Shutter Caisson Monobloc (2mm expansion clearance to eliminate seam z-fighting) */}
           <mesh
             position={[0, 0.852 + explodeDilation, 0]}
-            material={whiteShutterMaterial}
+            material={shutterMaterial}
           >
             <boxGeometry args={[1.44 + explodeDilation * 2, 0.178, 0.11]} />
           </mesh>

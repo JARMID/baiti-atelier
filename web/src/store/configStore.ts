@@ -207,7 +207,20 @@ export const useConfigStore = create<ConfigState>((set) => ({
         document.documentElement.classList.remove('light');
       }
     }
-    set({ theme });
+    set((state) => {
+      let nextFinish = state.config.finishColor;
+      if (theme === 'light' && (nextFinish === 'ral_7016' || nextFinish === 'ral_9005')) {
+        nextFinish = 'ral_9016';
+      } else if (theme === 'dark' && nextFinish === 'ral_9016') {
+        nextFinish = 'ral_7016';
+      }
+      const nextConfig = { ...state.config, finishColor: nextFinish };
+      return {
+        theme,
+        config: nextConfig,
+        cost: calculateWindowCost(nextConfig, state.calibration),
+      };
+    });
   },
 
   toggleTheme: () =>
@@ -223,7 +236,18 @@ export const useConfigStore = create<ConfigState>((set) => ({
           document.documentElement.classList.remove('light');
         }
       }
-      return { theme: nextTheme };
+      let nextFinish = state.config.finishColor;
+      if (nextTheme === 'light' && (nextFinish === 'ral_7016' || nextFinish === 'ral_9005')) {
+        nextFinish = 'ral_9016';
+      } else if (nextTheme === 'dark' && nextFinish === 'ral_9016') {
+        nextFinish = 'ral_7016';
+      }
+      const nextConfig = { ...state.config, finishColor: nextFinish };
+      return {
+        theme: nextTheme,
+        config: nextConfig,
+        cost: calculateWindowCost(nextConfig, state.calibration),
+      };
     }),
 
   setSelectedWilaya: (selectedWilaya) => set({ selectedWilaya }),

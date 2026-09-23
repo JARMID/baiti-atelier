@@ -258,6 +258,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                 isOpen={scrollVal >= 0.35}
                 windowModel={windowModel}
                 clippingPlane={clippingPlane}
+                isLight={isLight}
               />
               <ContactShadows
                 position={[0, -1.05, 0]}
