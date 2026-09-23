@@ -1,6 +1,6 @@
 # MiroFish Swarm Simulation: Baiti Atelier Market Readiness & User Sentiment Report
 
-**Date**: 2026-09-23 17:42:11
+**Date**: 2026-09-23 18:44:58
 **Simulation Engine**: MiroFish OASIS-compatible Swarm Persona Evaluator
 **Target Population**: Algerian Artisans & Manufacturing Workshops across 58 Wilayas
 **Product Evaluated**: Baiti Atelier | بيتي (Version 1.0.0-rc.1)
@@ -9,7 +9,7 @@
 
 ## 1. Executive Readiness Verdict
 
-- **Overall Market Adoption Likelihood**: **92.2%** (Exceptional Product-Market Fit)
+- **Overall Market Adoption Likelihood**: **93.0%** (Exceptional Product-Market Fit)
 - **Readiness to Ship**: **GREEN / READY FOR SHIPMENT**
 - **Target Demographic Sentiment**: Strong enthusiasm, driven by offline-first confidential costing and millimetric 1D/2D cutting optimization.
 
@@ -42,12 +42,12 @@
 > *"Finally software built for Algerian workshop reality. The cutting optimization alone saves 30,000 DZD per month in aluminum scrap."*
 
 ### Karim — Architect & General Building Contractor (Sétif (19))
-- **Adoption Likelihood**: **91%** | **Sentiment**: Extremely Positive
-- **Offline & Privacy Feedback**: Relieved that workshop rates and margins stay encrypted on local disk without cloud leakage.
-- **TOTP 2FA Feedback**: Prefers app TOTP over SMS because cellular reception is often weak inside metal workshop hangars.
-- **Top Delights**: 1D linear cutting optimizer with 45-degree kerf math, Reusable offcut rack bin labeling (CASIER-A-01), Instant Dinars (DZD) proforma quotes with QR token
-- **Observed Friction / Advice**: Wants to ensure desktop Windows app works seamlessly without active internet connection on older workshop PCs.
-> *"Finally software built for Algerian workshop reality. The cutting optimization alone saves 30,000 DZD per month in aluminum scrap."*
+- **Adoption Likelihood**: **95%** | **Sentiment**: highly positive
+- **Offline & Privacy Feedback**: Strong confidence in 100% offline DZD costing and the reusable offcut rack (CHT-ALU-01) directly addresses my need for privacy and material efficiency.
+- **TOTP 2FA Feedback**: Appreciate the pure RFC 6238 TOTP 2FA with offline backup codes — eliminates SMS vulnerabilities and fits my workshop’s isolated environment.
+- **Top Delights**: Bioclimatic DTR C3-2 / CNERIB thermal auditor (Uw, Sw, Uf, dew point), Offline-first DZD costing with local disk encryption, Millimetric 1D profile optimization and CHT-ALU-01 offcut rack, TOTP authenticator with zero SMS tracking, Multi-platform parity (Web, Tauri .exe, Flutter mobile)
+- **Observed Friction / Advice**: None
+> *"None"*
 
 ### Rachid — Traditional Ironmonger & Security Grille Artisan (Blida (09))
 - **Adoption Likelihood**: **91%** | **Sentiment**: Extremely Positive
