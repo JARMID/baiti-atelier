@@ -47,6 +47,7 @@ import { RollerShutterWindingModal } from './RollerShutterWindingModal';
 import { AcousticInsulationModal } from './AcousticInsulationModal';
 import { CurtainWallStructuralModal } from './CurtainWallStructuralModal';
 import { SeismicJoineryModal } from './SeismicJoineryModal';
+import { BifoldDoorModal } from './BifoldDoorModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -225,6 +226,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showAcousticModal, setShowAcousticModal] = useState(false);
   const [showCurtainWallModal, setShowCurtainWallModal] = useState(false);
   const [showSeismicModal, setShowSeismicModal] = useState(false);
+  const [showBifoldModal, setShowBifoldModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -927,6 +929,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Activity className="w-3 h-3" />
               <span>Séisme RPA</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowBifoldModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-amber-300 font-semibold"
+              title="Calcul cinématique et charges de baie accordéon NF EN 1527"
+            >
+              <Sliders className="w-3 h-3" />
+              <span>Accordéon</span>
             </button>
 
             <button
@@ -2007,6 +2022,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
         <SeismicJoineryModal
           isOpen={showSeismicModal}
           onClose={() => setShowSeismicModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          windowReference={`Baie ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* BIFOLD ACCORDION DOOR MECHANICAL & PMR THRESHOLD MODAL */}
+      {showBifoldModal && (
+        <BifoldDoorModal
+          isOpen={showBifoldModal}
+          onClose={() => setShowBifoldModal(false)}
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           windowReference={`Baie ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}

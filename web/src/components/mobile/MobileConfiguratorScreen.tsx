@@ -50,6 +50,7 @@ import { RollerShutterWindingModal } from './RollerShutterWindingModal';
 import { AcousticInsulationModal } from './AcousticInsulationModal';
 import { CurtainWallStructuralModal } from './CurtainWallStructuralModal';
 import { SeismicJoineryModal } from './SeismicJoineryModal';
+import { BifoldDoorModal } from './BifoldDoorModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -164,6 +165,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isAcousticModalOpen, setIsAcousticModalOpen] = useState(false);
   const [isCurtainWallModalOpen, setIsCurtainWallModalOpen] = useState(false);
   const [isSeismicModalOpen, setIsSeismicModalOpen] = useState(false);
+  const [isBifoldModalOpen, setIsBifoldModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -760,6 +762,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Building2 className="w-4 h-4" />
           <span>Dimensionnement Statique Façade Rideau (DTU 33.1 / EC9)</span>
+        </button>
+
+        {/* Bifold Accordion Door Mechanics & PMR Sizing Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsBifoldModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Layers className="w-4 h-4" />
+          <span>Dimensionnement Porte Accordéon & Seuil PMR (NF EN 1527)</span>
         </button>
       </div>
 
@@ -1841,6 +1856,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         <SeismicJoineryModal
           isOpen={isSeismicModalOpen}
           onClose={() => setIsSeismicModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          windowReference={`Baie ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* BIFOLD ACCORDION DOOR MECHANICAL & PMR THRESHOLD MODAL */}
+      {isBifoldModalOpen && (
+        <BifoldDoorModal
+          isOpen={isBifoldModalOpen}
+          onClose={() => setIsBifoldModalOpen(false)}
           initialWidth={config.width}
           initialHeight={config.height}
           windowReference={`Baie ${config.width}x${config.height} ${config.profileSystem}`}

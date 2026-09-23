@@ -5443,6 +5443,327 @@ export async function generateSeismicCalculationPdf(params: SeismicNoticePdfPara
   doc.save(safeFilename);
 }
 
+export interface BifoldDoorPdfParams {
+  documentId: string;
+  clientName: string;
+  wilayaName: string;
+  windowReference: string;
+  widthMm: number;
+  heightMm: number;
+  result: import('./bifoldDoorManager').BifoldCalculationResult;
+  workshopName?: string;
+}
+
+/**
+ * Generates an official A4 technical specification and calculation note for bifold accordion doors.
+ * References: NF EN 1527 / NF EN 1191 / NF DTU 36.5 / Decret Executif PMR 06-455.
+ * Humanizer invariant: exactly 0 em dashes, 0 en dashes.
+ */
+export async function generateBifoldDoorNoticePdf(params: BifoldDoorPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryNavy: [number, number, number] = [15, 23, 42]; // slate-900
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const amberOrange: [number, number, number] = [245, 158, 11];
+  const roseRed: [number, number, number] = [239, 68, 68];
+
+  const isOk = params.result.overallVerdict === 'favorable';
+  const isWarn = params.result.overallVerdict === 'warning';
+  const statusColor = isOk ? emeraldGreen : isWarn ? amberOrange : roseRed;
+
+  // 1. Header & Title Block
+  doc.setFillColor(...primaryNavy);
+  doc.rect(14, 12, 182, 22, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER : NOTE TECHNIQUE PORTE ACCORDEON', 20, 21);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text('Calcul Mecanique des Chariots, Fleche Linteau & Drainage Seuil (NF EN 1527 / DTU 36.5)', 20, 27);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(212, 175, 55);
+  doc.text(`Doc N: ${params.documentId}`, 150, 21);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 150, 27);
+
+  // 2. Project & Location Metadata Card
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 38, 182, 20, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Reference Ouvrage :', 18, 44);
+  doc.text('Maitre d Ouvrage / Client :', 18, 50);
+  doc.text('Localisation / Wilaya :', 18, 55);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(51, 65, 85);
+  doc.text(`${params.windowReference} (${params.widthMm} x ${params.heightMm} mm)`, 60, 44);
+  doc.text(`${params.clientName || 'Projet Standard'}`, 60, 50);
+  doc.text(`${params.wilayaName || 'Alger (16)'}`, 60, 55);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...primaryNavy);
+  doc.text('Configuration Schema :', 115, 44);
+  doc.text('Type de Guidage :', 115, 50);
+  doc.text('Type de Seuil :', 115, 55);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(51, 65, 85);
+  doc.text(`${params.result.configSpec.label}`, 152, 44);
+  doc.text(`${params.result.mountingSpec.nameFr.split('(')[0].trim()}`, 152, 50);
+  doc.text(`${params.result.thresholdSpec.nameFr.split('(')[0].trim()}`, 152, 55);
+
+  // 3. Technical Parameters Grid
+  const gridY = 62;
+  const colWidth = 43.5;
+  const colGap = 2.6;
+
+  // Box 1: Geometrie & Vantaux
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(14, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('1. Geometrie Vantaux', 17, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Nombre de vantaux : ${params.result.leafCount}`, 17, gridY + 12);
+  doc.text(`Largeur vantail : ${params.result.leafWidthMm} mm`, 17, gridY + 18);
+  doc.text(`Hauteur vantail : ${params.result.leafHeightMm} mm`, 17, gridY + 24);
+  doc.text(`Porte de service : ${params.result.configSpec.trafficDoor ? 'Oui (battante)' : 'Non'}`, 17, gridY + 30);
+  doc.text(`Surface vitree : ${params.result.totalGlassAreaM2.toFixed(2)} m2`, 17, gridY + 36);
+
+  // Box 2: Masses & Chariots
+  const b2X = 14 + colWidth + colGap;
+  doc.roundedRect(b2X, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(b2X, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('2. Charges & Chariots', b2X + 3, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Poids vitrage/u : ${params.result.leafGlassWeightKg} kg`, b2X + 3, gridY + 12);
+  doc.text(`Poids total/vantail : ${params.result.singleLeafTotalWeightKg} kg`, b2X + 3, gridY + 18);
+  doc.text(`Poids tablier total : ${params.result.totalDoorLeavesWeightKg} kg`, b2X + 3, gridY + 24);
+  doc.text(`Charge/chariot : ${params.result.loadPerBogieKg} kg`, b2X + 3, gridY + 30);
+  doc.text(`Taux charge : ${params.result.bogieUtilizationPercent}% (cap ${params.result.selectedBogieCapacityKg}kg)`, b2X + 3, gridY + 36);
+
+  // Box 3: Linteau & Fleche
+  const b3X = b2X + colWidth + colGap;
+  doc.roundedRect(b3X, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(b3X, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('3. Appui Linteau Replie', b3X + 3, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Vantaux empiles : ${params.result.stackedLeavesCountMaxSide}`, b3X + 3, gridY + 12);
+  doc.text(`Charge ponctuelle : ${params.result.stackedConcentratedLoadKg} kg`, b3X + 3, gridY + 18);
+  doc.text(`Largeur paquet : ${params.result.stackedWidthMm} mm`, b3X + 3, gridY + 24);
+  doc.text(`Fleche limite : ${params.result.lintelDeflectionLimitMm} mm`, b3X + 3, gridY + 30);
+  doc.text(`Inertie est. : ${params.result.recommendedLintelInertiaCm4} cm4`, b3X + 3, gridY + 36);
+
+  // Box 4: Seuil & Drainage
+  const b4X = b3X + colWidth + colGap;
+  doc.roundedRect(b4X, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(b4X, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('4. Seuil & Drainage', b4X + 3, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Hauteur seuil : ${params.result.thresholdSpec.heightMm} mm`, b4X + 3, gridY + 12);
+  doc.text(`PMR Decret 06-455 : ${params.result.thresholdSpec.pmrCompliant ? 'Conforme' : 'Non PMR'}`, b4X + 3, gridY + 18);
+  doc.text(`Etancheite : ${params.result.thresholdSpec.waterTightnessClass}`, b4X + 3, gridY + 24);
+  doc.text(`Fentes buses : ${params.result.weepHoleCount} buses`, b4X + 3, gridY + 30);
+  doc.text(`Clapet anti-retour : ${params.result.antiReturnFlapRequired ? 'Obligatoire' : 'Optionnel'}`, b4X + 3, gridY + 36);
+
+  // 4. Detailed Kinematics & Mechanics Table
+  const tableY = 109;
+  doc.setFillColor(...primaryNavy);
+  doc.rect(14, tableY, 182, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('COMPOSANT / PARAMETRE', 18, tableY + 5);
+  doc.text('VALEUR CALCULEE', 90, tableY + 5);
+  doc.text('CRITERE NORMATIF', 140, tableY + 5);
+
+  const rows = [
+    {
+      label: 'Charge dynamique par chariot a roulettes',
+      val: `${params.result.loadPerBogieKg} kg (${params.result.bogieUtilizationPercent}% capacite)`,
+      crit: `Capacite nominale ${params.result.selectedBogieCapacityKg} kg (NF EN 1527)`,
+    },
+    {
+      label: 'Effort de traction sur paumelle haute',
+      val: `${params.result.hingeTensionDaN} daN (couple de porte a faux)`,
+      crit: 'Minimum 3 paumelles avec vis traversantes dans tubulure',
+    },
+    {
+      label: 'Charge linteau sous vantaux empiles',
+      val: `${params.result.stackedConcentratedLoadKg} kg en extremite de baie`,
+      crit: `Fleche maximale ${params.result.lintelDeflectionLimitMm} mm sous charge reelle`,
+    },
+    {
+      label: 'Evacuation des eaux de pluie en traverse basse',
+      val: `Debit d evacuation ${params.result.drainageRateLitersPerMin} L/min`,
+      crit: `${params.result.weepHoleCount} fentes 8x30 mm + buses avec clapet silicone`,
+    },
+    {
+      label: 'Fixation du dormant lateral en maconnerie',
+      val: `${params.result.minAnchorFastenersPerJamb} chevilles par montant lateral`,
+      crit: 'Espacement max 400 mm avec calage d appui incompressible',
+    },
+  ];
+
+  let curY = tableY + 7;
+  rows.forEach((r, idx) => {
+    doc.setFillColor(idx % 2 === 0 ? 255 : 248, idx % 2 === 0 ? 255 : 250, idx % 2 === 0 ? 255 : 252);
+    doc.rect(14, curY, 182, 6.5, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.line(14, curY + 6.5, 196, curY + 6.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(30, 41, 59);
+    doc.text(r.label, 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(r.val, 90, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    doc.text(r.crit, 140, curY + 4.5);
+
+    curY += 6.5;
+  });
+
+  // 5. Compliance Banner & Verdict Card
+  const verdictY = curY + 4;
+  doc.setDrawColor(...statusColor);
+  doc.setFillColor(isOk ? 240 : isWarn ? 254 : 254, isOk ? 253 : isWarn ? 243 : 242, isOk ? 244 : isWarn ? 199 : 242);
+  doc.roundedRect(14, verdictY, 182, 34, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...statusColor);
+  doc.text(`VERDICT TECHNIQUE : ${params.result.verdictTitleFr.toUpperCase()}`, 18, verdictY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(30, 41, 59);
+  let vY = verdictY + 12;
+  for (const det of params.result.verdictDetailsFr) {
+    doc.text(`• ${det}`, 18, vY);
+    vY += 4.5;
+  }
+  if (params.result.structuralLintelWarning) {
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...roseRed);
+    doc.text(`• ${params.result.structuralLintelWarning}`, 18, vY);
+    vY += 4.5;
+  }
+
+  // 6. Workshop Directives & Maintenance Guide
+  const directY = verdictY + 37;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, directY, 182, 30, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Prescriptions de Fabrication et Montage (NF DTU 36.5 P20-202) :', 18, directY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(71, 85, 105);
+  let dY = directY + 10;
+  for (const rec of params.result.recommendationsFr) {
+    doc.text(`• ${rec}`, 18, dY, { maxWidth: 174 });
+    dY += 4.5;
+  }
+
+  // 7. Signatures & QR Code
+  const signY = directY + 33;
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 21, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 21, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Pour le Fabricant Menuisier :', 18, signY + 5.5);
+  doc.text('Visa Client / Architecte :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Atelier de fabrication Baiti Atelier', 18, signY + 10.5);
+  doc.text('Signature & Date :', 18, signY + 16);
+  doc.text('Bon pour accord specifications baie pliante', 135, signY + 10.5);
+  doc.text('Signature & Date :', 135, signY + 16);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|BIFOLD|${params.documentId}|REF=${params.windowReference}|CONFIG=${params.result.configSpec.id}|WEIGHT=${params.result.singleLeafTotalWeightKg}KG|BOGIE=${params.result.loadPerBogieKg}KG|STATUS=${isOk ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 0.5, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Note technique officielle Baiti Atelier • ${params.documentId} • NF EN 1527 • NF EN 1191 • NF DTU 36.5 • Decret PMR 06-455`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Note_Porte_Accordeon_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 
