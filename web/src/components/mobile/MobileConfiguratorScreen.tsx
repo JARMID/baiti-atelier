@@ -36,6 +36,7 @@ import {
   Flame,
   ShieldCheck,
   Scale,
+  SplitSquareVertical,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -77,6 +78,7 @@ import { GlassBalustradeModal } from './GlassBalustradeModal';
 import { BioclimaticPergolaModal } from './BioclimaticPergolaModal';
 import { SolarSunshadeModal } from './SolarSunshadeModal';
 import { SlidingCarriageModal } from './SlidingCarriageModal';
+import { TransomDeadLoadModal } from './TransomDeadLoadModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -208,6 +210,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isBioclimaticPergolaModalOpen, setIsBioclimaticPergolaModalOpen] = useState(false);
   const [isSolarSunshadeModalOpen, setIsSolarSunshadeModalOpen] = useState(false);
   const [isSlidingCarriageModalOpen, setIsSlidingCarriageModalOpen] = useState(false);
+  const [isTransomDeadLoadModalOpen, setIsTransomDeadLoadModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -1025,6 +1028,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Scale className="w-4 h-4" />
           <span>Chariots Coulissant Lourd & Effort PMR (NF EN 13126-15 / Décret 06-455)</span>
+        </button>
+
+        {/* Transom Dead Load Glass Weight & Setting Block Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsTransomDeadLoadModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <SplitSquareVertical className="w-4 h-4" />
+          <span>Calage d Assise & Flèche Traverse (NF DTU 39 / NF EN 13830)</span>
         </button>
       </div>
 
@@ -2329,6 +2345,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           projectReference={`Coulissant ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* TRANSOM DEAD LOAD & GLASS SETTING BLOCK AUDITOR MODAL */}
+      {isTransomDeadLoadModalOpen && (
+        <TransomDeadLoadModal
+          isOpen={isTransomDeadLoadModalOpen}
+          onClose={() => setIsTransomDeadLoadModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          projectReference={`Traverse ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />

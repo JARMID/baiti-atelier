@@ -11,6 +11,8 @@ import type { SolarSunshadeInput, SolarSunshadeAuditResult } from './solarSunsha
 import { BLADE_SPECS } from './solarSunshadeManager';
 import type { SlidingCarriageInput, SlidingCarriageAuditResult } from './slidingCarriageManager';
 import { CARRIAGE_SPECS, TRACK_SPECS } from './slidingCarriageManager';
+import type { TransomDeadLoadInput, TransomDeadLoadAuditResult } from './transomDeadLoadManager';
+import { TRANSOM_PROFILE_SPECS, SETTING_BLOCK_SPECS } from './transomDeadLoadManager';
 
 export interface DevisOpeningItem {
   id: string;
@@ -10274,6 +10276,319 @@ export async function generateSlidingCarriageNoticePdf(params: SlidingCarriageNo
   const safeFilename = `Attestation_Chariots_Coulissant_${params.documentId}.pdf`;
   doc.save(safeFilename);
 }
+
+export interface TransomDeadLoadNoticePdfParams {
+  documentId: string;
+  projectRef: string;
+  clientName?: string;
+  wilayaName: string;
+  input: TransomDeadLoadInput;
+  audit: TransomDeadLoadAuditResult;
+}
+
+export async function generateTransomDeadLoadNoticePdf(params: TransomDeadLoadNoticePdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const audit = params.audit;
+  const input = params.input;
+  const profile = TRANSOM_PROFILE_SPECS[input.transomProfileModel];
+  const block = SETTING_BLOCK_SPECS[input.settingBlockMaterial];
+
+  // Palette: Navy Blue #003366, Gold #D4AF37, Slate #0F172A, Background #F8FAFC
+  const bluePrimary: [number, number, number] = [0, 51, 102];
+  const slateDark: [number, number, number] = [15, 23, 42];
+  const goldAccent: [number, number, number] = [212, 175, 55];
+  const bgLight: [number, number, number] = [248, 250, 252];
+  const borderLight: [number, number, number] = [226, 232, 240];
+
+  // 1. Header Banner
+  doc.setFillColor(...bluePrimary);
+  doc.rect(0, 0, 210, 26, 'F');
+  doc.setFillColor(...goldAccent);
+  doc.rect(0, 26, 210, 1.5, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('ATTESTATION DE CALAGE D ASSISE & RIGIDITÉ DE TRAVERSE', 14, 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(224, 231, 255);
+  doc.text('Poids Propre du Vitrage • Flèche NF EN 13830 • Calage NF DTU 39 P1-1 • CSTB 3220', 14, 17);
+
+  const todayStr = new Date().toLocaleDateString('fr-DZ');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`Réf : ${params.projectRef}`, 196, 11, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.text(`Date : ${todayStr} • Doc ID : ${params.documentId}`, 196, 17, { align: 'right' });
+
+  // 2. Metadata Card
+  doc.setFillColor(...bgLight);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, 32, 182, 22, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...bluePrimary);
+  doc.text('DONNÉES GÉOMÉTRIQUES DU VITRAGE & DE LA TRAVERSE', 18, 38);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...slateDark);
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 18, 44);
+  doc.text(`Wilaya : ${params.wilayaName}`, 18, 49);
+
+  doc.text(`Portée traverse : ${input.transomLengthMm} mm (Hauteur vitrage : ${input.glassHeightMm} mm)`, 78, 44);
+  doc.text(`Masse totale du vitrage : ${audit.glassWeightKg} kg (${audit.glassAreaM2} m² • ${input.glassThicknessMm} mm)`, 78, 49);
+
+  doc.text(`Profilé : ${profile.labelFr.split('(')[0].trim()}`, 148, 44);
+  doc.text(`Inertie sous gravité Iy : ${profile.momentOfInertiaIyCm4} cm4`, 148, 49);
+
+  // 3. Technical Summary Blocks (3 Columns)
+  const boxY = 58;
+  const boxW = 58;
+  const boxH = 34;
+
+  // Box 1: Transom Deflection
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(0, 51, 102, 0.08);
+  doc.rect(14, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('1. DÉFORMATION TRAVERSE', 17, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Flèche réelle calculée : ${audit.deflectionActualMm} mm`, 17, boxY + 10);
+  doc.text(`Limite NF EN 13830 : ${audit.deflectionLimitEffectiveMm} mm`, 17, boxY + 14);
+  doc.text(`Ratio de déformation : ${audit.deflectionRatioPercent}%`, 17, boxY + 18);
+  doc.text(`Critère : min(L/500, 3.0 mm)`, 17, boxY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(audit.isDeflectionCompliant ? 16 : 225, audit.isDeflectionCompliant ? 185 : 29, audit.isDeflectionCompliant ? 129 : 72);
+  doc.text(audit.isDeflectionCompliant ? 'Flèche Conforme NF' : 'Flèche Excessive (Risque)', 17, boxY + 28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text('Scellement vitrage préservé', 17, boxY + 32);
+
+  // Box 2: Setting Blocks (DTU 39)
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(76, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(0, 51, 102, 0.08);
+  doc.rect(76, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('2. CALES D ASSISE (DTU 39)', 79, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Charge / cale : ${audit.loadPerSettingBlockKg} kg (${audit.loadPerSettingBlockN} N)`, 79, boxY + 10);
+  doc.text(`Pression de contact : ${audit.contactPressureMpa} MPa`, 79, boxY + 14);
+  doc.text(`Matériau : ${block.labelFr.split('(')[0].trim()}`, 79, boxY + 18);
+  doc.text(`Longueur cale : ${input.settingBlockLengthMm} mm (Min : ${audit.minRecommendedBlockLengthMm} mm)`, 79, boxY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(audit.isPressureCompliant ? 16 : 225, audit.isPressureCompliant ? 185 : 29, audit.isPressureCompliant ? 129 : 72);
+  doc.text(audit.isPressureCompliant ? 'Pression Admissible' : 'Écrasement Élastomère', 79, boxY + 28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text(`Dureté : ${block.hardnessShoreA} Shore A conforme`, 79, boxY + 32);
+
+  // Box 3: Torsion & Drainage
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(138, boxY, boxW, boxH, 2, 2, 'FD');
+  doc.setFillColor(0, 51, 102, 0.08);
+  doc.rect(138, boxY, boxW, 6, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('3. TORSION & DRAINAGE', 141, boxY + 4.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...slateDark);
+  doc.text(`Excentrement vitrage : ${audit.glassCenterEccentricityMm} mm`, 141, boxY + 10);
+  doc.text(`Couple de torsion : ${audit.torsionMomentNm} N.m`, 141, boxY + 14);
+  doc.text(`Étriers anti-torsion : ${input.hasAntiTorsionBracket ? 'Présents' : (audit.isAntiTorsionRequired ? 'Requis' : 'Optionnels')}`, 141, boxY + 18);
+  doc.text(`Jeu de fond de feuillure : ${audit.clearanceRebateMm} mm`, 141, boxY + 22);
+
+  doc.setFont('helvetica', 'bold');
+  const torsionOk = !audit.isAntiTorsionRequired || input.hasAntiTorsionBracket;
+  doc.setTextColor(torsionOk ? 16 : 217, torsionOk ? 185 : 119, torsionOk ? 129 : 6);
+  doc.text(torsionOk ? 'Équilibre Torsion Validé' : 'Étriers Anti-Torsion Requis', 141, boxY + 28);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.text('Drainage condensation assuré', 141, boxY + 32);
+
+  // 4. Kinematics & Setting Rules
+  const kinY = boxY + boxH + 5;
+  doc.setFillColor(...bgLight);
+  doc.setDrawColor(...borderLight);
+  doc.roundedRect(14, kinY, 182, 36, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...bluePrimary);
+  doc.text('4. RÈGLES DE POSITIONNEMENT DES CALES D ASSISE (NF DTU 39)', 18, kinY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...slateDark);
+  doc.text(`Distance aux montants verticaux : ${input.settingBlockDistanceMm} mm (Règle DTU : L/10 = ${(input.transomLengthMm / 10).toFixed(0)} mm)`, 18, kinY + 13);
+  doc.text(`Largeur des cales : Doit excéder l épaisseur du vitrage de 2 mm pour couvrir toutes les feuilles de verre`, 18, kinY + 18);
+  doc.text(`Canaux de drainage : Les cales ne doivent jamais obstruer les orifices d évacuation d eau en fond de feuillure`, 18, kinY + 23);
+  doc.text(`Tenue thermique : Matériau élastomère garanti sans plastifiant volatil pouvant dégrader le scellement polyuréthane`, 18, kinY + 28);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...bluePrimary);
+  doc.text('Contrôle à l atelier : Serrage des vis de fixation montant-traverse à la clé dynamométrique (couple 6 N.m)', 18, kinY + 33);
+
+  // 5. Bill of Materials & Hardware Specs
+  const tableData = [
+    [
+      'Cales d assise de vitrage',
+      block.labelFr,
+      '2 pièces',
+      `${input.settingBlockLengthMm} x ${input.glassThicknessMm + 4} x 5 mm`,
+      `Dureté ${block.hardnessShoreA} ShA • Plage ${block.temperatureRangeFr}`,
+      'Élastomère vulcanisé',
+    ],
+    [
+      'Profilé traverse aluminium',
+      profile.labelFr,
+      '1 barre',
+      `L = ${input.transomLengthMm} mm`,
+      `Inertie Iy = ${profile.momentOfInertiaIyCm4} cm4 • Profondeur ${profile.depthMm} mm`,
+      'Alu 6060 T6 thermolaqué',
+    ],
+    [
+      'Étriers anti-torsion / basculement',
+      input.hasAntiTorsionBracket ? 'Étrier de renfort sous cale en acier inox' : 'Non requis pour ce vitrage',
+      input.hasAntiTorsionBracket ? '2 pièces' : '0',
+      'Entraxe cales',
+      'Reprise du moment de torsion direct sur l âme du profilé',
+      'Inox 304 / Zamak',
+    ],
+    [
+      'Pions de raccordement montant',
+      'Embouts de traverse à expansion avec vis inox',
+      '2 ensembles',
+      'Diamètre 10 mm',
+      'Reprise d effort tranchant vertical P_total = 2 x ' + audit.loadPerSettingBlockKg + ' kg',
+      'Alu usiné & Inox A2',
+    ],
+  ];
+
+  autoTable(doc, {
+    startY: kinY + 40,
+    head: [['Composant', 'Désignation Quincaillerie', 'Quantité', 'Dimensions / Capacité', 'Spécification Normative', 'Matériau / Finition']],
+    body: tableData,
+    theme: 'grid',
+    styles: {
+      fontSize: 6.5,
+      cellPadding: 1.8,
+      textColor: [15, 23, 42],
+    },
+    headStyles: {
+      fillColor: [0, 51, 102],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'left',
+    },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 32 },
+      1: { cellWidth: 46 },
+      2: { cellWidth: 18 },
+      3: { fontStyle: 'bold', cellWidth: 26 },
+      4: { cellWidth: 44 },
+      5: { halign: 'right', cellWidth: 16 },
+    },
+  });
+
+  // 6. Synthesis Recommendations Card
+  const finalTable = (doc as any).lastAutoTable;
+  const synthY = finalTable.finalY + 4;
+
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, synthY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...bluePrimary);
+  doc.text('5. PRESCRIPTIONS DE POSE & SÉCURITÉ DE FEUILLURE', 18, synthY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(...slateDark);
+
+  let recoLineY = synthY + 10;
+  audit.recommendationsFr.slice(0, 3).forEach((reco) => {
+    doc.text(`• ${reco}`, 18, recoLineY);
+    recoLineY += 4.2;
+  });
+
+  // 7. Signature & QR Code Block
+  const signY = synthY + 28;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, signY, 182, 24, 2, 2, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(15, 23, 42);
+  doc.text('VISA TECHNIQUE FABRICANT', 18, signY + 6);
+  doc.text('BON POUR ACCORD & POSE CLIENT', 128, signY + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.2);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Atelier de Menuiserie Aluminium Baiti', 18, signY + 11);
+  doc.text('Signature & Cachet :', 18, signY + 16);
+
+  doc.text(`Client : ${params.clientName || 'Particulier'}`, 128, signY + 11);
+  doc.text('Date & Signature :', 128, signY + 16);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|TRANSOM|${params.documentId}|REF=${params.projectRef}|GLASS=${audit.glassWeightKg}KG|DEFLECTION=${audit.deflectionActualMm}MM|STATUS=${audit.overallStatus}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 2, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer Legal Line
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.2);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Attestation officielle Baiti Atelier • ${params.documentId} • NF DTU 39 P1-1 • NF EN 13830 • CSTB 3220`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Attestation_Traverse_Calage_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
 
 
 

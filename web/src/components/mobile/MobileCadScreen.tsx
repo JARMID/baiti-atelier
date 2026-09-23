@@ -34,6 +34,7 @@ import {
   Hand,
   Anchor,
   Scale,
+  SplitSquareVertical,
 } from 'lucide-react';
 import { playTactileClick, playSwitchSound, playClampSound } from '../../utils/audioFeedback';
 import {
@@ -71,6 +72,7 @@ import { GlassBalustradeModal } from './GlassBalustradeModal';
 import { BioclimaticPergolaModal } from './BioclimaticPergolaModal';
 import { SolarSunshadeModal } from './SolarSunshadeModal';
 import { SlidingCarriageModal } from './SlidingCarriageModal';
+import { TransomDeadLoadModal } from './TransomDeadLoadModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -266,6 +268,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showBioclimaticPergolaModal, setShowBioclimaticPergolaModal] = useState(false);
   const [showSolarSunshadeModal, setShowSolarSunshadeModal] = useState(false);
   const [showSlidingCarriageModal, setShowSlidingCarriageModal] = useState(false);
+  const [showTransomDeadLoadModal, setShowTransomDeadLoadModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -1189,6 +1192,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Scale className="w-3 h-3" />
               <span>Chariots PMR</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowTransomDeadLoadModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-indigo-500/10 dark:bg-indigo-500/15 border border-indigo-500/30 hover:bg-indigo-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-indigo-300 font-semibold min-h-[44px]"
+              title="Audit calage d assise et flèche de traverse sous poids propre du vitrage (NF DTU 39 / NF EN 13830)"
+            >
+              <SplitSquareVertical className="w-3 h-3" />
+              <span>Traverse DTU</span>
             </button>
 
             <button
@@ -2492,6 +2508,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           projectReference={`Coulissant ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* TRANSOM DEAD LOAD & GLASS SETTING BLOCK AUDITOR MODAL */}
+      {showTransomDeadLoadModal && (
+        <TransomDeadLoadModal
+          isOpen={showTransomDeadLoadModal}
+          onClose={() => setShowTransomDeadLoadModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          projectReference={`Traverse ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />
