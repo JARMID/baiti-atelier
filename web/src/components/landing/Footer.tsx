@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useConfigStore } from '../../store/configStore';
 import { playTactileClick } from '../../utils/audioFeedback';
+import { BaitiLogoMark } from '../brand/BaitiLogoMark';
 
 export const Footer: React.FC = () => {
   const { language, theme, setMaterialMarketOpen } = useConfigStore();
@@ -108,29 +109,7 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10">
           {/* COLUMN 1: BRAND IDENTITY & STANDARDS (4 cols) */}
           <div className="lg:col-span-4 flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0F355E] to-[#D4AF37] p-0.5 flex items-center justify-center shadow-lg">
-                <div
-                  className={`w-full h-full rounded-[10px] flex items-center justify-center ${
-                    isLight ? 'bg-white text-slate-900' : 'bg-[#030914] text-[#D4AF37]'
-                  }`}
-                >
-                  <Grid className="w-4 h-4 text-[#D4AF37]" />
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`text-lg font-serif font-bold tracking-tight ${
-                    isLight ? 'text-slate-900' : 'text-white'
-                  }`}
-                >
-                  Baiti Atelier
-                </span>
-                <span dir="rtl" lang="ar" className="text-base font-bold text-[#D4AF37] font-arabic">
-                  بيتي
-                </span>
-              </div>
-            </div>
+            <BaitiLogoMark size={38} showText={true} isLight={isLight} />
 
             <p className={`text-xs leading-relaxed font-light ${isLight ? 'text-slate-600' : 'text-zinc-400'}`}>
               {language === 'ar'

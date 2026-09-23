@@ -29,6 +29,7 @@ import {
   playTactileClick,
 } from '../../utils/audioFeedback';
 import { ALGERIAN_WILAYAS_58, formatWilayaLabel } from '../../utils/algerianWilayas';
+import { BaitiLogoMark } from '../brand/BaitiLogoMark';
 
 interface HeaderProps {
   onOpenSketchModal?: () => void;
@@ -143,38 +144,9 @@ export const Header: React.FC<HeaderProps> = ({
           <a
             href="#"
             onClick={() => playTactileClick()}
-            className="flex items-center gap-3 group"
+            className="flex items-center group cursor-pointer"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0F355E] to-[#D4AF37] p-0.5 shadow-lg shadow-[#D4AF37]/20 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <div
-                className={`w-full h-full rounded-[10px] flex items-center justify-center ${
-                  isLight ? 'bg-white' : 'bg-[#060D18]'
-                }`}
-              >
-                <Grid className="w-5 h-5 text-[#D4AF37]" />
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`text-lg font-serif font-bold tracking-tight ${
-                    isLight ? 'text-slate-900' : 'text-white'
-                  }`}
-                >
-                  Baiti Atelier
-                </span>
-                <span
-                  dir="rtl"
-                  lang="ar"
-                  className="text-base font-bold text-[#D4AF37] font-arabic tracking-wide"
-                >
-                  بيتي
-                </span>
-              </div>
-              <span className={`text-[10px] font-mono -mt-1 hidden sm:block ${isLight ? 'text-slate-500' : 'text-zinc-400'}`}>
-                Menuiserie & Débitage · 58 Wilayas
-              </span>
-            </div>
+            <BaitiLogoMark size={42} showText={true} isLight={isLight} />
           </a>
 
           {/* Clean Wilaya Selector Chip */}

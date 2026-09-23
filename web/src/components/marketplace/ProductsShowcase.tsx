@@ -49,7 +49,7 @@ const INITIAL_PRODUCTS: CatalogProduct[] = [
     estimatedPriceDzd: 185000,
     leadTimeDays: '7 à 10 jours',
     rating: 4.9,
-    imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&auto=format&fit=crop&q=80',
+    imageUrl: '/branding/baiti_villa_panoramic.jpg',
     description: 'Profilé lourd thermolaqué gris anthracite RAL 7016, double vitrage isolant Stop-Sol 4/16/4, moteur tubulaire avec télécommande radio.',
     tags: ['Gamme 67', 'RPT', 'Stop-Sol', 'Coulissant'],
   },
