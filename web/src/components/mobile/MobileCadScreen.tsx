@@ -48,6 +48,7 @@ import { AcousticInsulationModal } from './AcousticInsulationModal';
 import { CurtainWallStructuralModal } from './CurtainWallStructuralModal';
 import { SeismicJoineryModal } from './SeismicJoineryModal';
 import { BifoldDoorModal } from './BifoldDoorModal';
+import { LouverAerodynamicsModal } from './LouverAerodynamicsModal';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
   GLASS_LIST,
@@ -227,6 +228,7 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
   const [showCurtainWallModal, setShowCurtainWallModal] = useState(false);
   const [showSeismicModal, setShowSeismicModal] = useState(false);
   const [showBifoldModal, setShowBifoldModal] = useState(false);
+  const [showLouverModal, setShowLouverModal] = useState(false);
 
   // Field Survey Modal State
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
@@ -942,6 +944,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
             >
               <Sliders className="w-3 h-3" />
               <span>Accordéon</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick();
+                setShowLouverModal(true);
+              }}
+              className="px-2 py-1 rounded-lg bg-teal-500/10 dark:bg-teal-500/15 border border-teal-500/30 hover:bg-teal-500/20 flex items-center gap-1 text-[10px] cursor-pointer transition-all active:scale-95 text-teal-300 font-semibold"
+              title="Calcul de section libre et perte de charge de grille à ventelles NF EN 13030"
+            >
+              <Wind className="w-3 h-3" />
+              <span>Ventelles</span>
             </button>
 
             <button
@@ -2038,6 +2053,19 @@ export const MobileCadScreen: React.FC<MobileCadScreenProps> = ({ onNavigateTab 
           initialWidth={cadStructure.width}
           initialHeight={cadStructure.height}
           windowReference={`Baie ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Chantier Client"
+        />
+      )}
+
+      {/* LOUVER & SUNSHADE AERODYNAMIC & PRESSURE DROP MODAL */}
+      {showLouverModal && (
+        <LouverAerodynamicsModal
+          isOpen={showLouverModal}
+          onClose={() => setShowLouverModal(false)}
+          initialWidth={cadStructure.width}
+          initialHeight={cadStructure.height}
+          windowReference={`Grille ${cadStructure.width}x${cadStructure.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Chantier Client"
         />

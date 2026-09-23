@@ -26,6 +26,7 @@ import {
   Waves,
   Building2,
   Activity,
+  Wind,
 } from 'lucide-react';
 import type { MobileNavTab } from './MobileBottomNavigation';
 import {
@@ -51,6 +52,7 @@ import { AcousticInsulationModal } from './AcousticInsulationModal';
 import { CurtainWallStructuralModal } from './CurtainWallStructuralModal';
 import { SeismicJoineryModal } from './SeismicJoineryModal';
 import { BifoldDoorModal } from './BifoldDoorModal';
+import { LouverAerodynamicsModal } from './LouverAerodynamicsModal';
 import {
   GLASS_LIST,
   getGlassSpec,
@@ -166,6 +168,7 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
   const [isCurtainWallModalOpen, setIsCurtainWallModalOpen] = useState(false);
   const [isSeismicModalOpen, setIsSeismicModalOpen] = useState(false);
   const [isBifoldModalOpen, setIsBifoldModalOpen] = useState(false);
+  const [isLouverModalOpen, setIsLouverModalOpen] = useState(false);
   const [showAddToSurveyModal, setShowAddToSurveyModal] = useState(false);
   const [surveyRoomName, setSurveyRoomName] = useState('Salon - Baie Vitrée');
   const [surveyAllege, setSurveyAllege] = useState<number>(0);
@@ -775,6 +778,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
         >
           <Layers className="w-4 h-4" />
           <span>Dimensionnement Porte Accordéon & Seuil PMR (NF EN 1527)</span>
+        </button>
+
+        {/* Louver & Sunshade Aerodynamic Sizing Action Button */}
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick();
+            setIsLouverModalOpen(true);
+          }}
+          className="w-full py-2.5 px-3 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-400 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
+        >
+          <Wind className="w-4 h-4" />
+          <span>Dimensionnement Grille à Ventelles & Aéraulique (NF EN 13030)</span>
         </button>
       </div>
 
@@ -1872,6 +1888,19 @@ export const MobileConfiguratorScreen: React.FC<MobileConfiguratorScreenProps> =
           initialWidth={config.width}
           initialHeight={config.height}
           windowReference={`Baie ${config.width}x${config.height} ${config.profileSystem}`}
+          wilayaName={selectedWilaya}
+          clientName="Client Projet"
+        />
+      )}
+
+      {/* LOUVER & SUNSHADE AERODYNAMIC & PRESSURE DROP MODAL */}
+      {isLouverModalOpen && (
+        <LouverAerodynamicsModal
+          isOpen={isLouverModalOpen}
+          onClose={() => setIsLouverModalOpen(false)}
+          initialWidth={config.width}
+          initialHeight={config.height}
+          windowReference={`Grille ${config.width}x${config.height} ${config.profileSystem}`}
           wilayaName={selectedWilaya}
           clientName="Client Projet"
         />

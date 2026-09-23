@@ -5763,6 +5763,322 @@ export async function generateBifoldDoorNoticePdf(params: BifoldDoorPdfParams): 
   doc.save(safeFilename);
 }
 
+export interface LouverAerodynamicPdfParams {
+  documentId: string;
+  clientName: string;
+  wilayaName: string;
+  projectRef: string;
+  widthMm: number;
+  heightMm: number;
+  result: import('./louverAerodynamicsManager').LouverCalculationResult;
+  workshopName?: string;
+}
+
+/**
+ * Generates an official A4 technical specification note for louvers and sunshades aerodynamic performance.
+ * References: NF EN 13030 / NF DTU 68.3 / Prescriptions Sonelgaz / CNERIB DTR C3-4.
+ * Humanizer invariant: exactly 0 em dashes, 0 en dashes.
+ */
+export async function generateLouverAerodynamicPdf(params: LouverAerodynamicPdfParams): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const primaryNavy: [number, number, number] = [15, 23, 42]; // slate-900
+  const emeraldGreen: [number, number, number] = [16, 185, 129];
+  const amberOrange: [number, number, number] = [245, 158, 11];
+  const roseRed: [number, number, number] = [239, 68, 68];
+
+  const isOk = params.result.overallVerdict === 'favorable';
+  const isWarn = params.result.overallVerdict === 'warning';
+  const statusColor = isOk ? emeraldGreen : isWarn ? amberOrange : roseRed;
+
+  // 1. Header & Title Block
+  doc.setFillColor(...primaryNavy);
+  doc.rect(14, 12, 182, 22, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('BAITI ATELIER : NOTE AERAULIQUE GRILLE A VENTELLES', 20, 21);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.text('Section Libre, Vitesse d Air & Perte de Charge (NF EN 13030 / DTU 68.3 / Sonelgaz)', 20, 27);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(212, 175, 55);
+  doc.text(`Doc N: ${params.documentId}`, 150, 21);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 150, 27);
+
+  // 2. Project Metadata Card
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 38, 182, 20, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Reference Ouvrage :', 18, 44);
+  doc.text('Maitre d Ouvrage / Client :', 18, 50);
+  doc.text('Localisation / Wilaya :', 18, 55);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(51, 65, 85);
+  doc.text(`${params.projectRef} (${params.widthMm} x ${params.heightMm} mm)`, 60, 44);
+  doc.text(`${params.clientName || 'Client Projet'}`, 60, 50);
+  doc.text(`${params.wilayaName || 'Alger (16)'}`, 60, 55);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...primaryNavy);
+  doc.text('Usage du Local :', 115, 44);
+  doc.text('Profil Lame :', 115, 50);
+  doc.text('Type de Grillage :', 115, 55);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(51, 65, 85);
+  doc.text(`${params.result.appSpec.labelFr}`, 148, 44, { maxWidth: 44 });
+  doc.text(`${params.result.profileSpec.nameFr.split('(')[0].trim()}`, 148, 50, { maxWidth: 44 });
+  doc.text(`${params.result.screenSpec.nameFr.split('(')[0].trim()}`, 148, 55, { maxWidth: 44 });
+
+  // 3. Technical Parameters Grid
+  const gridY = 62;
+  const colWidth = 43.5;
+  const colGap = 2.6;
+
+  // Box 1: Geometrie & Lames
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(14, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('1. Geometrie Lames', 17, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Surface brute : ${params.result.grossAreaM2.toFixed(3)} m2`, 17, gridY + 12);
+  doc.text(`Nombre de lames : ${params.result.bladeCount}`, 17, gridY + 18);
+  doc.text(`Pas des lames : ${params.result.bladePitchMm} mm`, 17, gridY + 24);
+  doc.text(`Longueur lame : ${params.result.bladeLengthMm} mm`, 17, gridY + 30);
+  doc.text(`Angle inclinaison : ${params.result.profileSpec.bladeAngleDeg} deg`, 17, gridY + 36);
+
+  // Box 2: Section Libre
+  const b2X = 14 + colWidth + colGap;
+  doc.roundedRect(b2X, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(b2X, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('2. Section Libre', b2X + 3, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Taux passage : ${params.result.geometricFreeAreaPercent}%`, b2X + 3, gridY + 12);
+  doc.text(`Section libre : ${params.result.geometricFreeAreaM2.toFixed(3)} m2`, b2X + 3, gridY + 18);
+  doc.text(`Surface aero Ce : ${params.result.effectiveAeroAreaM2.toFixed(3)} m2`, b2X + 3, gridY + 24);
+  doc.text(`Coef Ce : ${params.result.profileSpec.dischargeCoefficientCe}`, b2X + 3, gridY + 30);
+  doc.text(`Facteur grille : x${params.result.screenSpec.freeAreaFactor}`, b2X + 3, gridY + 36);
+
+  // Box 3: Aeraulique & Vitesse
+  const b3X = b2X + colWidth + colGap;
+  doc.roundedRect(b3X, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(b3X, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('3. Debit & Vitesse', b3X + 3, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Debit etude : ${params.result.airflowM3PerHour} m3/h`, b3X + 3, gridY + 12);
+  doc.text(`Debit seconde : ${params.result.airflowM3PerSecond.toFixed(3)} m3/s`, b3X + 3, gridY + 18);
+  doc.text(`Vitesse frontale : ${params.result.faceVelocityMPerSec} m/s`, b3X + 3, gridY + 24);
+  doc.text(`Vitesse gorge : ${params.result.freeAreaVelocityMPerSec} m/s`, b3X + 3, gridY + 30);
+  doc.text(`Limite preconisee : ${params.result.appSpec.maxAirVelocityMPerSec} m/s`, b3X + 3, gridY + 36);
+
+  // Box 4: Perte de Charge & Pluie
+  const b4X = b3X + colWidth + colGap;
+  doc.roundedRect(b4X, gridY, colWidth, 42, 1.5, 1.5, 'FD');
+  doc.setFillColor(241, 245, 249);
+  doc.rect(b4X, gridY, colWidth, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('4. Pression & Pluie', b4X + 3, gridY + 5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Delta P total : ${params.result.pressureDropPa} Pa`, b4X + 3, gridY + 12);
+  doc.text(`Masse volumique : ${params.result.airDensityKgM3} kg/m3`, b4X + 3, gridY + 18);
+  doc.text(`Rejet pluie : ${params.result.profileSpec.waterRejectionClass.split('(')[0].trim()}`, b4X + 3, gridY + 24);
+  doc.text(`Efficacite : ${params.result.profileSpec.waterRejectionClass.includes('99%') ? '99% a 100%' : 'Standard'}`, b4X + 3, gridY + 30);
+  doc.text(`Grillage : ${params.result.screenSpec.meshPitchMm}`, b4X + 3, gridY + 36);
+
+  // 4. Detailed Aerodynamics Table
+  const tableY = 109;
+  doc.setFillColor(...primaryNavy);
+  doc.rect(14, tableY, 182, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('GRANDEUR AERAULIQUE / NORME', 18, tableY + 5);
+  doc.text('VALEUR CALCULEE', 90, tableY + 5);
+  doc.text('EXIGENCE / SEUIL APPLICABLE', 140, tableY + 5);
+
+  const rows = [
+    {
+      label: 'Section libre geometrique nette (A_free)',
+      val: `${params.result.geometricFreeAreaM2.toFixed(3)} m2 (${params.result.geometricFreeAreaPercent}%)`,
+      crit: `Minimum requis : ${params.result.appSpec.minFreeAreaPercentRequired}% de surface brute`,
+    },
+    {
+      label: 'Vitesse de passage frontale (V_face)',
+      val: `${params.result.faceVelocityMPerSec} m/s sous ${params.result.airflowM3PerHour} m3/h`,
+      crit: `Vitesse max recommandee : ${params.result.appSpec.maxAirVelocityMPerSec} m/s`,
+    },
+    {
+      label: 'Perte de charge statique aeraulique (Delta P)',
+      val: `${params.result.pressureDropPa} Pa (avec grille ${params.result.screenSpec.meshPitchMm})`,
+      crit: 'Admissible en prise d air neuf et rejet direct',
+    },
+    {
+      label: 'Efficacite contre la penetration de pluie',
+      val: `${params.result.profileSpec.waterRejectionClass}`,
+      crit: 'Essai selon NF EN 13030 sous pluie battante 75 L/h',
+    },
+    {
+      label: 'Fixation cadre dormant et rigidite',
+      val: `Cadre aluminium 35 mm avec ${params.result.bladeCount} lames serties`,
+      crit: 'Fixation par chevilles acier espacées de 500 mm max',
+    },
+  ];
+
+  let curY = tableY + 7;
+  rows.forEach((r, idx) => {
+    doc.setFillColor(idx % 2 === 0 ? 255 : 248, idx % 2 === 0 ? 255 : 250, idx % 2 === 0 ? 255 : 252);
+    doc.rect(14, curY, 182, 6.5, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.line(14, curY + 6.5, 196, curY + 6.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(30, 41, 59);
+    doc.text(r.label, 18, curY + 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(r.val, 90, curY + 4.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    doc.text(r.crit, 140, curY + 4.5);
+
+    curY += 6.5;
+  });
+
+  // 5. Compliance Banner & Verdict Card
+  const verdictY = curY + 4;
+  doc.setDrawColor(...statusColor);
+  doc.setFillColor(isOk ? 240 : isWarn ? 254 : 254, isOk ? 253 : isWarn ? 243 : 242, isOk ? 244 : isWarn ? 199 : 242);
+  doc.roundedRect(14, verdictY, 182, 34, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...statusColor);
+  doc.text(`VERDICT TECHNIQUE : ${params.result.velocityStatusTitleFr.toUpperCase()}`, 18, verdictY + 6.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(30, 41, 59);
+  let vY = verdictY + 12;
+  for (const det of params.result.verdictDetailsFr) {
+    doc.text(`• ${det}`, 18, vY);
+    vY += 4.5;
+  }
+  doc.text(`• Protection eau : ${params.result.waterPenetrationVerdictFr}`, 18, vY);
+
+  // 6. Workshop Directives & Installation Rules
+  const directY = verdictY + 37;
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, directY, 182, 30, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Prescriptions Aerauliques et Directives Chantier (NF DTU 68.3 / Sonelgaz) :', 18, directY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(71, 85, 105);
+  let dY = directY + 10;
+  for (const rec of params.result.recommendationsFr) {
+    doc.text(`• ${rec}`, 18, dY, { maxWidth: 174 });
+    dY += 4.5;
+  }
+
+  // 7. Signatures & QR Code
+  const signY = directY + 33;
+  doc.setDrawColor(203, 213, 225);
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(14, signY, 65, 21, 1.5, 1.5, 'FD');
+  doc.roundedRect(131, signY, 65, 21, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...primaryNavy);
+  doc.text('Pour le Concepteur Aeraulique :', 18, signY + 5.5);
+  doc.text('Visa Bureau d Etudes / Sonelgaz :', 135, signY + 5.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text('Ingenieur CVC Baiti Atelier', 18, signY + 10.5);
+  doc.text('Signature & Date :', 18, signY + 16);
+  doc.text('Bon pour accord specifications grille', 135, signY + 10.5);
+  doc.text('Signature & Date :', 135, signY + 16);
+
+  // QR Code
+  try {
+    const qrPayload = `BAITI|LOUVER|${params.documentId}|REF=${params.projectRef}|FREE=${params.result.geometricFreeAreaPercent}%|V=${params.result.faceVelocityMPerSec}MS|DP=${params.result.pressureDropPa}PA|STATUS=${isOk ? 'OK' : 'RISK'}`;
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, { width: 90, margin: 0 });
+    doc.addImage(qrDataUrl, 'PNG', 92, signY + 0.5, 20, 20);
+  } catch {
+    // Handled
+  }
+
+  // 8. Footer
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(
+    `Note technique officielle Baiti Atelier • ${params.documentId} • NF EN 13030 • NF DTU 68.3 • CNERIB DTR C3-4 • Prescriptions Sonelgaz`,
+    105,
+    289,
+    { align: 'center' }
+  );
+
+  const safeFilename = `Note_Ventelles_Aeraulique_${params.documentId}.pdf`;
+  doc.save(safeFilename);
+}
+
+
 
 
 
