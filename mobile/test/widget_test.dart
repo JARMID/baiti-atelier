@@ -311,6 +311,23 @@ void main() {
 
     expect(find.text('ESPACE ATELIER PRO'), findsOneWidget);
     expect(find.text('35 000 DZD'), findsOneWidget);
+
+    // Scroll to and tap the payment management button
+    final paymentBtn = find.textContaining('GÉRER LE PAIEMENT');
+    if (paymentBtn.evaluate().isNotEmpty) {
+      await tester.ensureVisible(paymentBtn);
+      await tester.pumpAndSettle();
+      await tester.tap(paymentBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('PAIEMENT SÉCURISÉ ALGÉRIE'), findsOneWidget);
+      expect(find.text('007 99999 0021458974 42'), findsOneWidget);
+
+      // Close dialog
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pumpAndSettle();
+      expect(find.text('PAIEMENT SÉCURISÉ ALGÉRIE'), findsNothing);
+    }
     expect(tester.takeException(), isNull);
   });
 }

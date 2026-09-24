@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../models/artisan_profile.dart';
 import '../services/storage_service.dart';
 import '../services/app_settings.dart';
+import '../utils/algerian_financials.dart';
 
 class AlgerianPaymentDialog extends StatefulWidget {
   final ArtisanProfile profile;
@@ -47,8 +48,8 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
   final TextEditingController _cardCvvController = TextEditingController(text: '349');
   final TextEditingController _ccpSlipController = TextEditingController(text: 'REC-DZ-8942');
 
-  final String _baridimobRip = '007 99999 0021458932 45';
-  final String _ccpAccount = '00214589 Clé 45';
+  final String _baridimobRip = formatBaridiMobRip('00799999002145897442');
+  final String _ccpAccount = '0021458974 Clé 42';
 
   Future<void> _simulatePayment() async {
     setState(() => _isProcessing = true);
@@ -144,29 +145,48 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'PAIEMENT SÉCURISÉ ALGÉRIE',
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFFD4AF37),
-                        letterSpacing: 1.0,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'PAIEMENT SÉCURISÉ ALGÉRIE',
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFFD4AF37),
+                          letterSpacing: 1.0,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Abonnement Atelier Pro · 35 000 DZD',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
+                      const SizedBox(height: 2),
+                      Text(
+                        'Abonnement Atelier Pro · 35 000 DZD',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        amountInDzdWordsFr(35000),
+                        style: const TextStyle(
+                          fontSize: 9.5,
+                          fontStyle: FontStyle.italic,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                      Text(
+                        amountInDzdWordsAr(35000),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFD4AF37),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded, size: 20),
@@ -222,19 +242,22 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
                       )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _isOtpStep ? Icons.verified_user_rounded : Icons.lock_outline_rounded,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _isOtpStep ? 'CONFIRMER LE CODE OTP' : 'SIMULER LE RÈGLEMENT (35 000 DZD)',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                          ),
-                        ],
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _isOtpStep ? Icons.verified_user_rounded : Icons.lock_outline_rounded,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _isOtpStep ? 'CONFIRMER LE CODE OTP' : 'SIMULER LE RÈGLEMENT (35 000 DZD)',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                          ],
+                        ),
                       ),
               ),
             ),
@@ -330,15 +353,22 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        _baridimobRip,
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF10B981),
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            _baridimobRip,
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF10B981),
+                            ),
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       GestureDetector(
                         onTap: () {
                           Clipboard.setData(ClipboardData(text: _baridimobRip));
@@ -480,15 +510,22 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        _ccpAccount,
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF38BDF8),
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            _ccpAccount,
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF38BDF8),
+                            ),
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       GestureDetector(
                         onTap: () {
                           Clipboard.setData(ClipboardData(text: _ccpAccount));
