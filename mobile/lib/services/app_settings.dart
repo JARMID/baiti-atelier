@@ -467,6 +467,26 @@ class AppSettings extends ChangeNotifier {
     'calib_btn_save': 'ENREGISTRER',
     'calib_btn_saved': 'ENREGISTRÉ',
     'calib_snack_copied': 'Grille tarifaire copiée pour WhatsApp',
+
+    // Chantiers Project Modal & Tooltips
+    'chantiers_project_client_name': 'Nom du Chantier / Client :',
+    'chantiers_project_hint': 'ex: Villa Kouba R+2 - M. Benali',
+    'chantiers_execution_wilaya': 'Wilaya d\'Exécution :',
+    'chantiers_create_btn': 'Créer Chantier',
+    'chantiers_no_match': 'Aucun projet ne correspond aux filtres',
+    'chantiers_tooltip_new': 'Nouveau chantier',
+    'chantiers_tooltip_export_all': 'Exporter récapitulatif WhatsApp global',
+    'chantiers_tooltip_proforma': 'Devis & Proforma Officiel',
+    'chantiers_tooltip_cutting': 'Fiche Débit Scie & Verre',
+    'chantiers_tooltip_share_project': 'Partager ce chantier WhatsApp',
+    'chantiers_projects_label': 'Projets',
+    'chantiers_openings_count': 'ouv.',
+
+    // Common Action Buttons
+    'cancel': 'Annuler',
+    'confirm': 'Confirmer',
+    'close': 'Fermer',
+    'save': 'Enregistrer',
   };
 
   static const Map<String, String> _arStrings = {
@@ -818,5 +838,25 @@ class AppSettings extends ChangeNotifier {
     'calib_btn_save': 'حفظ الإعدادات',
     'calib_btn_saved': 'تم الحفظ بنجاح',
     'calib_snack_copied': 'تم نسخ لائحة الأسعار لمشاركتها عبر واتساب',
+
+    // Chantiers Project Modal & Tooltips
+    'chantiers_project_client_name': 'اسم المشروع / الزبون :',
+    'chantiers_project_hint': 'مثال: فيلا القبة طابقين - السيد بن علي',
+    'chantiers_execution_wilaya': 'ولاية الإنجاز :',
+    'chantiers_create_btn': 'إنشاء المشروع',
+    'chantiers_no_match': 'لا توجد مشاريع مطابقة لمعايير البحث',
+    'chantiers_tooltip_new': 'مشروع جديد',
+    'chantiers_tooltip_export_all': 'مشاركة التقرير الإجمالي عبر واتساب',
+    'chantiers_tooltip_proforma': 'الفاتورة التقديرية الرسمية',
+    'chantiers_tooltip_cutting': 'بطاقة تقطيع المنشار والزجاج',
+    'chantiers_tooltip_share_project': 'مشاركة هذا المشروع عبر واتساب',
+    'chantiers_projects_label': 'مشاريع',
+    'chantiers_openings_count': 'فتحة',
+
+    // Common Action Buttons
+    'cancel': 'إلغاء',
+    'confirm': 'تأكيد',
+    'close': 'إغلاق',
+    'save': 'حفظ',
   };
 }

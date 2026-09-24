@@ -199,7 +199,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Nom du Chantier / Client :',
+              settings.tr('chantiers_project_client_name'),
               style: TextStyle(fontSize: 11, color: settings.secondaryText),
             ),
             const SizedBox(height: 6),
@@ -207,7 +207,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
               controller: nameCtrl,
               style: TextStyle(fontSize: 13, color: settings.primaryText),
               decoration: InputDecoration(
-                hintText: 'ex: Villa Kouba R+2 - M. Benali',
+                hintText: settings.tr('chantiers_project_hint'),
                 hintStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
                 filled: true,
                 fillColor: settings.inputBackground,
@@ -224,7 +224,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Wilaya d\'Exécution :',
+              settings.tr('chantiers_execution_wilaya'),
               style: TextStyle(fontSize: 11, color: settings.secondaryText),
             ),
             const SizedBox(height: 6),
@@ -300,7 +300,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Annuler', style: TextStyle(color: settings.secondaryText)),
+            child: Text(settings.tr('cancel'), style: TextStyle(color: settings.secondaryText)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -331,7 +331,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                 Navigator.pop(ctx);
               }
             },
-            child: const Text('Créer Chantier', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            child: Text(settings.tr('chantiers_create_btn'), style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -356,13 +356,13 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
             customActions: [
               IconButton(
                 icon: const Icon(Icons.create_new_folder_rounded, color: Color(0xFF38BDF8), size: 20),
-                tooltip: 'Nouveau chantier',
+                tooltip: settings.tr('chantiers_tooltip_new'),
                 onPressed: _showNewProjectDialog,
               ),
               if (widget.savedSpecs.isNotEmpty)
                 IconButton(
                   icon: const Icon(Icons.share_rounded, color: Color(0xFFD4AF37), size: 19),
-                  tooltip: 'Exporter récapitulatif WhatsApp global',
+                  tooltip: settings.tr('chantiers_tooltip_export_all'),
                   onPressed: _shareAllViaWhatsApp,
                 ),
             ],
@@ -424,7 +424,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                '${grouped.length} Projet${grouped.length > 1 ? 's' : ''}',
+                                '${grouped.length} ${settings.tr('chantiers_projects_label')}',
                                 style: const TextStyle(
                                   fontFamily: 'monospace',
                                   fontSize: 9,
@@ -557,7 +557,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                         Text(
                           widget.savedSpecs.isEmpty
                               ? settings.tr('chantiers_empty_title')
-                              : 'Aucun projet ne correspond aux filtres',
+                              : settings.tr('chantiers_no_match'),
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: settings.primaryText),
                         ),
                         const SizedBox(height: 6),
@@ -687,7 +687,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                                     ),
                                                     const SizedBox(width: 4),
                                                     Text(
-                                                      '•  ouv.',
+                                                      '• ${pSpecs.length} ${settings.tr('chantiers_openings_count')}',
                                                       style: TextStyle(
                                                         fontSize: 10,
                                                         color: settings.secondaryText,
@@ -703,21 +703,21 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                           padding: const EdgeInsets.all(4),
                                           constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                                           icon: const Icon(Icons.receipt_long_rounded, size: 17, color: Color(0xFFD4AF37)),
-                                          tooltip: 'Devis & Proforma Officiel',
+                                          tooltip: settings.tr('chantiers_tooltip_proforma'),
                                           onPressed: () => DevisPreviewSheet.show(context, pName, pSpecs, initialTab: 0),
                                         ),
                                         IconButton(
                                           padding: const EdgeInsets.all(4),
                                           constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                                           icon: const Icon(Icons.content_cut_rounded, size: 17, color: Color(0xFF38BDF8)),
-                                          tooltip: 'Fiche Débit Scie & Verre',
+                                          tooltip: settings.tr('chantiers_tooltip_cutting'),
                                           onPressed: () => DevisPreviewSheet.show(context, pName, pSpecs, initialTab: 1),
                                         ),
                                         IconButton(
                                           padding: const EdgeInsets.all(4),
                                           constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                                           icon: const Icon(Icons.share_rounded, size: 17, color: Color(0xFF10B981)),
-                                          tooltip: 'Partager ce chantier WhatsApp',
+                                          tooltip: settings.tr('chantiers_tooltip_share_project'),
                                           onPressed: () => _shareProjectViaWhatsApp(pName, pSpecs),
                                         ),
                                         Icon(
