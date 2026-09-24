@@ -349,7 +349,7 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Essayez de modifier vos filtres de recherche ou de wilaya.',
+                            settings.tr('workshops_empty_subtitle'),
                             textAlign: TextAlign.center,
                             style: TextStyle(fontSize: 12, color: settings.secondaryText),
                           ),
@@ -361,7 +361,7 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                             icon: const Icon(Icons.refresh_rounded, size: 16),
-                            label: const Text('Réinitialiser les filtres'),
+                            label: Text(settings.tr('workshops_reset_filters')),
                             onPressed: () {
                               _searchController.clear();
                               setState(() {

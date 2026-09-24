@@ -225,6 +225,8 @@ class AppSettings extends ChangeNotifier {
     'workshops_rate_alu': 'Alu :',
     'workshops_rate_glass': 'Verre :',
     'workshops_empty': 'Aucun artisan trouvé avec ces critères',
+    'workshops_empty_subtitle': 'Essayez de modifier vos filtres de recherche ou de wilaya.',
+    'workshops_reset_filters': 'Réinitialiser les filtres',
 
     'settings_title': 'PARAMÈTRES & PRÉFÉRENCES',
     'theme_dark': 'Mode Sombre Atelier',
@@ -596,6 +598,8 @@ class AppSettings extends ChangeNotifier {
     'workshops_rate_alu': 'ألمنيوم :',
     'workshops_rate_glass': 'زجاج :',
     'workshops_empty': 'لم يتم العثور على ورشات بهذه المواصفات',
+    'workshops_empty_subtitle': 'يرجى تغيير خيارات البحث أو تحديد ولاية أخرى.',
+    'workshops_reset_filters': 'إعادة ضبط الفلاتر',
 
     'settings_title': 'إعدادات المنظومة',
     'theme_dark': 'الوضع الليلي للورشة',
