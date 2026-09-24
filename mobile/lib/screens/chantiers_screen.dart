@@ -5,6 +5,7 @@ import '../models/opening_spec.dart';
 import '../widgets/devis_preview_sheet.dart';
 import '../widgets/baiti_app_bar.dart';
 import '../services/app_settings.dart';
+import '../utils/algerian_financials.dart';
 
 class ChantiersScreen extends StatefulWidget {
   final List<OpeningSpec> savedSpecs;
@@ -110,11 +111,19 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
       buffer.writeln('  Chiffrage: $cost DZD\n');
     }
 
+    final wordsFr = amountInDzdWordsFr(totalProject);
+    final wordsAr = amountInDzdWordsAr(totalProject);
+    final dtrZone = getDtrZoneForWilayaName(wilaya);
+
     buffer.writeln('----------------------------------------');
     buffer.writeln('*MONTANT TOTAL CHANTIER : ${totalProject.toStringAsFixed(0)} DZD*');
+    buffer.writeln('Arrêté à la somme de : $wordsFr');
+    buffer.writeln('المبلغ بالحروف : $wordsAr');
     buffer.writeln('*ACOMPTE 40% REQUIS : ${acompte40.toStringAsFixed(0)} DZD*');
     buffer.writeln('*SOLDE À LA LIVRAISON : ${solde60.toStringAsFixed(0)} DZD*');
-    buffer.writeln('_Menuiserie aluminium & bois conforme normes DTR Algérie_');
+    buffer.writeln('Zone Bioclimatique DTR : ${dtrZone.label} (Uw max ${dtrZone.maxUw} W/m²K)');
+    buffer.writeln('Règlement BaridiMob RIP : ${formatBaridiMobRip('00799999002145897442')}');
+    buffer.writeln('_Menuiserie aluminium et PVC conforme aux exigences DTR Algérie_');
 
     final url = Uri.parse('whatsapp://send?text=${Uri.encodeComponent(buffer.toString())}');
     if (await canLaunchUrl(url)) {
@@ -148,6 +157,12 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
       buffer.writeln('');
     });
 
+    buffer.writeln('========================================');
+    buffer.writeln('Arrêté le carnet global à la somme de : ${amountInDzdWordsFr(_totalEstimatedAmount)}');
+    buffer.writeln('المبلغ الإجمالي بالحروف : ${amountInDzdWordsAr(_totalEstimatedAmount)}');
+    buffer.writeln('Coordonnées BaridiMob RIP : ${formatBaridiMobRip('00799999002145897442')}');
+    buffer.writeln('_Baiti Atelier • Direction Financière et Suivi de Chantiers 58 Wilayas_');
+
     final url = Uri.parse('whatsapp://send?text=${Uri.encodeComponent(buffer.toString())}');
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
@@ -170,9 +185,11 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
           children: [
             Icon(Icons.create_new_folder_rounded, color: Color(0xFFD4AF37), size: 20),
             SizedBox(width: 8),
-            Text(
-              'Créer un Nouveau Chantier',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+            Expanded(
+              child: Text(
+                'Nouveau Chantier',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -209,36 +226,67 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
             ValueListenableBuilder<String>(
               valueListenable: wilayaCtrl,
               builder: (context, val, _) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0B0F17),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF1E293B)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      isExpanded: true,
-                      value: val,
-                      dropdownColor: const Color(0xFF1E293B),
-                      style: const TextStyle(fontSize: 12, color: Colors.white),
-                      items: const [
-                        'Alger (16)',
-                        'Oran (31)',
-                        'Constantine (25)',
-                        'Sétif (19)',
-                        'Batna (05)',
-                        'Blida (09)',
-                        'Tizi Ouzou (15)',
-                        'Annaba (23)',
-                        'Béjaïa (06)',
-                        'Tlemcen (13)',
-                      ].map((w) => DropdownMenuItem(value: w, child: Text(w))).toList(),
-                      onChanged: (newVal) {
-                        if (newVal != null) wilayaCtrl.value = newVal;
-                      },
+                final zone = getDtrZoneForWilayaName(val);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0B0F17),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF1E293B)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          isExpanded: true,
+                          value: val,
+                          dropdownColor: const Color(0xFF1E293B),
+                          style: const TextStyle(fontSize: 12, color: Colors.white),
+                          items: const [
+                            'Alger (16)',
+                            'Oran (31)',
+                            'Constantine (25)',
+                            'Sétif (19)',
+                            'Batna (05)',
+                            'Blida (09)',
+                            'Tizi Ouzou (15)',
+                            'Annaba (23)',
+                            'Béjaïa (06)',
+                            'Tlemcen (13)',
+                            'Biskra (07)',
+                            'Ouargla (30)',
+                            'Ghardaïa (47)',
+                            'Béchar (08)',
+                          ].map((w) => DropdownMenuItem(value: w, child: Text(w))).toList(),
+                          onChanged: (newVal) {
+                            if (newVal != null) wilayaCtrl.value = newVal;
+                          },
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0x1FD4AF37),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0x4DD4AF37)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.wb_sunny_rounded, size: 14, color: Color(0xFFD4AF37)),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${zone.label} • Uw max ${zone.maxUw} W/m²K',
+                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 );
               },
             ),

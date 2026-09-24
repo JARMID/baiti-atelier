@@ -198,6 +198,17 @@ void main() {
 
     expect(find.text('SUIVI DES CHANTIERS'), findsOneWidget);
     expect(find.text('Villa Hydra R+2'), findsOneWidget);
+
+    // Open New Project dialog and check DTR bioclimatic zone badge
+    await tester.tap(find.byIcon(Icons.create_new_folder_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Nouveau Chantier'), findsOneWidget);
+    expect(find.byWidgetPredicate((w) => w is Text && w.data != null && w.data!.contains('Zone A')), findsOneWidget);
+
+    // Cancel dialog
+    await tester.tap(find.text('Annuler'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nouveau Chantier'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
