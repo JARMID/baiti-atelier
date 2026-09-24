@@ -42,8 +42,31 @@ class WorkshopsScreen extends StatefulWidget {
 
 class _WorkshopsScreenState extends State<WorkshopsScreen> {
   String _selectedWilaya = 'Toutes';
+  String _selectedTrade = 'Tous';
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   final List<WorkshopItem> _workshops = const [
+    WorkshopItem(
+      id: '0',
+      name: 'Atelier Aluminium Kouba',
+      trade: 'Menuiserie Aluminium & PVC',
+      wilayaCode: '16',
+      wilayaName: 'Alger',
+      address: 'Vieux Kouba, Alger',
+      phone: '+213797780838',
+      whatsapp: '213797780838',
+      rating: 4.98,
+      completedJobs: 540,
+      aluminumRateKg: 850.0,
+      glassRateM2: 2450.0,
+    ),
     WorkshopItem(
       id: '1',
       name: 'Menuiserie Moderne Kouba',
@@ -175,11 +198,20 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _selectedWilaya == 'Toutes'
-        ? _workshops
-        : _workshops.where((w) => w.wilayaName == _selectedWilaya).toList();
-
+    final trades = ['Tous', 'Aluminium', 'PVC', 'Façade', 'Bois', 'Ferronnerie', 'Tapisserie'];
     final wilayas = ['Toutes', 'Alger', 'Oran', 'Constantine', 'Sétif', 'Batna', 'Blida', 'Médéa'];
+
+    final filtered = _workshops.where((w) {
+      final matchWilaya = _selectedWilaya == 'Toutes' || w.wilayaName == _selectedWilaya;
+      final matchTrade = _selectedTrade == 'Tous' || w.trade.toLowerCase().contains(_selectedTrade.toLowerCase());
+      final matchSearch = _searchQuery.isEmpty ||
+          w.name.toLowerCase().contains(_searchQuery) ||
+          w.trade.toLowerCase().contains(_searchQuery) ||
+          w.wilayaName.toLowerCase().contains(_searchQuery) ||
+          w.address.toLowerCase().contains(_searchQuery) ||
+          w.phone.contains(_searchQuery);
+      return matchWilaya && matchTrade && matchSearch;
+    }).toList();
 
     return AnimatedBuilder(
       animation: AppSettings.instance,
@@ -195,9 +227,77 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
           ),
           body: Column(
             children: [
+              // Search input bar
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: settings.inputBackground,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: settings.inputBorder),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
+                    style: TextStyle(fontSize: 12, color: settings.primaryText),
+                    decoration: InputDecoration(
+                      hintText: 'Rechercher atelier, artisan, wilaya, métier...',
+                      hintStyle: TextStyle(fontSize: 12, color: settings.secondaryText),
+                      prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFFD4AF37)),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear_rounded, size: 16),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Trade filter horizontal list
+              SizedBox(
+                height: 38,
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: trades.length,
+                  itemBuilder: (context, idx) {
+                    final t = trades[idx];
+                    final isSelected = _selectedTrade == t;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(
+                        selected: isSelected,
+                        label: Text(t),
+                        labelStyle: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected ? (isDark ? Colors.black : Colors.white) : settings.secondaryText,
+                        ),
+                        backgroundColor: isDark ? const Color(0xFF0F1B2D) : const Color(0xFFF1F5F9),
+                        selectedColor: const Color(0xFFD4AF37),
+                        side: BorderSide(
+                          color: isSelected ? const Color(0xFFD4AF37) : settings.cardBorder,
+                        ),
+                        onSelected: (_) => setState(() => _selectedTrade = t),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
               // Wilaya filter horizontal list
               SizedBox(
-                height: 48,
+                height: 38,
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   scrollDirection: Axis.horizontal,
@@ -206,12 +306,12 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
                     final w = wilayas[idx];
                     final isSelected = _selectedWilaya == w;
                     return Padding(
-                      padding: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.only(right: 6),
                       child: FilterChip(
                         selected: isSelected,
                         label: Text(w),
                         labelStyle: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10.5,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           color: isSelected
                               ? (isDark ? Colors.black : Colors.white)
@@ -229,12 +329,56 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
-              // Workshops list with 140px bottom clearance for floating navbar
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 140),
+              // Workshops list or Empty State with 140px bottom clearance for floating navbar
+              if (filtered.isEmpty)
+                Expanded(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off_rounded, size: 48, color: settings.secondaryText),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Aucun atelier trouvé',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: settings.primaryText),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Essayez de modifier vos filtres de recherche ou de wilaya.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12, color: settings.secondaryText),
+                          ),
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFFD4AF37),
+                              side: const BorderSide(color: Color(0xFFD4AF37)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            icon: const Icon(Icons.refresh_rounded, size: 16),
+                            label: const Text('Réinitialiser les filtres'),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                _searchQuery = '';
+                                _selectedWilaya = 'Toutes';
+                                _selectedTrade = 'Tous';
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 140),
                   itemCount: filtered.length,
                   itemBuilder: (context, idx) {
                     final w = filtered[idx];

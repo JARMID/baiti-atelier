@@ -126,6 +126,22 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('RÉPERTOIRE 58 WILAYAS'), findsOneWidget);
+    expect(find.text('Atelier Aluminium Kouba'), findsOneWidget);
+
+    // Enter search query 'kouba'
+    await tester.enterText(find.byType(TextField), 'kouba');
+    await tester.pumpAndSettle();
+    expect(find.text('Atelier Aluminium Kouba'), findsOneWidget);
+
+    // Enter non-matching query
+    await tester.enterText(find.byType(TextField), 'inexistantxyz');
+    await tester.pumpAndSettle();
+    expect(find.text('Aucun atelier trouvé'), findsOneWidget);
+
+    // Tap reset button
+    await tester.tap(find.text('Réinitialiser les filtres'));
+    await tester.pumpAndSettle();
+    expect(find.text('Atelier Aluminium Kouba'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
