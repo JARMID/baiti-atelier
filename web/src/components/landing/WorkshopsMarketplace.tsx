@@ -8,7 +8,7 @@ import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
 const MOCK_WORKSHOPS: Workshop[] = [
   {
     id: 'w1',
-    name: 'Atelier Alum Moderne Kouba',
+    name: 'Atelier Aluminium Kouba',
     ownerName: 'Mourad Hadj-Ali',
     wilaya: '16 - Alger',
     wilayaCode: 16,
