@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import QRCode from 'qrcode';
 import type { LinearOptimizationResult, OptimizedBar1D, PlacedCut1D } from '../../types/optimizer';
 import { X, Printer, Download, Scissors, CheckCircle2, FileSpreadsheet, Code2 } from 'lucide-react';
 import { printThermalLabelsBatch, isTauriDesktop } from '../../services/desktopBridge';
@@ -10,6 +11,36 @@ import {
   downloadSawFile,
 } from '../../utils/sawMachineBridge';
 import { playTactileClick, playClampSound } from '../../utils/audioFeedback';
+
+const PieceQrCode: React.FC<{ pieceId: string; length: number; miterLeft: number; miterRight: number }> = ({
+  pieceId,
+  length,
+  miterLeft,
+  miterRight,
+}) => {
+  const [dataUrl, setDataUrl] = useState<string>('');
+
+  useEffect(() => {
+    let active = true;
+    QRCode.toDataURL(
+      `BAITI:${pieceId}:${length.toFixed(1)}mm:${miterLeft}/${miterRight}`,
+      { width: 64, margin: 1, errorCorrectionLevel: 'L' }
+    )
+      .then((url) => {
+        if (active) setDataUrl(url);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [pieceId, length, miterLeft, miterRight]);
+
+  if (!dataUrl) {
+    return <div className="w-8 h-8 bg-zinc-200 animate-pulse rounded" />;
+  }
+
+  return <img src={dataUrl} alt={`QR ${pieceId}`} className="w-8 h-8 object-contain" />;
+};
 
 interface ThermalLabelsModalProps {
   isOpen: boolean;
@@ -254,15 +285,24 @@ export const ThermalLabelsModal: React.FC<ThermalLabelsModalProps> = ({
                   <div>ALGÉRIE 58W</div>
                 </div>
 
-                {/* Simulated Barcode */}
-                <div className="flex items-center gap-0.5 h-6">
-                  {[2, 1, 3, 1, 2, 4, 1, 2, 3, 1, 2, 1, 3, 2, 1, 2].map((w, i) => (
-                    <div
-                      key={i}
-                      style={{ width: `${w}px` }}
-                      className="h-full bg-black"
-                    />
-                  ))}
+                <div className="flex items-center gap-2">
+                  <PieceQrCode
+                    pieceId={piece.id}
+                    length={piece.length}
+                    miterLeft={piece.miterLeft}
+                    miterRight={piece.miterRight}
+                  />
+
+                  {/* Scannable Barcode */}
+                  <div className="flex items-center gap-0.5 h-6">
+                    {[2, 1, 3, 1, 2, 4, 1, 2, 3, 1, 2, 1, 3, 2, 1, 2].map((w, i) => (
+                      <div
+                        key={i}
+                        style={{ width: `${w}px` }}
+                        className="h-full bg-black"
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

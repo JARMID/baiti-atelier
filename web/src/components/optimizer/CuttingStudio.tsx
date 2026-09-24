@@ -22,6 +22,7 @@ import {
   Cpu,
   BookmarkPlus,
   PackageCheck,
+  Share2,
 } from 'lucide-react';
 import { ThermalLabelsModal } from './ThermalLabelsModal';
 import { CuttingAssemblyTerminal } from './CuttingAssemblyTerminal';
@@ -229,6 +230,36 @@ export const CuttingStudio: React.FC = () => {
       setBoardHeight(2070);
       setKerf2D(3.5); // circular blade saw
     }
+  };
+
+  const handleShareWhatsAppCutPlan = () => {
+    playTactileClick();
+    const totalBars = linearResult.totalStockBars;
+    const totalCuts = linearResult.totalCutCount;
+    const totalYield = (linearResult.overallUtilizationRate * 100).toFixed(1);
+
+    const lines: string[] = [
+      '========================================',
+      'BAITI ATELIER | بيتي : PLAN DE SCIAGE 1D',
+      `DATE : ${new Date().toLocaleDateString('fr-FR')}`,
+      `RENDEMENT : ${totalYield}% | BARRES 6M : ${totalBars} | PIECES : ${totalCuts}`,
+      '========================================',
+      '',
+    ];
+
+    linearResult.bars.forEach((bar) => {
+      lines.push(`--- BARRE #${bar.barIndex} (Stock : ${bar.stockLength} mm) ---`);
+      bar.cuts.forEach((cut, i) => {
+        lines.push(`  ${i + 1}. [${cut.profileCode || 'ALU'}] ${cut.label} : ${cut.length.toFixed(1)} mm (${cut.miterLeft}°/${cut.miterRight}°)`);
+      });
+      lines.push(`  Chute : ${bar.wasteLength.toFixed(1)} mm ${bar.isReusableRemnant ? `[Casier ${bar.remnantId}]` : ''}`);
+      lines.push('');
+    });
+
+    lines.push('Genere via Baiti Atelier • Norme DTR C3-2');
+    const text = lines.join('\n');
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
   };
 
   return (
@@ -494,6 +525,19 @@ export const CuttingStudio: React.FC = () => {
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
                   <span>CSV Débit</span>
+                </button>
+
+                <button
+                  onClick={handleShareWhatsAppCutPlan}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono transition-all cursor-pointer shadow-sm hover-lift ${
+                    isLight
+                      ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800'
+                      : 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
+                  }`}
+                  title="Partager le plan de débit complet directement sur WhatsApp Atelier"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>WhatsApp Scie</span>
                 </button>
 
                 <button

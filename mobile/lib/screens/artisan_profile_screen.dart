@@ -27,6 +27,9 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
   late TextEditingController _emailController;
   late TextEditingController _nifController;
   late TextEditingController _rcController;
+  late TextEditingController _ccpController;
+  late TextEditingController _ccpKeyController;
+  late TextEditingController _ripController;
   String _selectedWilaya = '16 - Alger';
   int _selectedAvatarIndex = 0;
 
@@ -100,6 +103,9 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
     _emailController = TextEditingController();
     _nifController = TextEditingController();
     _rcController = TextEditingController();
+    _ccpController = TextEditingController();
+    _ccpKeyController = TextEditingController();
+    _ripController = TextEditingController();
     _loadProfile();
   }
 
@@ -111,7 +117,38 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
     _emailController.dispose();
     _nifController.dispose();
     _rcController.dispose();
+    _ccpController.dispose();
+    _ccpKeyController.dispose();
+    _ripController.dispose();
     super.dispose();
+  }
+
+  String _calculateCcpKey(String ccp) {
+    final clean = ccp.replaceAll(RegExp(r'\D'), '');
+    if (clean.isEmpty) return '00';
+    final num = BigInt.tryParse(clean);
+    if (num == null) return '00';
+    final remainder = ((num * BigInt.from(100)) % BigInt.from(97)).toInt();
+    final key = (97 - remainder) % 97;
+    return key < 10 ? '0$key' : '$key';
+  }
+
+  String _generateRip(String ccp, String key) {
+    final cleanCcp = ccp.replaceAll(RegExp(r'\D'), '').padLeft(10, '0');
+    final cleanKey = key.padLeft(2, '0');
+    return '00799999$cleanCcp$cleanKey';
+  }
+
+  void _onCcpChanged(String val) {
+    final clean = val.replaceAll(RegExp(r'\D'), '');
+    if (clean.isNotEmpty) {
+      final key = _calculateCcpKey(clean);
+      final rip = _generateRip(clean, key);
+      setState(() {
+        _ccpKeyController.text = key;
+        _ripController.text = rip;
+      });
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -125,6 +162,9 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
         _emailController.text = loaded.email;
         _nifController.text = loaded.nif ?? '';
         _rcController.text = loaded.rc ?? '';
+        _ccpController.text = loaded.ccp ?? '0021458974';
+        _ccpKeyController.text = loaded.ccpKey ?? '42';
+        _ripController.text = loaded.rip ?? '00799999002145897442';
         _selectedWilaya = _wilayasList.contains(loaded.wilaya)
             ? loaded.wilaya
             : '16 - Alger';
@@ -145,6 +185,9 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
       avatarIndex: _selectedAvatarIndex,
       nif: _nifController.text.trim().isNotEmpty ? _nifController.text.trim() : null,
       rc: _rcController.text.trim().isNotEmpty ? _rcController.text.trim() : null,
+      ccp: _ccpController.text.trim().isNotEmpty ? _ccpController.text.trim() : null,
+      ccpKey: _ccpKeyController.text.trim().isNotEmpty ? _ccpKeyController.text.trim() : null,
+      rip: _ripController.text.trim().isNotEmpty ? _ripController.text.trim() : null,
     );
     await StorageService.saveArtisanProfile(updated);
     if (mounted) {
@@ -1022,6 +1065,44 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
             hint: 'Ex: 16/00-1234567B19',
             settings: settings,
           ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                flex: 7,
+                child: _buildTextField(
+                  label: 'Compte CCP (sans clé)',
+                  controller: _ccpController,
+                  icon: Icons.credit_card_rounded,
+                  hint: 'Ex: 0021458974',
+                  keyboardType: TextInputType.number,
+                  settings: settings,
+                  onChanged: _onCcpChanged,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 3,
+                child: _buildTextField(
+                  label: 'Clé CCP',
+                  controller: _ccpKeyController,
+                  icon: Icons.vpn_key_rounded,
+                  hint: '42',
+                  keyboardType: TextInputType.number,
+                  settings: settings,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _buildTextField(
+            label: 'RIP BaridiMob Algérie Poste (20 chiffres)',
+            controller: _ripController,
+            icon: Icons.account_balance_wallet_rounded,
+            hint: 'Ex: 00799999002145897442',
+            keyboardType: TextInputType.number,
+            settings: settings,
+          ),
         ],
       ),
     );
@@ -1034,6 +1115,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
     required String hint,
     required AppSettings settings,
     TextInputType keyboardType = TextInputType.text,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1052,6 +1134,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           child: TextField(
             controller: controller,
             keyboardType: keyboardType,
+            onChanged: onChanged,
             style: TextStyle(fontSize: 12, color: settings.primaryText),
             decoration: InputDecoration(
               isDense: true,
