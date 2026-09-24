@@ -99,6 +99,19 @@ export const Footer: React.FC = () => {
                 <Download className="w-4 h-4 text-[#D4AF37]" />
                 <span>App Windows (.exe)</span>
               </a>
+
+              <a
+                href="/downloads/baiti-atelier-mobile.apk"
+                download
+                className={`px-5 py-3.5 rounded-xl border text-xs font-mono flex items-center justify-center gap-2 transition-all cursor-pointer hover-lift btn-press ${
+                  isLight
+                    ? 'bg-slate-50 hover:bg-slate-100 border-slate-300 text-slate-800'
+                    : 'bg-white/5 hover:bg-white/10 border-white/15 text-zinc-200'
+                }`}
+              >
+                <Smartphone className="w-4 h-4 text-sky-400" />
+                <span>App Android (.apk)</span>
+              </a>
             </div>
           </div>
         </div>
@@ -324,14 +337,14 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <a
-                  href="/downloads/baiti-companion-setup.exe"
+                  href="/downloads/baiti-atelier-mobile.apk"
                   download
                   className={`transition-colors hover:text-[#D4AF37] flex items-center gap-2 font-medium ${
                     isLight ? 'text-slate-800' : 'text-zinc-200'
                   }`}
                 >
                   <Smartphone className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Compagnon Mobile Chantier</span>
+                  <span>Compagnon Mobile Android (.apk)</span>
                 </a>
                 <span className="text-[10px] text-zinc-500 block ml-5">Flutter 3 · Prise de Cotes & QR</span>
               </li>
