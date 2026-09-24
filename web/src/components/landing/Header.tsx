@@ -365,6 +365,20 @@ export const Header: React.FC<HeaderProps> = ({
                       <span className="text-[10px] font-mono text-zinc-500">64-bit</span>
                     </a>
 
+                    {/* Mobile App Android .apk */}
+                    <a
+                      href="/downloads/baiti-atelier-mobile.apk"
+                      download
+                      onClick={() => setIsToolboxOpen(false)}
+                      className="flex items-center justify-between p-2 rounded-xl hover:bg-white/10 transition-colors cursor-pointer text-left rtl:text-right"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="w-4 h-4 text-emerald-400" />
+                        <span>Compagnon Android (.apk)</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-zinc-500">50 MB</span>
+                    </a>
+
                     {/* PWA Install Button */}
                     {deferredPrompt && (
                       <button
@@ -675,6 +689,16 @@ export const Header: React.FC<HeaderProps> = ({
             )}
 
 
+
+            <a
+              href="/downloads/baiti-atelier-mobile.apk"
+              download
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center justify-center gap-2 p-2.5 min-h-[44px] rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-mono"
+            >
+              <Smartphone className="w-4 h-4 text-emerald-400" />
+              <span>Télécharger Baiti Mobile (.apk)</span>
+            </a>
 
             <a
               href="/downloads/baiti-atelier-desktop-setup.exe"
