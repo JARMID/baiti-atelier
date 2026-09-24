@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/opening_spec.dart';
 import '../models/artisan_profile.dart';
 import '../services/storage_service.dart';
+import '../services/app_settings.dart';
 import '../utils/algerian_financials.dart';
 
 class DevisPreviewSheet extends StatefulWidget {
@@ -262,16 +263,19 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
     }
     final aggregateBars6m = (aggregateLinearCutMm / 6000.0).ceil();
 
+    final settings = AppSettings.instance;
+    final isDark = settings.isDarkMode;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
       minChildSize: 0.5,
       maxChildSize: 0.96,
       builder: (ctx, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF0F1422),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border(top: BorderSide(color: Color(0xFF334155), width: 1.5)),
+          decoration: BoxDecoration(
+            color: settings.sheetBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(top: BorderSide(color: settings.sheetBorder, width: 1.5)),
           ),
           child: Column(
             children: [
@@ -282,7 +286,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                   width: 44,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF475569),
+                    color: settings.sheetHandle,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -312,28 +316,28 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Text(
+                                Text(
                                   'Baiti Atelier',
-                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: settings.primaryText),
                                 ),
                                 const SizedBox(width: 6),
-                                Text(
+                                const Text(
                                   'بيتي',
                                   textDirection: TextDirection.rtl,
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37)),
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37)),
                                 ),
                               ],
                             ),
                           ),
                           Text(
                             '${widget.projectName} • $quoteId',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontFamily: 'monospace'),
+                            style: TextStyle(fontSize: 11, color: settings.secondaryText, fontFamily: 'monospace'),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF94A3B8)),
+                      icon: Icon(Icons.close, color: settings.secondaryText),
                       onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
@@ -345,9 +349,9 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                 margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF131927),
+                  color: settings.subCardBackground,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF1E293B)),
+                  border: Border.all(color: settings.subCardBorder),
                 ),
                 child: Row(
                   children: [
@@ -383,12 +387,12 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    'Devis Proforma',
+                                    settings.tr('sheet_devis_proforma'),
                                     style: TextStyle(
                                       fontFamily: 'monospace',
                                       fontSize: 11,
                                       fontWeight: _activeTab == 0 ? FontWeight.bold : FontWeight.normal,
-                                      color: _activeTab == 0 ? Colors.white : const Color(0xFF94A3B8),
+                                      color: _activeTab == 0 ? (isDark ? Colors.white : const Color(0xFF0F172A)) : settings.secondaryText,
                                     ),
                                   ),
                                 ],
@@ -431,12 +435,12 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    'Débit Scie & Verre',
+                                    settings.tr('sheet_debit_saw_glass'),
                                     style: TextStyle(
                                       fontFamily: 'monospace',
                                       fontSize: 11,
                                       fontWeight: _activeTab == 1 ? FontWeight.bold : FontWeight.normal,
-                                      color: _activeTab == 1 ? Colors.white : const Color(0xFF94A3B8),
+                                      color: _activeTab == 1 ? (isDark ? Colors.white : const Color(0xFF0F172A)) : settings.secondaryText,
                                     ),
                                   ),
                                 ],
@@ -450,7 +454,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                 ),
               ),
 
-              const Divider(color: Color(0xFF1E293B), height: 1),
+              Divider(color: settings.dividerColor, height: 1),
 
               // Document Sheet Body
               Expanded(
@@ -463,9 +467,9 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF131927),
+                          color: settings.subCardBackground,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF1E293B)),
+                          border: Border.all(color: settings.subCardBorder),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,10 +485,10 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                         _artisanProfile?.workshopName.isNotEmpty == true
                                             ? _artisanProfile!.workshopName
                                             : 'BAITI ATELIER SARL | بيتي',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w900,
-                                          color: Colors.white,
+                                          color: settings.primaryText,
                                           letterSpacing: 0.5,
                                         ),
                                         maxLines: 1,
@@ -495,7 +499,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                         _artisanProfile?.phone.isNotEmpty == true
                                             ? 'Atelier ${_artisanProfile!.wilaya} • Tél: ${_artisanProfile!.phone}'
                                             : 'Menuiserie Aluminium, PVC & Agencement',
-                                        style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                        style: TextStyle(fontSize: 11, color: settings.secondaryText),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -510,9 +514,9 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
                                   ),
-                                  child: const Text(
-                                    'DTR C3-2 VALIDE',
-                                    style: TextStyle(
+                                  child: Text(
+                                    settings.tr('sheet_dtr_valid'),
+                                    style: const TextStyle(
                                       fontSize: 9,
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFF10B981),
@@ -523,7 +527,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                               ],
                             ),
                             const SizedBox(height: 12),
-                            const Divider(color: Color(0xFF1E293B), height: 1),
+                            Divider(color: settings.dividerColor, height: 1),
                             const SizedBox(height: 12),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -532,10 +536,10 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text('CLIENT & CHANTIER', style: TextStyle(fontSize: 9, color: Color(0xFF64748B), fontFamily: 'monospace')),
+                                      Text(settings.tr('sheet_client_chantier'), style: TextStyle(fontSize: 9, color: settings.secondaryText, fontFamily: 'monospace')),
                                       const SizedBox(height: 2),
-                                      Text(widget.projectName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
-                                      Text('Wilaya de $wilaya', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                                      Text(widget.projectName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: settings.primaryText)),
+                                      Text('Wilaya de $wilaya', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: settings.secondaryText)),
                                     ],
                                   ),
                                 ),
@@ -544,13 +548,13 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
-                                      const Text('DATE EMISSION', style: TextStyle(fontSize: 9, color: Color(0xFF64748B), fontFamily: 'monospace')),
+                                      Text(settings.tr('sheet_date_emission'), style: TextStyle(fontSize: 9, color: settings.secondaryText, fontFamily: 'monospace')),
                                       const SizedBox(height: 2),
                                       Text(
                                         DateTime.now().toLocal().toString().split(' ')[0],
-                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'monospace'),
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: settings.primaryText, fontFamily: 'monospace'),
                                       ),
-                                      const Text('Validite: 30 jours', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                                      Text(settings.tr('sheet_validite_30j'), style: TextStyle(fontSize: 10, color: settings.secondaryText)),
                                     ],
                                   ),
                                 ),
@@ -563,9 +567,9 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                       const SizedBox(height: 16),
 
                       // Table of Items
-                      const Text(
-                        'NOMENCLATURE DES OUVRAGES',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8), letterSpacing: 0.8),
+                      Text(
+                        settings.tr('sheet_nomenclature_openings'),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: settings.secondaryText, letterSpacing: 0.8),
                       ),
                       const SizedBox(height: 8),
 
@@ -580,9 +584,9 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF131927),
+                            color: settings.cardBackground,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFF1E293B)),
+                            border: Border.all(color: settings.cardBorder),
                           ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -610,26 +614,26 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                   children: [
                                     Text(
                                       s.title,
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: settings.primaryText),
                                     ),
                                     const SizedBox(height: 3),
                                     Text(
                                       '${s.widthMm.toInt()} x ${s.heightMm.toInt()} mm (Qte: ${s.quantity}) • ${s.profileSystem}',
-                                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                      style: TextStyle(fontSize: 11, color: settings.secondaryText),
                                     ),
                                     Text(
                                       '${s.finishColor} • ${s.glassType}',
-                                      style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                      style: TextStyle(fontSize: 10, color: settings.secondaryText),
                                     ),
                                   ],
                                 ),
                               ),
                               Text(
                                 _formatDzd(itemTotal.toDouble()),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: settings.primaryText,
                                   fontFamily: 'monospace',
                                 ),
                               ),
@@ -644,43 +648,43 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF131927),
+                          color: settings.subCardBackground,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF1E293B)),
+                          border: Border.all(color: settings.subCardBorder),
                         ),
                         child: Column(
                           children: [
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Sous-total Châssis HT', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
-                                Text(_formatDzd(totalHt), style: const TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'monospace')),
+                                Text(settings.tr('sheet_subtotal_chassis'), style: TextStyle(fontSize: 12, color: settings.secondaryText)),
+                                Text(_formatDzd(totalHt), style: TextStyle(fontSize: 12, color: settings.primaryText, fontFamily: 'monospace')),
                               ],
                             ),
                             const SizedBox(height: 6),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('TVA Fiscale Légale (19%)', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
-                                Text(_formatDzd(tva19), style: const TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'monospace')),
+                                Text(settings.tr('sheet_tva_legal'), style: TextStyle(fontSize: 12, color: settings.secondaryText)),
+                                Text(_formatDzd(tva19), style: TextStyle(fontSize: 12, color: settings.primaryText, fontFamily: 'monospace')),
                               ],
                             ),
                             const SizedBox(height: 6),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Droit de Timbre Fiscal', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
-                                Text(_formatDzd(timbreFiscal), style: const TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'monospace')),
+                                Text(settings.tr('sheet_timbre_fiscal'), style: TextStyle(fontSize: 12, color: settings.secondaryText)),
+                                Text(_formatDzd(timbreFiscal), style: TextStyle(fontSize: 12, color: settings.primaryText, fontFamily: 'monospace')),
                               ],
                             ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 8),
-                              child: Divider(color: Color(0xFF1E293B), height: 1),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Divider(color: settings.dividerColor, height: 1),
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('TOTAL GENERAL TTC', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+                                Text(settings.tr('sheet_total_general_ttc'), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: settings.primaryText)),
                                 Text(
                                   _formatDzd(totalTtc),
                                   style: const TextStyle(
@@ -697,16 +701,16 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1E293B).withValues(alpha: 0.6),
+                                color: settings.chipBackground,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: const Color(0xFF334155)),
+                                border: Border.all(color: settings.chipBorder),
                               ),
                               child: Text(
-                                'Arrêté à la somme de : ${amountInDzdWordsFr(totalTtc)}',
-                                style: const TextStyle(
+                                '${settings.tr('sheet_arrete_somme')} ${amountInDzdWordsFr(totalTtc)}',
+                                style: TextStyle(
                                   fontSize: 10,
                                   fontStyle: FontStyle.italic,
-                                  color: Color(0xFFCBD5E1),
+                                  color: settings.primaryText,
                                 ),
                               ),
                             ),
@@ -723,14 +727,14 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                             child: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF0F231D),
+                                color: isDark ? const Color(0xFF0F231D) : const Color(0xFFECFDF5),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: const Color(0xFF059669).withValues(alpha: 0.4)),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('ACOMPTE REQUIS (40%)', style: TextStyle(fontSize: 9, color: Color(0xFF10B981), fontFamily: 'monospace', fontWeight: FontWeight.bold)),
+                                  Text(settings.tr('sheet_acompte_requis'), style: const TextStyle(fontSize: 9, color: Color(0xFF10B981), fontFamily: 'monospace', fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 3),
                                   Text(_formatDzd(acompte40), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
                                 ],
@@ -742,14 +746,14 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                             child: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF181E2E),
+                                color: isDark ? const Color(0xFF181E2E) : const Color(0xFFEFF6FF),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.4)),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('SOLDE APRES POSE (60%)', style: TextStyle(fontSize: 9, color: Color(0xFF60A5FA), fontFamily: 'monospace', fontWeight: FontWeight.bold)),
+                                  Text(settings.tr('sheet_solde_reception'), style: const TextStyle(fontSize: 9, color: Color(0xFF60A5FA), fontFamily: 'monospace', fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 3),
                                   Text(_formatDzd(solde60), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF60A5FA))),
                                 ],
@@ -765,7 +769,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF111827),
+                          color: isDark ? const Color(0xFF111827) : settings.subCardBackground,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.35)),
                         ),
@@ -786,9 +790,9 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                       child: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFFD4AF37), size: 16),
                                     ),
                                     const SizedBox(width: 8),
-                                    const Text(
-                                      'PAIEMENT BARIDIMOB',
-                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37), letterSpacing: 0.6),
+                                    Text(
+                                      settings.tr('sheet_payment_baridimob_title'),
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37), letterSpacing: 0.6),
                                     ),
                                   ],
                                 ),
@@ -799,7 +803,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(color: const Color(0xFF059669).withValues(alpha: 0.4)),
                                   ),
-                                  child: const Text('Algérie Poste', style: TextStyle(fontSize: 9, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+                                  child: Text(settings.tr('sheet_algerie_poste_badge'), style: const TextStyle(fontSize: 9, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
                                 ),
                               ],
                             ),
@@ -807,7 +811,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1E293B).withValues(alpha: 0.6),
+                                color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : settings.chipBackground,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
@@ -816,25 +820,25 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Text('RIP Virement Algérie Poste (20 chiffres)', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                                        Text(settings.tr('sheet_rip_algerie_poste'), style: TextStyle(fontSize: 9, color: settings.secondaryText)),
                                         const SizedBox(height: 2),
                                         Text(
                                           formatBaridiMobRip(_artisanProfile?.rip ?? '00799999002145897442'),
-                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'monospace'),
+                                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: settings.primaryText, fontFamily: 'monospace'),
                                         ),
                                       ],
                                     ),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.copy_rounded, size: 16, color: Color(0xFFD4AF37)),
-                                    tooltip: 'Copier RIP',
+                                    tooltip: settings.tr('sheet_copy_rip'),
                                     onPressed: () {
                                       HapticFeedback.selectionClick();
                                       Clipboard.setData(ClipboardData(text: _artisanProfile?.rip ?? '00799999002145897442'));
                                       ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('RIP BaridiMob copié avec succès.'),
-                                          backgroundColor: Color(0xFF059669),
+                                        SnackBar(
+                                          content: Text(settings.tr('sheet_rip_copied_snack')),
+                                          backgroundColor: const Color(0xFF059669),
                                         ),
                                       );
                                     },
@@ -844,8 +848,8 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Titulaire : ${_artisanProfile?.name ?? "Mourad Hadj-Ali"} (${_artisanProfile?.workshopName ?? "Atelier Aluminium Kouba"})',
-                              style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                              '${settings.tr('sheet_titulaire_label')} ${_artisanProfile?.name ?? "Mourad Hadj-Ali"} (${_artisanProfile?.workshopName ?? "Atelier Aluminium Kouba"})',
+                              style: TextStyle(fontSize: 10, color: settings.secondaryText),
                             ),
                           ],
                         ),
@@ -855,7 +859,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF131927),
+                          color: settings.subCardBackground,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
                         ),
@@ -865,18 +869,18 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Expanded(
+                                Expanded(
                                   child: Row(
                                     children: [
-                                      Icon(Icons.content_cut_rounded, size: 18, color: Color(0xFF38BDF8)),
-                                      SizedBox(width: 8),
+                                      const Icon(Icons.content_cut_rounded, size: 18, color: Color(0xFF38BDF8)),
+                                      const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
-                                          'RÉSUMÉ DÉBITS CHANTIER',
+                                          settings.tr('sheet_cut_summary_title'),
                                           style: TextStyle(
                                             fontSize: 13,
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.white,
+                                            color: settings.primaryText,
                                             fontFamily: 'monospace',
                                           ),
                                           maxLines: 1,
@@ -894,14 +898,14 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    '${widget.specs.length} châssis • $totalPiecesCount pièces',
+                                    '${widget.specs.length} ${settings.tr('sheet_chassis_count_label')} • $totalPiecesCount ${settings.tr('sheet_pieces_count_label')}',
                                     style: const TextStyle(fontSize: 10, color: Color(0xFF38BDF8), fontFamily: 'monospace', fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
-                            const Divider(color: Color(0xFF1E293B), height: 1),
+                            Divider(color: settings.dividerColor, height: 1),
                             const SizedBox(height: 12),
                             Row(
                               children: [
@@ -909,16 +913,16 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                   child: Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+                                      color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.5) : settings.chipBackground,
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Text('STOCK BARRES 6M', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8), fontFamily: 'monospace')),
+                                        Text(settings.tr('sheet_stock_barres_6m'), style: TextStyle(fontSize: 9, color: settings.secondaryText, fontFamily: 'monospace')),
                                         const SizedBox(height: 3),
                                         Text('$aggregateBars6m barres', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF10B981), fontFamily: 'monospace')),
-                                        Text('${(aggregateLinearCutMm / 1000).toStringAsFixed(1)} m linéaires', style: const TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                                        Text('${(aggregateLinearCutMm / 1000).toStringAsFixed(1)} ${settings.tr('sheet_linear_meters')}', style: TextStyle(fontSize: 10, color: settings.secondaryText)),
                                       ],
                                     ),
                                   ),
@@ -928,16 +932,16 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                   child: Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+                                      color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.5) : settings.chipBackground,
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        const Text('VITRAGE TOTAL NET', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8), fontFamily: 'monospace')),
+                                        Text(settings.tr('sheet_vitrage_total_net'), style: TextStyle(fontSize: 9, color: settings.secondaryText, fontFamily: 'monospace')),
                                         const SizedBox(height: 3),
                                         Text('${aggregateGlassM2.toStringAsFixed(2)} m²', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8), fontFamily: 'monospace')),
-                                        const Text('Surface vitrière totale', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                                        Text(settings.tr('sheet_vitrage_surface_sub'), style: TextStyle(fontSize: 10, color: settings.secondaryText)),
                                       ],
                                     ),
                                   ),
@@ -950,9 +954,9 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
 
                       const SizedBox(height: 16),
 
-                      const Text(
-                        'DÉTAIL DES COUPES PAR CHÂSSIS',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8), letterSpacing: 0.8),
+                      Text(
+                        settings.tr('sheet_detail_coupes_title'),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: settings.secondaryText, letterSpacing: 0.8),
                       ),
                       const SizedBox(height: 8),
 
@@ -966,9 +970,9 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF131927),
+                            color: settings.subCardBackground,
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0xFF1E293B)),
+                            border: Border.all(color: settings.subCardBorder),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -999,7 +1003,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                         Expanded(
                                           child: Text(
                                             s.title,
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: settings.primaryText),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -1018,15 +1022,15 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF1E293B),
+                                  color: isDark ? const Color(0xFF1E293B) : settings.chipBackground,
                                   borderRadius: BorderRadius.circular(6),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   children: [
-                                    Expanded(flex: 5, child: Text('PIÈCE', style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold))),
-                                    Expanded(flex: 3, child: Text('COTE', textAlign: TextAlign.right, style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold))),
-                                    Expanded(flex: 2, child: Text('ANGLES', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold))),
-                                    Expanded(flex: 2, child: Text('QTÉ', textAlign: TextAlign.right, style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold))),
+                                    Expanded(flex: 5, child: Text(settings.tr('col_piece'), style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: settings.secondaryText, fontWeight: FontWeight.bold))),
+                                    Expanded(flex: 3, child: Text(settings.tr('col_cote'), textAlign: TextAlign.right, style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: settings.secondaryText, fontWeight: FontWeight.bold))),
+                                    Expanded(flex: 2, child: Text(settings.tr('col_angles'), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: settings.secondaryText, fontWeight: FontWeight.bold))),
+                                    Expanded(flex: 2, child: Text(settings.tr('col_qte'), textAlign: TextAlign.right, style: TextStyle(fontFamily: 'monospace', fontSize: 9, color: settings.secondaryText, fontWeight: FontWeight.bold))),
                                   ],
                                 ),
                               ),
@@ -1040,7 +1044,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                         flex: 5,
                                         child: Text(
                                           c.label,
-                                          style: const TextStyle(fontSize: 10.5, color: Colors.white70),
+                                          style: TextStyle(fontSize: 10.5, color: settings.primaryText),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -1063,10 +1067,10 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                         child: Text(
                                           c.cutAngles,
                                           textAlign: TextAlign.center,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontFamily: 'monospace',
                                             fontSize: 9,
-                                            color: Color(0xFF94A3B8),
+                                            color: settings.secondaryText,
                                           ),
                                         ),
                                       ),
@@ -1075,11 +1079,11 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                         child: Text(
                                           '${c.quantity}x',
                                           textAlign: TextAlign.right,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontFamily: 'monospace',
                                             fontSize: 10.5,
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.white,
+                                            color: settings.primaryText,
                                           ),
                                         ),
                                       ),
@@ -1101,17 +1105,17 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
               // Action Toolbar: adapts dynamically to current active tab
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0B0F17),
-                  border: Border(top: BorderSide(color: Color(0xFF1E293B))),
+                decoration: BoxDecoration(
+                  color: settings.cardBackground,
+                  border: Border(top: BorderSide(color: settings.dividerColor)),
                 ),
                 child: Row(
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF94A3B8),
-                          side: const BorderSide(color: Color(0xFF334155)),
+                          foregroundColor: settings.secondaryText,
+                          side: BorderSide(color: settings.subCardBorder),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
@@ -1122,8 +1126,8 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                             SnackBar(
                               content: Text(
                                 _activeTab == 0
-                                    ? 'Devis formel copié dans le presse-papier.'
-                                    : 'Fiche de débit collective copiée dans le presse-papier.',
+                                    ? settings.tr('sheet_quote_copied_snack')
+                                    : settings.tr('sheet_cut_copied_snack'),
                               ),
                               backgroundColor: const Color(0xFF059669),
                             ),
@@ -1131,7 +1135,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                         },
                         icon: const Icon(Icons.copy_rounded, size: 16),
                         label: Text(
-                          _activeTab == 0 ? 'Copier Devis' : 'Copier Fiche Débit',
+                          _activeTab == 0 ? settings.tr('sheet_copy_devis') : settings.tr('sheet_copy_debit'),
                           style: const TextStyle(fontSize: 12),
                         ),
                       ),
@@ -1154,7 +1158,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                           size: 16,
                         ),
                         label: Text(
-                          _activeTab == 0 ? 'WhatsApp Client' : 'WhatsApp Atelier',
+                          _activeTab == 0 ? settings.tr('sheet_wa_client') : settings.tr('sheet_wa_workshop'),
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                       ),

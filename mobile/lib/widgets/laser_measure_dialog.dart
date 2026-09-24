@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../services/app_settings.dart';
 
 class LaserMeasureDialog extends StatefulWidget {
   final double initialWidthMm;
@@ -18,6 +19,11 @@ class LaserMeasureDialog extends StatefulWidget {
 }
 
 class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
+  AppSettings get settings => AppSettings.instance;
+  bool get isDark => settings.isDarkMode;
+  Color get dialogBg => settings.dialogBackground;
+  Color get borderColor => settings.dialogBorder;
+
   // Rough opening measurements (Tableau maçonnerie brut)
   late double _measuredWidth;
   late double _measuredHeight;
@@ -85,7 +91,7 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: dialogBg,
       insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
@@ -95,8 +101,8 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
             // 1. Header Bar with Laser Status
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: borderColor)),
               ),
               child: Row(
                 children: [
@@ -113,19 +119,19 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'VISEUR LASER CHANTIER',
                           style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: settings.primaryText,
                             letterSpacing: 1.0,
                           ),
                         ),
                         Text(
                           'Mesure optique tableau & équerrage maçonnerie',
-                          style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
+                          style: TextStyle(fontSize: 10, color: settings.secondaryText),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -171,7 +177,7 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                    icon: Icon(Icons.close, color: settings.secondaryText, size: 20),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -321,9 +327,9 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
             // 3. Technical Calculation Dashboard
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: const BoxDecoration(
-                color: Color(0xFF0F172A),
-                border: Border(top: BorderSide(color: Color(0xFF1E293B))),
+              decoration: BoxDecoration(
+                color: dialogBg,
+                border: Border(top: BorderSide(color: borderColor)),
               ),
               child: Column(
                 children: [
@@ -335,18 +341,19 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E293B),
+                            color: settings.subCardBackground,
                             borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: settings.subCardBorder),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'COTE TABLEAU BRUT',
                                 style: TextStyle(
                                   fontFamily: 'monospace',
                                   fontSize: 9,
-                                  color: Color(0xFF94A3B8),
+                                  color: settings.secondaryText,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -355,12 +362,12 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                                 fit: BoxFit.scaleDown,
                                 alignment: Alignment.centerLeft,
                                 child: Text(
-                                  ' ×  mm',
-                                  style: const TextStyle(
+                                  '\${_measuredWidth.toInt()} × \${_measuredHeight.toInt()} mm',
+                                  style: TextStyle(
                                     fontFamily: 'monospace',
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: settings.primaryText,
                                   ),
                                 ),
                               ),
@@ -374,8 +381,9 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E293B),
+                            color: settings.subCardBackground,
                             borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: settings.subCardBorder),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,12 +394,12 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Text(
+                                    Text(
                                       'ÉQUERRAGE',
                                       style: TextStyle(
                                         fontFamily: 'monospace',
                                         fontSize: 9,
-                                        color: Color(0xFF94A3B8),
+                                        color: settings.secondaryText,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -439,9 +447,9 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        const Text(
+                        Text(
                           'Jeu de pose:',
-                          style: TextStyle(fontSize: 11, color: Colors.white70),
+                          style: TextStyle(fontSize: 11, color: settings.secondaryText),
                         ),
                         const SizedBox(width: 8),
                         _buildPlayChip('Standard (-10mm)', 0),
@@ -485,11 +493,11 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   '${_finalFabricationWidth.toInt()} × ${_finalFabricationHeight.toInt()} mm',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'monospace',
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
                                   ),
                                 ),
                               ),
@@ -579,10 +587,10 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isMatch ? const Color(0xFFD4AF37) : const Color(0xFF1E293B),
+                    color: isMatch ? const Color(0xFFD4AF37) : settings.chipBackground,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: isMatch ? const Color(0xFFD4AF37) : const Color(0xFF334155),
+                      color: isMatch ? const Color(0xFFD4AF37) : settings.chipBorder,
                     ),
                   ),
                   child: Text(
@@ -590,7 +598,7 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: isMatch ? FontWeight.bold : FontWeight.normal,
-                      color: isMatch ? const Color(0xFF0F172A) : Colors.white70,
+                      color: isMatch ? const Color(0xFF0F172A) : settings.secondaryText,
                     ),
                   ),
                 ),
@@ -609,15 +617,16 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF38BDF8) : const Color(0xFF1E293B),
+          color: isSelected ? const Color(0xFF38BDF8) : settings.chipBackground,
           borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: isSelected ? const Color(0xFF38BDF8) : settings.chipBorder),
         ),
         child: Text(
           title,
           style: TextStyle(
             fontSize: 10,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected ? const Color(0xFF0F172A) : Colors.white70,
+            color: isSelected ? const Color(0xFF0F172A) : settings.secondaryText,
           ),
         ),
       ),
@@ -630,17 +639,17 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: settings.chipBackground,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: const Color(0xFF334155)),
+          border: Border.all(color: settings.chipBorder),
         ),
         child: Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'monospace',
             fontSize: 9,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: settings.primaryText,
           ),
         ),
       ),

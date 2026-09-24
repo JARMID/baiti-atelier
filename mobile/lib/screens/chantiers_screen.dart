@@ -170,25 +170,26 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
   }
 
   void _showNewProjectDialog() {
+    final settings = AppSettings.instance;
     final nameCtrl = TextEditingController();
     final wilayaCtrl = ValueNotifier<String>('Alger (16)');
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF121826),
+        backgroundColor: settings.dialogBackground,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: Color(0xFF1E293B)),
+          side: BorderSide(color: settings.dialogBorder),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.create_new_folder_rounded, color: Color(0xFFD4AF37), size: 20),
-            SizedBox(width: 8),
+            const Icon(Icons.create_new_folder_rounded, color: Color(0xFFD4AF37), size: 20),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Nouveau Chantier',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                settings.tr('chantiers_new_project'),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: settings.primaryText),
               ),
             ),
           ],
@@ -197,30 +198,34 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Nom du Chantier / Client :',
-              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              style: TextStyle(fontSize: 11, color: settings.secondaryText),
             ),
             const SizedBox(height: 6),
             TextField(
               controller: nameCtrl,
-              style: const TextStyle(fontSize: 13, color: Colors.white),
+              style: TextStyle(fontSize: 13, color: settings.primaryText),
               decoration: InputDecoration(
                 hintText: 'ex: Villa Kouba R+2 - M. Benali',
-                hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                hintStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
                 filled: true,
-                fillColor: const Color(0xFF0B0F17),
+                fillColor: settings.inputBackground,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: Color(0xFF1E293B)),
+                  borderSide: BorderSide(color: settings.inputBorder),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: settings.inputBorder),
                 ),
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Wilaya d\'Exécution :',
-              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              style: TextStyle(fontSize: 11, color: settings.secondaryText),
             ),
             const SizedBox(height: 6),
             ValueListenableBuilder<String>(
@@ -233,16 +238,16 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0B0F17),
+                        color: settings.inputBackground,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFF1E293B)),
+                        border: Border.all(color: settings.inputBorder),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           isExpanded: true,
                           value: val,
-                          dropdownColor: const Color(0xFF1E293B),
-                          style: const TextStyle(fontSize: 12, color: Colors.white),
+                          dropdownColor: settings.cardBackground,
+                          style: TextStyle(fontSize: 12, color: settings.primaryText),
                           items: const [
                             'Alger (16)',
                             'Oran (31)',
@@ -295,7 +300,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text('Annuler', style: TextStyle(color: settings.secondaryText)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -398,14 +403,14 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                       children: [
                         Row(
                           children: [
-                            const Flexible(
+                            Flexible(
                               child: Text(
-                                'TOTAL PORTFOLIO CHANTIERS',
+                                settings.tr('chantiers_total_portfolio'),
                                 style: TextStyle(
                                   fontFamily: 'monospace',
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF94A3B8),
+                                  color: settings.secondaryText,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -436,10 +441,10 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             _formatDzd(_totalEstimatedAmount),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
-                              color: Colors.white,
+                              color: settings.primaryText,
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -452,9 +457,9 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text(
-                          'ACOMPTES 40%',
-                          style: TextStyle(
+                        Text(
+                          settings.tr('chantiers_acompte_40'),
+                          style: const TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -490,18 +495,18 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                   child: Container(
                     height: 38,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF121826),
+                      color: settings.inputBackground,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFF1E293B)),
+                      border: Border.all(color: settings.inputBorder),
                     ),
                     child: TextField(
-                      style: const TextStyle(fontSize: 12, color: Colors.white),
-                      decoration: const InputDecoration(
-                        hintText: 'Rechercher chantier, repère F1, wilaya...',
-                        hintStyle: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                        prefixIcon: Icon(Icons.search, size: 16, color: Color(0xFF64748B)),
+                      style: TextStyle(fontSize: 12, color: settings.primaryText),
+                      decoration: InputDecoration(
+                        hintText: settings.tr('chantiers_search_hint'),
+                        hintStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
+                        prefixIcon: Icon(Icons.search, size: 16, color: settings.secondaryText),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
                       ),
                       onChanged: (val) => setState(() => _searchQuery = val),
                     ),
@@ -517,11 +522,11 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
-                _buildFilterChip('all', 'Tous (${widget.savedSpecs.length})', const Color(0xFFD4AF37)),
-                _buildFilterChip('aluminum', 'Alu & PVC', const Color(0xFF38BDF8)),
-                _buildFilterChip('woodworking', 'Bois', const Color(0xFFF59E0B)),
-                _buildFilterChip('metalwork', 'Ferronnerie', const Color(0xFFEF4444)),
-                _buildFilterChip('tapestry', 'Tapisserie', const Color(0xFFA855F7)),
+                _buildFilterChip('all', '${settings.tr('chantiers_filter_all')} (${widget.savedSpecs.length})', const Color(0xFFD4AF37)),
+                _buildFilterChip('aluminum', settings.tr('trade_aluminum'), const Color(0xFF38BDF8)),
+                _buildFilterChip('woodworking', settings.tr('trade_wood'), const Color(0xFFF59E0B)),
+                _buildFilterChip('metalwork', settings.tr('trade_metal'), const Color(0xFFEF4444)),
+                _buildFilterChip('tapestry', settings.tr('trade_tapestry'), const Color(0xFFA855F7)),
               ],
             ),
           ),
@@ -538,28 +543,28 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF121826),
+                            color: settings.chipBackground,
                             shape: BoxShape.circle,
-                            border: Border.all(color: const Color(0xFF1E293B)),
+                            border: Border.all(color: settings.chipBorder),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.folder_off_outlined,
                             size: 40,
-                            color: Color(0xFF64748B),
+                            color: settings.secondaryText,
                           ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           widget.savedSpecs.isEmpty
-                              ? 'Aucun chantier enregistré'
+                              ? settings.tr('chantiers_empty_title')
                               : 'Aucun projet ne correspond aux filtres',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: settings.primaryText),
                         ),
                         const SizedBox(height: 6),
-                        const Text(
-                          'Enregistrez des cotes depuis l\'onglet "Cotes & Devis"\nou appuyez sur l\'icône dossier en haut pour créer un chantier.',
+                        Text(
+                          settings.tr('chantiers_empty_subtitle'),
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          style: TextStyle(fontSize: 11, color: settings.secondaryText),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
@@ -571,9 +576,9 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                           ),
                           onPressed: _showNewProjectDialog,
                           icon: const Icon(Icons.add, size: 16, color: Colors.black),
-                          label: const Text(
-                            'Nouveau Chantier',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black),
+                          label: Text(
+                            settings.tr('chantiers_new_project'),
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black),
                           ),
                         ),
                       ],
@@ -673,9 +678,9 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                                   children: [
                                                     Text(
                                                       wilaya,
-                                                      style: const TextStyle(
+                                                      style: TextStyle(
                                                         fontSize: 10,
-                                                        color: Color(0xFF94A3B8),
+                                                        color: settings.secondaryText,
                                                       ),
                                                       maxLines: 1,
                                                       overflow: TextOverflow.ellipsis,
@@ -683,9 +688,9 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                                     const SizedBox(width: 4),
                                                     Text(
                                                       '•  ouv.',
-                                                      style: const TextStyle(
+                                                      style: TextStyle(
                                                         fontSize: 10,
-                                                        color: Color(0xFF64748B),
+                                                        color: settings.secondaryText,
                                                       ),
                                                     ),
                                                   ],
@@ -726,9 +731,9 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF0B0F17),
+                                        color: settings.subCardBackground,
                                         borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(color: const Color(0xFF1E293B)),
+                                        border: Border.all(color: settings.subCardBorder),
                                       ),
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -737,9 +742,9 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                const Text(
-                                                  'TOTAL CHANTIER',
-                                                  style: TextStyle(fontSize: 8, fontFamily: 'monospace', color: Color(0xFF64748B)),
+                                                Text(
+                                                  settings.tr('chantiers_total_project'),
+                                                  style: TextStyle(fontSize: 8, fontFamily: 'monospace', color: settings.secondaryText),
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
                                                 ),
@@ -748,7 +753,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                                   alignment: Alignment.centerLeft,
                                                   child: Text(
                                                     _formatDzd(pTotal),
-                                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: settings.primaryText),
                                                   ),
                                                 ),
                                               ],
@@ -759,9 +764,9 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.center,
                                               children: [
-                                                const Text(
-                                                  'ACOMPTE 40%',
-                                                  style: TextStyle(fontSize: 8, fontFamily: 'monospace', color: Color(0xFF10B981)),
+                                                Text(
+                                                  settings.tr('chantiers_acompte_40'),
+                                                  style: const TextStyle(fontSize: 8, fontFamily: 'monospace', color: Color(0xFF10B981)),
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
                                                 ),
@@ -781,9 +786,9 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.end,
                                               children: [
-                                                const Text(
-                                                  'SOLDE 60%',
-                                                  style: TextStyle(fontSize: 8, fontFamily: 'monospace', color: Color(0xFF38BDF8)),
+                                                Text(
+                                                  settings.tr('chantiers_solde_60'),
+                                                  style: const TextStyle(fontSize: 8, fontFamily: 'monospace', color: Color(0xFF38BDF8)),
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
                                                 ),
@@ -812,7 +817,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                               value: pSpecs.isEmpty
                                                   ? 0.0
                                                   : (installedCount * 1.0 + assembledCount * 0.7 + cuttingCount * 0.4) / pSpecs.length,
-                                              backgroundColor: const Color(0xFF1E293B),
+                                              backgroundColor: settings.chipBackground,
                                               valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
                                               minHeight: 4,
                                             ),
@@ -820,8 +825,8 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          '$installedCount/${pSpecs.length} posés',
-                                          style: const TextStyle(fontSize: 9, fontFamily: 'monospace', color: Color(0xFF94A3B8)),
+                                          '$installedCount/${pSpecs.length} ${settings.tr("chantiers_installed_count")}',
+                                          style: TextStyle(fontSize: 9, fontFamily: 'monospace', color: settings.secondaryText),
                                         ),
                                       ],
                                     ),
@@ -834,8 +839,8 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                             if (isExpanded)
                               Container(
                                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                                decoration: const BoxDecoration(
-                                  border: Border(top: BorderSide(color: Color(0xFF1E293B))),
+                                decoration: BoxDecoration(
+                                  border: Border(top: BorderSide(color: settings.cardBorder)),
                                 ),
                                 child: Column(
                                   children: [
@@ -849,9 +854,9 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                         margin: const EdgeInsets.only(bottom: 8),
                                         padding: const EdgeInsets.all(10),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF0B0F17),
+                                          color: settings.subCardBackground,
                                           borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: const Color(0xFF1E293B)),
+                                          border: Border.all(color: settings.subCardBorder),
                                         ),
                                         child: Row(
                                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -885,10 +890,10 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                                       Expanded(
                                                         child: Text(
                                                           spec.title,
-                                                          style: const TextStyle(
+                                                          style: TextStyle(
                                                             fontSize: 12,
                                                             fontWeight: FontWeight.bold,
-                                                            color: Colors.white,
+                                                            color: settings.primaryText,
                                                           ),
                                                           maxLines: 1,
                                                           overflow: TextOverflow.ellipsis,
@@ -914,7 +919,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                                   const SizedBox(height: 2),
                                                   Text(
                                                     '${spec.widthMm.toInt()} × ${spec.heightMm.toInt()} mm • ${spec.quantity} u • ${spec.profileSystem}',
-                                                    style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                                                    style: TextStyle(fontSize: 10, color: settings.secondaryText),
                                                     maxLines: 1,
                                                     overflow: TextOverflow.ellipsis,
                                                   ),
@@ -957,7 +962,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                               onPressed: () {
                                                 if (origIdx >= 0) widget.onRemove(origIdx);
                                               },
-                                              tooltip: 'Supprimer',
+                                              tooltip: settings.tr('chantiers_delete_tooltip'),
                                             ),
                                           ],
                                         ),
@@ -980,6 +985,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
 }
 
   Widget _buildFilterChip(String tradeId, String label, Color chipColor) {
+    final settings = AppSettings.instance;
     final isSelected = _selectedTradeFilter == tradeId;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -989,12 +995,12 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
         labelStyle: TextStyle(
           fontSize: 11,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+          color: isSelected ? (settings.isDark ? Colors.white : const Color(0xFF0F172A)) : settings.secondaryText,
         ),
-        backgroundColor: const Color(0xFF121826),
+        backgroundColor: settings.chipBackground,
         selectedColor: chipColor.withValues(alpha: 0.25),
         side: BorderSide(
-          color: isSelected ? chipColor : const Color(0xFF1E293B),
+          color: isSelected ? chipColor : settings.chipBorder,
         ),
         onSelected: (_) => setState(() => _selectedTradeFilter = tradeId),
       ),
@@ -1002,16 +1008,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
   }
 
   String _getTradeLabel(String trade) {
-    switch (trade) {
-      case 'woodworking':
-        return 'Bois & Cuisine';
-      case 'metalwork':
-        return 'Ferronnerie';
-      case 'tapestry':
-        return 'Tapisserie';
-      default:
-        return 'Alu & PVC';
-    }
+    return AppSettings.instance.trTrade(trade);
   }
 
   Color _getTradeColor(String trade) {
@@ -1028,16 +1025,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
   }
 
   String _getStatusLabel(String status) {
-    switch (status) {
-      case 'cutting':
-        return 'En Débitage Scie';
-      case 'assembly':
-        return 'Montage & Quincaillerie';
-      case 'installed':
-        return 'Posé sur Chantier';
-      default:
-        return 'Devis Chiffré';
-    }
+    return AppSettings.instance.trStatus(status);
   }
 
   Color _getStatusColor(String status) {

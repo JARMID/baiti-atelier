@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/opening_spec.dart';
+import '../services/app_settings.dart';
 import 'devis_preview_sheet.dart';
 
 class QuoteSummaryCard extends StatelessWidget {
@@ -72,14 +73,15 @@ _Généré via Baiti Atelier Mobile_
 
   @override
   Widget build(BuildContext context) {
+    final settings = AppSettings.instance;
     final cost = spec.calculateCost();
 
     return Card(
       elevation: 0,
-      color: const Color(0xFF0F172A),
+      color: settings.cardBackground,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFF1E293B), width: 1.2),
+        side: BorderSide(color: settings.cardBorder, width: 1.2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -101,15 +103,15 @@ _Généré via Baiti Atelier Mobile_
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Flexible(
+                      Flexible(
                         child: Text(
-                          'CHIFFRAGE DÉTAILLÉ EN DZD',
+                          settings.tr('quote_detailed_title').toUpperCase(),
                           style: TextStyle(
                             fontFamily: 'monospace',
-                            fontSize: 11,
+                            fontSize: 10.5,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF94A3B8),
-                            letterSpacing: 1.1,
+                            color: settings.secondaryText,
+                            letterSpacing: 0.8,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -119,10 +121,10 @@ _Généré via Baiti Atelier Mobile_
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '${spec.quantity} unité(s)',
-                  style: const TextStyle(
+                  '${spec.quantity} ${settings.tr('quote_units')}',
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFFCBD5E1),
+                    color: settings.secondaryText,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -131,36 +133,36 @@ _Généré via Baiti Atelier Mobile_
             const SizedBox(height: 14),
 
             // Cost lines
-            _buildCostRow('Matériau principal', cost['primaryMaterial'] ?? 0.0),
+            _buildCostRow(settings.tr('cost_primary'), cost['primaryMaterial'] ?? 0.0, settings),
             if ((cost['secondaryMaterial'] ?? 0.0) > 0)
-              _buildCostRow('Second œuvre / vitrage / chants', cost['secondaryMaterial']!),
+              _buildCostRow(settings.tr('cost_secondary'), cost['secondaryMaterial']!, settings),
             if ((cost['hardware'] ?? 0.0) > 0)
-              _buildCostRow('Accessoires & quincaillerie', cost['hardware']!),
+              _buildCostRow(settings.tr('cost_hardware'), cost['hardware']!, settings),
             if ((cost['finishing'] ?? 0.0) > 0)
-              _buildCostRow('Finition / volet / thermolaquage', cost['finishing']!),
-            _buildCostRow('Main d\'œuvre & façonnage atelier', cost['labor'] ?? 0.0),
+              _buildCostRow(settings.tr('cost_finishing'), cost['finishing']!, settings),
+            _buildCostRow(settings.tr('cost_labor'), cost['labor'] ?? 0.0, settings),
 
-            const Divider(color: Color(0xFF1E293B), height: 24),
+            Divider(color: settings.dividerColor, height: 24),
 
             // Grand Total
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'TOTAL INDICATIF HT',
+                      settings.tr('cost_total_ht').toUpperCase(),
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 10,
-                        color: Color(0xFF64748B),
+                        color: settings.secondaryText,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      'Tarif atelier Algérie',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                      settings.tr('quote_sub_algeria'),
+                      style: TextStyle(fontSize: 11, color: settings.secondaryText),
                     ),
                   ],
                 ),
@@ -192,11 +194,11 @@ _Généré via Baiti Atelier Mobile_
                   child: ElevatedButton.icon(
                     onPressed: () => _dispatchWhatsApp(context),
                     icon: const Icon(Icons.send_rounded, size: 16, color: Colors.white),
-                    label: const FittedBox(
+                    label: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        'Transmettre sur WhatsApp',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                        settings.tr('quote_send_whatsapp'),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -218,24 +220,24 @@ _Généré via Baiti Atelier Mobile_
                   ),
                   icon: const Icon(Icons.receipt_long_rounded, size: 19),
                   style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
+                    backgroundColor: settings.chipBackground,
                     foregroundColor: const Color(0xFFD4AF37),
                     padding: const EdgeInsets.all(10),
                     minimumSize: const Size(40, 40),
                   ),
-                  tooltip: 'Fiche Devis & Facture Proforma',
+                  tooltip: settings.tr('quote_tooltip_proforma'),
                 ),
                 const SizedBox(width: 6),
                 IconButton.filledTonal(
                   onPressed: onSaveLocally,
                   icon: const Icon(Icons.bookmark_border_rounded, size: 19),
                   style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
-                    foregroundColor: const Color(0xFFE2E8F0),
+                    backgroundColor: settings.chipBackground,
+                    foregroundColor: settings.primaryText,
                     padding: const EdgeInsets.all(10),
                     minimumSize: const Size(40, 40),
                   ),
-                  tooltip: 'Enregistrer dans l\'historique chantier',
+                  tooltip: settings.tr('quote_tooltip_save'),
                 ),
               ],
             ),
@@ -245,7 +247,7 @@ _Généré via Baiti Atelier Mobile_
     );
   }
 
-  Widget _buildCostRow(String label, double amount) {
+  Widget _buildCostRow(String label, double amount, AppSettings settings) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3.5),
       child: Row(
@@ -254,7 +256,7 @@ _Généré via Baiti Atelier Mobile_
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+              style: TextStyle(fontSize: 13, color: settings.secondaryText),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -262,10 +264,10 @@ _Généré via Baiti Atelier Mobile_
           const SizedBox(width: 8),
           Text(
             _formatDzd(amount),
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'monospace',
               fontSize: 13,
-              color: Color(0xFFF1F5F9),
+              color: settings.primaryText,
               fontWeight: FontWeight.w500,
             ),
           ),

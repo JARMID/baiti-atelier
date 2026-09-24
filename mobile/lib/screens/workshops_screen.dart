@@ -241,7 +241,7 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
                     onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
                     style: TextStyle(fontSize: 12, color: settings.primaryText),
                     decoration: InputDecoration(
-                      hintText: 'Rechercher atelier, artisan, wilaya, métier...',
+                      hintText: settings.tr('workshops_search_hint'),
                       hintStyle: TextStyle(fontSize: 12, color: settings.secondaryText),
                       prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFFD4AF37)),
                       suffixIcon: _searchQuery.isNotEmpty
@@ -343,7 +343,8 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
                           Icon(Icons.search_off_rounded, size: 48, color: settings.secondaryText),
                           const SizedBox(height: 12),
                           Text(
-                            'Aucun atelier trouvé',
+                            settings.tr('workshops_empty'),
+                            textAlign: TextAlign.center,
                             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: settings.primaryText),
                           ),
                           const SizedBox(height: 4),
@@ -484,7 +485,7 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Tarif profilé :', style: TextStyle(fontSize: 10, color: settings.secondaryText), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    Text('${settings.tr('workshops_rate_alu')} ', style: TextStyle(fontSize: 10, color: settings.secondaryText), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     FittedBox(
                                       fit: BoxFit.scaleDown,
                                       alignment: Alignment.centerLeft,
@@ -501,7 +502,7 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Vitrage standard :', style: TextStyle(fontSize: 10, color: settings.secondaryText), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    Text('${settings.tr('workshops_rate_glass')} ', style: TextStyle(fontSize: 10, color: settings.secondaryText), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     FittedBox(
                                       fit: BoxFit.scaleDown,
                                       alignment: Alignment.centerLeft,
@@ -526,7 +527,7 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
                                       padding: const EdgeInsets.all(8),
                                       minimumSize: const Size(36, 36),
                                     ),
-                                    tooltip: 'Appeler',
+                                    tooltip: settings.tr('workshops_call'),
                                   ),
                                   const SizedBox(width: 4),
                                   IconButton(
@@ -538,7 +539,7 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
                                       padding: const EdgeInsets.all(8),
                                       minimumSize: const Size(36, 36),
                                     ),
-                                    tooltip: 'WhatsApp',
+                                    tooltip: settings.tr('workshops_whatsapp'),
                                   ),
                                 ],
                               ),

@@ -154,9 +154,9 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF040B16),
-        body: Center(
+      return Scaffold(
+        backgroundColor: AppSettings.instance.scaffoldBackground,
+        body: const Center(
           child: CircularProgressIndicator(color: Color(0xFFD4AF37)),
         ),
       );

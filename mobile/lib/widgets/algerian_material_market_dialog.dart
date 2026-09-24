@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/material_market.dart';
 import '../utils/algerian_financials.dart';
+import '../services/app_settings.dart';
 
 class AlgerianMaterialMarketDialog extends StatefulWidget {
   final VoidCallback? onCalibrationSaved;
@@ -33,6 +34,12 @@ class AlgerianMaterialMarketDialog extends StatefulWidget {
 }
 
 class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDialog> {
+  AppSettings get settings => AppSettings.instance;
+  bool get isDark => settings.isDarkMode;
+  Color get goldColor => settings.goldAccent;
+  Color get dialogBg => settings.dialogBackground;
+  Color get borderColor => settings.dialogBorder;
+
   int _activeTab = 0; // 0: Argus des Cours, 1: Calibrateur Atelier
   MaterialCategory _selectedCategory = MaterialCategory.all;
   final TextEditingController _searchController = TextEditingController();
@@ -165,9 +172,6 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
 
   @override
   Widget build(BuildContext context) {
-    const dialogBg = Color(0xFF0F1B2D);
-    const borderColor = Color(0xFF1E293B);
-    const goldColor = Color(0xFFD4AF37);
 
     return Container(
       constraints: BoxConstraints(
@@ -176,7 +180,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
       decoration: BoxDecoration(
         color: dialogBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(color: const Color(0xFF334155), width: 1.2),
+        border: Border.all(color: borderColor, width: 1.2),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -188,7 +192,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
               width: 44,
               height: 4,
               decoration: BoxDecoration(
-                color: const Color(0xFF475569),
+                color: settings.sheetHandle,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -203,7 +207,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'ARGUS DES COURS & CALIBRATEUR DZD',
                         style: TextStyle(
                           fontFamily: 'monospace',
@@ -214,12 +218,12 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
+                      Text(
                         'Bourse des Matières Premières Algérie',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: settings.primaryText,
                         ),
                       ),
                       const SizedBox(height: 1),
@@ -227,14 +231,14 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                         'Cotations industrielles 58 wilayas',
                         style: TextStyle(
                           fontSize: 9.5,
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: settings.secondaryText,
                         ),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20, color: Colors.white70),
+                  icon: Icon(Icons.close_rounded, size: 20, color: settings.secondaryText),
                   onPressed: () => Navigator.of(context).pop(),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -251,9 +255,9 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
             child: Container(
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
-                color: const Color(0xFF070F1E),
+                color: settings.chipBackground,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: borderColor),
+                border: Border.all(color: settings.chipBorder),
               ),
               child: Row(
                 children: [
@@ -284,7 +288,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
           // Main Tab Body
           Expanded(
             child: _isLoadingCalibration
-                ? const Center(child: CircularProgressIndicator(color: goldColor))
+                ? Center(child: CircularProgressIndicator(color: goldColor))
                 : _activeTab == 0
                     ? _buildArgusBourseTab()
                     : _buildCalibratorTab(),
@@ -319,7 +323,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
               Icon(
                 icon,
                 size: 14,
-                color: isActive ? const Color(0xFF040B16) : const Color(0xFF94A3B8),
+                color: isActive ? (isDark ? const Color(0xFF040B16) : Colors.white) : settings.secondaryText,
               ),
               const SizedBox(width: 6),
               Text(
@@ -327,7 +331,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                 style: TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.bold,
-                  color: isActive ? const Color(0xFF040B16) : const Color(0xFF94A3B8),
+                  color: isActive ? (isDark ? const Color(0xFF040B16) : Colors.white) : settings.secondaryText,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -369,22 +373,22 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
           child: Container(
             height: 38,
             decoration: BoxDecoration(
-              color: const Color(0xFF070F1E),
+              color: settings.inputBackground,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF1E293B)),
+              border: Border.all(color: settings.inputBorder),
             ),
             child: TextField(
               controller: _searchController,
               onChanged: (val) => setState(() => _searchQuery = val),
-              style: const TextStyle(fontSize: 11.5, color: Colors.white),
+              style: TextStyle(fontSize: 11.5, color: settings.primaryText),
               decoration: InputDecoration(
                 isDense: true,
                 hintText: 'Rechercher un profilé, verre ou fournisseur...',
-                hintStyle: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.4)),
+                hintStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
                 prefixIcon: const Icon(Icons.search_rounded, size: 16, color: Color(0xFFD4AF37)),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 14, color: Colors.white54),
+                        icon: Icon(Icons.clear_rounded, size: 14, color: settings.secondaryText),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
@@ -407,11 +411,11 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.inventory_2_outlined, size: 36, color: Colors.white.withValues(alpha: 0.3)),
+                      Icon(Icons.inventory_2_outlined, size: 36, color: settings.secondaryText),
                       const SizedBox(height: 6),
                       Text(
                         'Aucun matériau trouvé pour cette recherche',
-                        style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.5)),
+                        style: TextStyle(fontSize: 11, color: settings.secondaryText),
                       ),
                     ],
                   ),
@@ -437,10 +441,10 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
         margin: const EdgeInsets.only(right: 6),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFD4AF37).withValues(alpha: 0.2) : const Color(0xFF070F1E),
+          color: isSelected ? goldColor.withValues(alpha: 0.2) : settings.chipBackground,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF1E293B),
+            color: isSelected ? goldColor : settings.chipBorder,
             width: isSelected ? 1.2 : 0.8,
           ),
         ),
@@ -450,7 +454,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
           style: TextStyle(
             fontSize: 10.5,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF94A3B8),
+            color: isSelected ? goldColor : settings.secondaryText,
           ),
         ),
       ),
@@ -479,9 +483,9 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF070F1E),
+        color: settings.subCardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: settings.subCardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -495,10 +499,10 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                   children: [
                     Text(
                       item.nameFr,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: settings.primaryText,
                       ),
                     ),
                     const SizedBox(height: 1),
@@ -533,7 +537,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                     item.unit,
                     style: TextStyle(
                       fontSize: 9.5,
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: settings.secondaryText,
                     ),
                   ),
                 ],
@@ -550,12 +554,12 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
               Expanded(
                 child: Row(
                   children: [
-                    const Icon(Icons.business_rounded, size: 12, color: Color(0xFF94A3B8)),
+                    Icon(Icons.business_rounded, size: 12, color: settings.secondaryText),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         item.supplier,
-                        style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                        style: TextStyle(fontSize: 10, color: settings.secondaryText),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -596,8 +600,9 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F1B2D),
+              color: settings.chipBackground,
               borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: settings.chipBorder),
             ),
             child: Row(
               children: [
@@ -606,7 +611,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                 Expanded(
                   child: Text(
                     item.standardLengthOrSize,
-                    style: const TextStyle(fontSize: 9.5, color: Color(0xFFCBD5E1), fontFamily: 'monospace'),
+                    style: TextStyle(fontSize: 9.5, color: settings.primaryText, fontFamily: 'monospace'),
                   ),
                 ),
               ],
@@ -630,9 +635,9 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF070F1E),
+              color: settings.subCardBackground,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF1E293B)),
+              border: Border.all(color: settings.subCardBorder),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -742,9 +747,9 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF070F1E),
+              color: settings.subCardBackground,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.5)),
+              border: Border.all(color: goldColor.withValues(alpha: 0.5)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -773,7 +778,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                       'Fenêtre 2V 1200×1200 mm',
                       style: TextStyle(
                         fontSize: 9.5,
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: settings.secondaryText,
                       ),
                     ),
                   ],
@@ -782,10 +787,10 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Prix Estimé HT avec marge :',
-                        style: TextStyle(fontSize: 11, color: Colors.white70),
+                        style: TextStyle(fontSize: 11, color: settings.secondaryText),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -806,10 +811,10 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                 const SizedBox(height: 3),
                 Text(
                   amountInDzdWordsFr(sampleTotal),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 9.5,
                     fontStyle: FontStyle.italic,
-                    color: Color(0xFF94A3B8),
+                    color: settings.secondaryText,
                   ),
                 ),
                 Text(
@@ -896,9 +901,9 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F1B2D),
+          color: settings.chipBackground,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFF1E293B)),
+          border: Border.all(color: settings.chipBorder),
         ),
         child: Column(
           children: [
@@ -908,10 +913,10 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
               fit: BoxFit.scaleDown,
               child: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: settings.primaryText,
                 ),
               ),
             ),
@@ -933,9 +938,9 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF070F1E),
+        color: settings.subCardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: settings.subCardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -949,11 +954,11 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: settings.primaryText),
                     ),
                     Text(
                       subtitle,
-                      style: TextStyle(fontSize: 9.5, color: Colors.white.withValues(alpha: 0.5)),
+                      style: TextStyle(fontSize: 9.5, color: settings.secondaryText),
                     ),
                   ],
                 ),
@@ -982,7 +987,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
             data: SliderThemeData(
               trackHeight: 3,
               activeTrackColor: const Color(0xFFD4AF37),
-              inactiveTrackColor: const Color(0xFF1E293B),
+              inactiveTrackColor: settings.chipBorder,
               thumbColor: const Color(0xFFD4AF37),
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),

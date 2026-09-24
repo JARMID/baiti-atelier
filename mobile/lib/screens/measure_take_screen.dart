@@ -260,19 +260,19 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.folder_open_rounded, size: 18, color: Color(0xFFD4AF37)),
+                    Icon(Icons.folder_open_rounded, size: 18, color: settings.goldAccent),
                     const SizedBox(width: 8),
                     Expanded(
                       child: TextFormField(
                         initialValue: _spec.projectName,
-                        style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
-                        decoration: const InputDecoration(
+                        style: TextStyle(fontSize: 12, color: settings.primaryText, fontWeight: FontWeight.bold),
+                        decoration: InputDecoration(
                           isDense: true,
                           border: InputBorder.none,
-                          hintText: 'Nom du Chantier (ex: Villa Kouba R+2)',
-                          hintStyle: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                          labelText: 'Chantier Assigné',
-                          labelStyle: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                          hintText: settings.tr('project_name_hint'),
+                          hintStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
+                          labelText: settings.tr('project_assigned'),
+                          labelStyle: TextStyle(fontSize: 10, color: settings.goldAccent),
                         ),
                         onChanged: (val) {
                           _spec = _spec.copyWith(
@@ -283,7 +283,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                     ),
                   ],
                 ),
-                const Divider(height: 12, color: Color(0xFF1E293B)),
+                Divider(height: 12, color: settings.dividerColor),
                 Row(
                   children: [
                     Expanded(
@@ -291,25 +291,25 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
+                          color: settings.inputBackground,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFF334155)),
+                          border: Border.all(color: settings.inputBorder),
                         ),
                         child: TextFormField(
                           initialValue: _spec.openingReference,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF38BDF8),
+                            color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
                           ),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             isDense: true,
                             border: InputBorder.none,
                             hintText: 'F1',
-                            labelText: 'Repère',
-                            labelStyle: TextStyle(fontSize: 9, color: Color(0xFF64748B)),
+                            labelText: settings.tr('reference_label'),
+                            labelStyle: TextStyle(fontSize: 9, color: settings.secondaryText),
                           ),
                           onChanged: (val) {
                             _spec = _spec.copyWith(
@@ -325,18 +325,18 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
+                          color: settings.inputBackground,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFF334155)),
+                          border: Border.all(color: settings.inputBorder),
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: _spec.clientWilaya,
                             isExpanded: true,
-                            dropdownColor: const Color(0xFF0F1B2D),
-                            style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
-                            icon: const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFFD4AF37)),
-                            items: _wilayas.map((w) => DropdownMenuItem(value: w, child: Text(w, overflow: TextOverflow.ellipsis))).toList(),
+                            dropdownColor: settings.cardBackground,
+                            style: TextStyle(fontSize: 11, color: settings.primaryText, fontWeight: FontWeight.bold),
+                            icon: Icon(Icons.location_on_rounded, size: 14, color: settings.goldAccent),
+                            items: _wilayas.map((w) => DropdownMenuItem(value: w, child: Text(w, overflow: TextOverflow.ellipsis, style: TextStyle(color: settings.primaryText)))).toList(),
                             onChanged: (val) {
                               if (val != null) setState(() => _spec = _spec.copyWith(clientWilaya: val));
                             },
@@ -354,22 +354,22 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A),
+                        color: settings.subCardBackground,
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                        border: Border.all(color: settings.goldAccent.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.shield_outlined, size: 12, color: Color(0xFFD4AF37)),
+                          Icon(Icons.shield_outlined, size: 12, color: settings.goldAccent),
                           const SizedBox(width: 5),
                           Expanded(
                             child: Text(
                               'DTR C3-2 : ${dtr.label} • ${dtr.requirement}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 9.5,
-                                color: Color(0xFFCBD5E1),
+                                color: settings.primaryText,
                                 fontFamily: 'monospace',
                                 fontWeight: FontWeight.w500,
                               ),
@@ -398,12 +398,12 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
             children: [
               Expanded(
                 child: Text(
-                  'PRESETS STANDARDS ATELIER (${_getTradeName(_spec.tradeType).toUpperCase()})',
-                  style: const TextStyle(
+                  '${settings.tr('presets_title')} (${_getTradeName(_spec.tradeType).toUpperCase()})',
+                  style: TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF64748B),
+                    color: settings.secondaryText,
                     letterSpacing: 1.0,
                   ),
                   maxLines: 1,
@@ -439,9 +439,9 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF121826),
+              color: settings.subCardBackground,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF1E293B)),
+              border: Border.all(color: settings.subCardBorder),
             ),
             child: Column(
               children: [
@@ -449,13 +449,13 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Expanded(
-                      child: Text('Largeur Totale (L)', style: TextStyle(fontSize: 12, color: Colors.white70), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Expanded(
+                      child: Text(settings.tr('dim_width'), style: TextStyle(fontSize: 12, color: settings.secondaryText), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       '${_spec.widthMm.toInt()} mm',
-                      style: const TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.bold, color: settings.primaryText),
                     ),
                   ],
                 ),
@@ -465,7 +465,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                   max: 4000,
                   divisions: 72,
                   activeColor: tradeColor,
-                  inactiveColor: const Color(0xFF1E293B),
+                  inactiveColor: settings.dividerColor,
                   onChanged: (val) => setState(() => _spec = _spec.copyWith(widthMm: val)),
                 ),
 
@@ -473,13 +473,13 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Expanded(
-                      child: Text('Hauteur Totale (H)', style: TextStyle(fontSize: 12, color: Colors.white70), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Expanded(
+                      child: Text(settings.tr('dim_height'), style: TextStyle(fontSize: 12, color: settings.secondaryText), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       '${_spec.heightMm.toInt()} mm',
-                      style: const TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.bold, color: settings.primaryText),
                     ),
                   ],
                 ),
@@ -489,7 +489,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                   max: 3200,
                   divisions: 56,
                   activeColor: tradeColor,
-                  inactiveColor: const Color(0xFF1E293B),
+                  inactiveColor: settings.dividerColor,
                   onChanged: (val) => setState(() => _spec = _spec.copyWith(heightMm: val)),
                 ),
 
@@ -498,13 +498,13 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Expanded(
-                        child: Text('Profondeur Caisson (P)', style: TextStyle(fontSize: 12, color: Colors.white70), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Expanded(
+                        child: Text(settings.tr('dim_depth'), style: TextStyle(fontSize: 12, color: settings.secondaryText), maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         '${_spec.depthMm.toInt()} mm',
-                        style: const TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.bold, color: settings.primaryText),
                       ),
                     ],
                   ),
@@ -514,7 +514,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                     max: 900,
                     divisions: 26,
                     activeColor: tradeColor,
-                    inactiveColor: const Color(0xFF1E293B),
+                    inactiveColor: settings.dividerColor,
                     onChanged: (val) => setState(() => _spec = _spec.copyWith(depthMm: val)),
                   ),
                 ],
@@ -602,28 +602,31 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
 
   // --- TOP TRADE SEGMENT BAR ---
   Widget _buildTradeSelector() {
+    final settings = AppSettings.instance;
+    final isDark = settings.isDarkMode;
+
     final trades = [
       {
         'id': 'aluminum',
-        'label': 'Alu & PVC',
+        'label': settings.tr('trade_aluminum'),
         'icon': Icons.window_outlined,
         'color': const Color(0xFF38BDF8),
       },
       {
         'id': 'woodworking',
-        'label': 'Ébénisterie',
+        'label': settings.tr('trade_wood'),
         'icon': Icons.kitchen_outlined,
         'color': const Color(0xFFF59E0B),
       },
       {
         'id': 'metalwork',
-        'label': 'Ferronnerie',
+        'label': settings.tr('trade_metal'),
         'icon': Icons.fence_outlined,
         'color': const Color(0xFFEF4444),
       },
       {
         'id': 'tapestry',
-        'label': 'Tapisserie',
+        'label': settings.tr('trade_tapestry'),
         'icon': Icons.curtains_outlined,
         'color': const Color(0xFFA855F7),
       },
@@ -633,9 +636,9 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFF121826),
+        color: settings.subCardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: settings.subCardBorder),
       ),
       child: Row(
         children: trades.map((t) {
@@ -661,7 +664,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                     Icon(
                       t['icon'] as IconData,
                       size: 18,
-                      color: isSelected ? color : const Color(0xFF64748B),
+                      color: isSelected ? color : settings.secondaryText,
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -670,7 +673,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+                        color: isSelected ? (isDark ? Colors.white : settings.primaryText) : settings.secondaryText,
                       ),
                     ),
                   ],
@@ -701,18 +704,21 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
   }
 
   Widget _buildViewModeTabs(Color color) {
+    final settings = AppSettings.instance;
+    final isDark = settings.isDarkMode;
+
     final tabs = [
-      {'id': 0, 'label': 'Plan CAD', 'icon': Icons.architecture_rounded},
-      {'id': 1, 'label': 'Débit Scie', 'icon': Icons.content_cut_rounded},
-      {'id': 2, 'label': 'Quincaillerie', 'icon': Icons.tune_rounded},
+      {'id': 0, 'label': settings.tr('tab_cad'), 'icon': Icons.architecture_rounded},
+      {'id': 1, 'label': settings.tr('tab_cut_sheet'), 'icon': Icons.content_cut_rounded},
+      {'id': 2, 'label': settings.tr('tab_hardware'), 'icon': Icons.tune_rounded},
     ];
 
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: const Color(0xFF121826),
+        color: settings.subCardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: settings.subCardBorder),
       ),
       child: Row(
         children: tabs.map((tab) {
@@ -745,7 +751,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                         Icon(
                           tab['icon'] as IconData,
                           size: 14,
-                          color: isSelected ? color : const Color(0xFF64748B),
+                          color: isSelected ? color : settings.secondaryText,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -754,7 +760,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                             fontFamily: 'monospace',
                             fontSize: 11,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+                            color: isSelected ? (isDark ? Colors.white : settings.primaryText) : settings.secondaryText,
                           ),
                         ),
                       ],
@@ -790,19 +796,21 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
   }
 
   Widget _buildCadPlanView(Color color) {
+    final settings = AppSettings.instance;
+
     return Container(
       height: 240,
       decoration: BoxDecoration(
-        color: const Color(0xFF121826),
+        color: settings.cadCanvasBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: settings.cardBorder),
       ),
       child: Stack(
         children: [
           // Background CAD Grid
           CustomPaint(
             size: Size.infinite,
-            painter: _BlueprintGridPainter(),
+            painter: _BlueprintGridPainter(isDark: settings.isDarkMode),
           ),
 
           // Central Parametric CAD Drawing with Pinch-to-Zoom and Pan
@@ -814,7 +822,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
               child: Center(
                 child: CustomPaint(
                   size: const Size(200, 170),
-                  painter: _getTradePainter(color),
+                  painter: _getTradePainter(color, isDark: settings.isDarkMode),
                 ),
               ),
             ),
@@ -834,7 +842,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: settings.subCardBackground,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: _dimensionCalloutMode == 0
@@ -860,10 +868,10 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                     const SizedBox(width: 4),
                     Text(
                       _dimensionCalloutMode == 0
-                          ? 'Hors-Tout'
+                          ? settings.tr('cad_overall')
                           : _dimensionCalloutMode == 1
-                              ? 'Tableau (+10)'
-                              : 'Clair de Jour',
+                              ? (settings.isRtl ? 'أبعاد البناء (+10)' : 'Tableau (+10)')
+                              : (settings.isRtl ? 'الضوء الداخلي' : 'Clair de Jour'),
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 9.5,
@@ -890,7 +898,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: settings.subCardBackground,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: color.withValues(alpha: 0.3)),
                 ),
@@ -900,7 +908,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                     Icon(Icons.fullscreen_rounded, size: 13, color: color),
                     const SizedBox(width: 3),
                     Text(
-                      'Plein Écran',
+                      settings.tr('cad_fullscreen'),
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 9.5,
@@ -923,7 +931,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: settings.subCardBackground,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: color.withValues(alpha: 0.4)),
                 ),
@@ -949,7 +957,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: settings.subCardBackground,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: color.withValues(alpha: 0.4)),
                 ),
@@ -972,10 +980,10 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
             left: 12,
             child: Text(
               _getBottomDimensionText(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'monospace',
                 fontSize: 10,
-                color: Color(0xFF64748B),
+                color: settings.secondaryText,
               ),
             ),
           ),
@@ -1045,17 +1053,19 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
         final clairH = math.max(100.0, _spec.heightMm - 190.0);
         final glassSurface = ((clairW * clairH * 2) / 1000000.0).toStringAsFixed(2);
 
+        final settings = AppSettings.instance;
+
         return Dialog.fullscreen(
-          backgroundColor: const Color(0xFF0B0F17),
+          backgroundColor: settings.scaffoldBackground,
           child: SafeArea(
             child: Column(
               children: [
                 // Top Header Bar
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF121826),
-                    border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
+                  decoration: BoxDecoration(
+                    color: settings.subCardBackground,
+                    border: Border(bottom: BorderSide(color: settings.subCardBorder)),
                   ),
                   child: Row(
                     children: [
@@ -1074,17 +1084,17 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                           children: [
                             Text(
                               'Plan d\'Élévation Atelier [${_spec.openingReference}]',
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: settings.primaryText),
                             ),
                             Text(
                               '${_spec.projectName} • ${_spec.title}',
-                              style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                              style: TextStyle(fontSize: 11, color: settings.secondaryText),
                             ),
                           ],
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: Color(0xFF94A3B8)),
+                        icon: Icon(Icons.close, color: settings.secondaryText),
                         onPressed: () => Navigator.pop(ctx),
                       ),
                     ],
@@ -1097,7 +1107,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                     children: [
                       CustomPaint(
                         size: Size.infinite,
-                        painter: _BlueprintGridPainter(),
+                        painter: _BlueprintGridPainter(isDark: settings.isDarkMode),
                       ),
                       Center(
                         child: InteractiveViewer(
@@ -1106,7 +1116,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                           boundaryMargin: const EdgeInsets.all(60),
                           child: CustomPaint(
                             size: const Size(280, 240),
-                            painter: _getTradePainter(color),
+                            painter: _getTradePainter(color, isDark: settings.isDarkMode),
                           ),
                         ),
                       ),
@@ -1119,7 +1129,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B),
+                              color: settings.subCardBackground,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: color),
                             ),
@@ -1144,7 +1154,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B),
+                              color: settings.subCardBackground,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: color),
                             ),
@@ -1168,9 +1178,9 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                 // Bottom Technical Specs Card
                 Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF121826),
-                    border: Border(top: BorderSide(color: Color(0xFF1E293B))),
+                  decoration: BoxDecoration(
+                    color: settings.subCardBackground,
+                    border: Border(top: BorderSide(color: settings.subCardBorder)),
                   ),
                   child: Column(
                     children: [
@@ -1191,12 +1201,13 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1E293B),
+                                color: settings.chipBackground,
                                 borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: settings.chipBorder),
                               ),
                               child: Text(
                                 'Système: ${_spec.profileSystem} • Finition: ${_spec.finishColor}',
-                                style: const TextStyle(fontSize: 11, color: Colors.white70),
+                                style: TextStyle(fontSize: 11, color: settings.primaryText),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -1257,6 +1268,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
   }
 
   Widget _buildCutSheetView(Color color) {
+    final settings = AppSettings.instance;
     final cuts = _computeWorkshopCutList();
     final totalBars = (cuts.fold<double>(0.0, (acc, c) => acc + (c.lengthMm * c.quantity)) / 6000.0).ceil();
 
@@ -1264,9 +1276,9 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
       height: 250,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF121826),
+        color: settings.subCardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: settings.subCardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1282,12 +1294,12 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        'DÉBIT ATELIER [${_spec.openingReference}]',
-                        style: const TextStyle(
+                        '${settings.tr('tab_cut_sheet').toUpperCase()} [${_spec.openingReference}]',
+                        style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: settings.primaryText,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1312,7 +1324,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                       Icon(Icons.copy_rounded, size: 12, color: color),
                       const SizedBox(width: 4),
                       Text(
-                        'Copier Fiche',
+                        settings.tr('cut_action_copy'),
                         style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 10,
@@ -1332,15 +1344,15 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
+              color: settings.chipBackground,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Expanded(flex: 4, child: Text('DÉSIGNATION PIÈCE', style: TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold))),
-                Expanded(flex: 3, child: Text('COTE (mm)', textAlign: TextAlign.right, style: TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold))),
-                Expanded(flex: 2, child: Text('ANGLES', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold))),
-                Expanded(flex: 1, child: Text('QTÉ', textAlign: TextAlign.right, style: TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold))),
+                Expanded(flex: 4, child: Text(settings.tr('col_piece'), style: TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: settings.secondaryText, fontWeight: FontWeight.bold))),
+                Expanded(flex: 3, child: Text(settings.tr('col_cote'), textAlign: TextAlign.right, style: TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: settings.secondaryText, fontWeight: FontWeight.bold))),
+                Expanded(flex: 2, child: Text(settings.tr('col_angles'), textAlign: TextAlign.center, style: TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: settings.secondaryText, fontWeight: FontWeight.bold))),
+                Expanded(flex: 1, child: Text(settings.tr('col_qte'), textAlign: TextAlign.right, style: TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: settings.secondaryText, fontWeight: FontWeight.bold))),
               ],
             ),
           ),
@@ -1350,7 +1362,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
           Expanded(
             child: ListView.separated(
               itemCount: cuts.length,
-              separatorBuilder: (context, index) => Divider(height: 1, color: const Color(0xFF1E293B).withValues(alpha: 0.7)),
+              separatorBuilder: (context, index) => Divider(height: 1, color: settings.dividerColor),
               itemBuilder: (ctx, idx) {
                 final item = cuts[idx];
                 return Padding(
@@ -1361,7 +1373,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                         flex: 4,
                         child: Text(
                           item.label,
-                          style: const TextStyle(fontSize: 11, color: Colors.white70),
+                          style: TextStyle(fontSize: 11, color: settings.primaryText),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1396,11 +1408,11 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                         child: Text(
                           '${item.quantity}x',
                           textAlign: TextAlign.right,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: settings.primaryText,
                           ),
                         ),
                       ),
@@ -1416,7 +1428,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
+              color: settings.chipBackground,
               borderRadius: BorderRadius.circular(6),
             ),
             child: Row(
@@ -1424,8 +1436,8 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    'Profil: ${_spec.profileSystem}',
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: Color(0xFF64748B)),
+                    '${settings.tr('opt_primary_alu')}: ${_spec.profileSystem}',
+                    style: TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: settings.secondaryText),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1435,7 +1447,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      'Estim. Barres 6.00m: $totalBars',
+                      '${settings.tr('cut_est_bars')}: $totalBars',
                       style: const TextStyle(fontFamily: 'monospace', fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
                     ),
                   ),
@@ -1449,6 +1461,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
   }
 
   Widget _buildHardwareGlazingView(Color color) {
+    final settings = AppSettings.instance;
     final isAlu = _spec.tradeType == 'aluminum';
     final isWood = _spec.tradeType == 'woodworking';
     final isMetal = _spec.tradeType == 'metalwork';
@@ -1461,9 +1474,9 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
       height: 240,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF121826),
+        color: settings.subCardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: settings.subCardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1472,14 +1485,14 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
             children: [
               Icon(Icons.tune_rounded, size: 15, color: color),
               const SizedBox(width: 6),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'VITRAGE & ACCESSOIRES ATELIER',
+                  settings.tr('tab_hardware').toUpperCase(),
                   style: TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: settings.primaryText,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1495,7 +1508,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
               padding: const EdgeInsets.all(10),
               margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+                color: settings.chipBackground,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
               ),
@@ -1508,8 +1521,8 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Vitrage: ${_spec.glassType}',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                          '${settings.tr('opt_secondary_alu')}: ${_spec.glassType}',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: settings.primaryText),
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -1528,28 +1541,28 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
             child: ListView(
               children: [
                 if (isAlu) ...[
-                  _buildHardwareRow('Paumelles à clamer aluminium', '4 pièces'),
-                  _buildHardwareRow('Crémone multipoints de sécurité', '1 ensemble'),
-                  _buildHardwareRow('Équerres d\'alignement à pion', '8 pièces'),
-                  _buildHardwareRow('Joint d\'étanchéité EPDM central', '${((_spec.widthMm + _spec.heightMm) * 2 / 1000).toStringAsFixed(1)} m'),
-                  _buildHardwareRow('Gâche et pièces de verrouillage', '2 pièces'),
+                  _buildHardwareRow('Paumelles à clamer aluminium', '4 pièces', settings),
+                  _buildHardwareRow('Crémone multipoints de sécurité', '1 ensemble', settings),
+                  _buildHardwareRow('Équerres d\'alignement à pion', '8 pièces', settings),
+                  _buildHardwareRow('Joint d\'étanchéité EPDM central', '${((_spec.widthMm + _spec.heightMm) * 2 / 1000).toStringAsFixed(1)} m', settings),
+                  _buildHardwareRow('Gâche et pièces de verrouillage', '2 pièces', settings),
                 ] else if (isWood) ...[
-                  _buildHardwareRow('Charnières invisibles clip 110° amorties', '4 pièces'),
-                  _buildHardwareRow('Coulisses télescopiques sortie totale 450mm', '1 paire'),
-                  _buildHardwareRow('Taquets étagères 5mm nickelés', '8 pièces'),
-                  _buildHardwareRow('Poignées aluminium profilées encastrées', '2 pièces'),
-                  _buildHardwareRow('Vis d\'assemblage Confirmat 7x50', '24 pièces'),
+                  _buildHardwareRow('Charnières invisibles clip 110° amorties', '4 pièces', settings),
+                  _buildHardwareRow('Coulisses télescopiques sortie totale 450mm', '1 paire', settings),
+                  _buildHardwareRow('Taquets étagères 5mm nickelés', '8 pièces', settings),
+                  _buildHardwareRow('Poignées aluminium profilées encastrées', '2 pièces', settings),
+                  _buildHardwareRow('Vis d\'assemblage Confirmat 7x50', '24 pièces', settings),
                 ] else if (isMetal) ...[
-                  _buildHardwareRow('Crapaudines à souder avec billes', '2 pièces'),
-                  _buildHardwareRow('Serrure à pêne dormant réversible', '1 pièce'),
-                  _buildHardwareRow('Platine de fixation chevillée 6mm', '4 pièces'),
-                  _buildHardwareRow('Gâche renforcée anti-dégondage', '1 pièce'),
-                  _buildHardwareRow('Bouchons de finition plastique 40x40', '4 pièces'),
+                  _buildHardwareRow('Crapaudines à souder avec billes', '2 pièces', settings),
+                  _buildHardwareRow('Serrure à pêne dormant réversible', '1 pièce', settings),
+                  _buildHardwareRow('Platine de fixation chevillée 6mm', '4 pièces', settings),
+                  _buildHardwareRow('Gâche renforcée anti-dégondage', '1 pièce', settings),
+                  _buildHardwareRow('Bouchons de finition plastique 40x40', '4 pièces', settings),
                 ] else ...[
-                  _buildHardwareRow('Supports muraux réglables tringle', '3 pièces'),
-                  _buildHardwareRow('Embouts décoratifs finition métal', '2 pièces'),
-                  _buildHardwareRow('Anneaux glisseurs silencieux', '${((_spec.widthMm / 100) * 2).round()} pièces'),
-                  _buildHardwareRow('Ruban de plomb de lestage ourlet', '${((_spec.widthMm * 2.2) / 1000).toStringAsFixed(1)} m'),
+                  _buildHardwareRow('Supports muraux réglables tringle', '3 pièces', settings),
+                  _buildHardwareRow('Embouts décoratifs finition métal', '2 pièces', settings),
+                  _buildHardwareRow('Anneaux glisseurs silencieux', '${((_spec.widthMm / 100) * 2).round()} pièces', settings),
+                  _buildHardwareRow('Ruban de plomb de lestage ourlet', '${((_spec.widthMm * 2.2) / 1000).toStringAsFixed(1)} m', settings),
                 ],
               ],
             ),
@@ -1559,7 +1572,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
     );
   }
 
-  Widget _buildHardwareRow(String title, String qty) {
+  Widget _buildHardwareRow(String title, String qty, AppSettings settings) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -1568,7 +1581,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
           Expanded(
             child: Text(
               '• $title',
-              style: const TextStyle(fontSize: 10.5, color: Colors.white70),
+              style: TextStyle(fontSize: 10.5, color: settings.primaryText),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -1593,25 +1606,28 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
     );
   }
 
-  CustomPainter _getTradePainter(Color color) {
+  CustomPainter _getTradePainter(Color color, {bool isDark = true}) {
     if (_spec.tradeType == 'woodworking') {
       return _WoodCadPainter(
         widthMm: _spec.widthMm,
         heightMm: _spec.heightMm,
         depthMm: _spec.depthMm,
         primaryColor: color,
+        isDark: isDark,
       );
     } else if (_spec.tradeType == 'metalwork') {
       return _MetalCadPainter(
         widthMm: _spec.widthMm,
         heightMm: _spec.heightMm,
         primaryColor: color,
+        isDark: isDark,
       );
     } else if (_spec.tradeType == 'tapestry') {
       return _TapestryCadPainter(
         widthMm: _spec.widthMm,
         heightMm: _spec.heightMm,
         primaryColor: color,
+        isDark: isDark,
       );
     }
     return _AluCadPainter(
@@ -1620,6 +1636,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
       openingType: _spec.openingType,
       shutterType: _spec.shutterType,
       primaryColor: color,
+      isDark: isDark,
     );
   }
 
@@ -1691,6 +1708,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
   }
 
   Widget _buildPresetChip(String label, double w, double h, double d, String type, Color activeColor) {
+    final settings = AppSettings.instance;
     final isSelected = _spec.widthMm == w && _spec.heightMm == h;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -1699,11 +1717,11 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
         labelStyle: TextStyle(
           fontSize: 11,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+          color: isSelected ? Colors.white : settings.secondaryText,
         ),
-        backgroundColor: isSelected ? activeColor : const Color(0xFF121826),
+        backgroundColor: isSelected ? activeColor : settings.subCardBackground,
         side: BorderSide(
-          color: isSelected ? activeColor : const Color(0xFF1E293B),
+          color: isSelected ? activeColor : settings.subCardBorder,
         ),
         onPressed: () => _applyPreset(label, w, h, d, type),
       ),
@@ -1716,27 +1734,28 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
     required List<String> items,
     required Function(String) onChanged,
   }) {
+    final settings = AppSettings.instance;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF121826),
+        color: settings.subCardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: settings.subCardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 10, color: settings.secondaryText, fontWeight: FontWeight.bold),
           ),
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               isExpanded: true,
               value: items.contains(value) ? value : items.first,
-              dropdownColor: const Color(0xFF1E293B),
-              style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600),
-              icon: const Icon(Icons.arrow_drop_down, size: 18, color: Color(0xFF94A3B8)),
+              dropdownColor: settings.cardBackground,
+              style: TextStyle(fontSize: 12, color: settings.primaryText, fontWeight: FontWeight.w600),
+              icon: Icon(Icons.arrow_drop_down, size: 18, color: settings.secondaryText),
               items: items.map((item) => DropdownMenuItem(value: item, child: Text(item, overflow: TextOverflow.ellipsis))).toList(),
               onChanged: (val) {
                 if (val != null) onChanged(val);
@@ -1762,16 +1781,7 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
   }
 
   String _getTradeName(String trade) {
-    switch (trade) {
-      case 'woodworking':
-        return 'Bois & Meubles';
-      case 'metalwork':
-        return 'Ferronnerie';
-      case 'tapestry':
-        return 'Tapisserie';
-      default:
-        return 'Aluminium & PVC';
-    }
+    return AppSettings.instance.trTrade(trade);
   }
 
   String _getBottomDimensionText() {
@@ -1786,63 +1796,70 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
   }
 
   String _getPrimaryOptionLabel(String trade) {
+    final settings = AppSettings.instance;
     switch (trade) {
       case 'woodworking':
-        return 'Type Panneau';
+        return settings.tr('opt_primary_wood');
       case 'metalwork':
-        return 'Gamme Profilé';
+        return settings.tr('opt_primary_metal');
       case 'tapestry':
-        return 'Matière Tissu';
+        return settings.tr('opt_primary_tapestry');
       default:
-        return 'Gamme Profilé';
+        return settings.tr('opt_primary_alu');
     }
   }
 
   String _getSecondaryOptionLabel(String trade) {
+    final settings = AppSettings.instance;
     switch (trade) {
       case 'woodworking':
-        return 'Finition Chants';
+        return settings.tr('opt_secondary_wood');
       case 'metalwork':
-        return 'Motif & Barreaux';
+        return settings.tr('opt_secondary_metal');
       case 'tapestry':
-        return 'Tête Confection';
+        return settings.tr('opt_secondary_tapestry');
       default:
-        return 'Vitrage Isolé';
+        return settings.tr('opt_secondary_alu');
     }
   }
 
   String _getFinishOptionLabel(String trade) {
+    final settings = AppSettings.instance;
     switch (trade) {
       case 'woodworking':
-        return 'Teinte & Placage';
+        return settings.tr('opt_finish_wood');
       case 'metalwork':
-        return 'Finition Peinture';
+        return settings.tr('opt_finish_metal');
       case 'tapestry':
-        return 'Teinte Textile';
+        return settings.tr('opt_finish_tapestry');
       default:
-        return 'Couleur RAL';
+        return settings.tr('opt_finish_alu');
     }
   }
 
   String _getAccessoryOptionLabel(String trade) {
+    final settings = AppSettings.instance;
     switch (trade) {
       case 'woodworking':
-        return 'Quincaillerie & Rails';
+        return settings.tr('opt_acc_wood');
       case 'metalwork':
-        return 'Serrurerie & Sécurité';
+        return settings.tr('opt_acc_metal');
       case 'tapestry':
-        return 'Support & Tringle';
+        return settings.tr('opt_acc_tapestry');
       default:
-        return 'Volet Roulant';
+        return settings.tr('opt_acc_alu');
     }
   }
 }
 
 class _BlueprintGridPainter extends CustomPainter {
+  final bool isDark;
+  _BlueprintGridPainter({this.isDark = true});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF1E293B).withValues(alpha: 0.3)
+      ..color = (isDark ? const Color(0xFF1E293B) : const Color(0xFFCBD5E1)).withValues(alpha: isDark ? 0.35 : 0.5)
       ..strokeWidth = 0.8;
 
     const step = 20.0;
@@ -1855,7 +1872,7 @@ class _BlueprintGridPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _BlueprintGridPainter oldDelegate) => oldDelegate.isDark != isDark;
 }
 
 // ----------------------------------------------------
@@ -1867,6 +1884,7 @@ class _AluCadPainter extends CustomPainter {
   final String openingType;
   final String shutterType;
   final Color primaryColor;
+  final bool isDark;
 
   _AluCadPainter({
     required this.widthMm,
@@ -1874,6 +1892,7 @@ class _AluCadPainter extends CustomPainter {
     required this.openingType,
     required this.shutterType,
     required this.primaryColor,
+    this.isDark = true,
   });
 
   @override
@@ -1888,7 +1907,7 @@ class _AluCadPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final glassPaint = Paint()
-      ..color = const Color(0xFF38BDF8).withValues(alpha: 0.12)
+      ..color = const Color(0xFF38BDF8).withValues(alpha: isDark ? 0.12 : 0.18)
       ..style = PaintingStyle.fill;
 
     final glassStroke = Paint()
@@ -1901,7 +1920,7 @@ class _AluCadPainter extends CustomPainter {
       ..strokeWidth = 1.0;
 
     final dashPaint = Paint()
-      ..color = Colors.white60
+      ..color = isDark ? Colors.white60 : const Color(0xFF475569)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
 
@@ -1921,9 +1940,9 @@ class _AluCadPainter extends CustomPainter {
     // Shutter Box
     if (hasShutter) {
       final sRect = Rect.fromLTWH(left, top - shutterBoxH, drawW, shutterBoxH);
-      canvas.drawRect(sRect, Paint()..color = const Color(0xFF1E293B));
+      canvas.drawRect(sRect, Paint()..color = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0));
       canvas.drawRect(sRect, framePaint);
-      final slatPaint = Paint()..color = Colors.white24..strokeWidth = 1.0;
+      final slatPaint = Paint()..color = isDark ? Colors.white24 : Colors.black26..strokeWidth = 1.0;
       for (double y = top - shutterBoxH + 5; y < top; y += 5) {
         canvas.drawLine(Offset(left + 3, y), Offset(left + drawW - 3, y), slatPaint);
       }
@@ -1960,7 +1979,7 @@ class _AluCadPainter extends CustomPainter {
       canvas.drawLine(
         Offset(innerRect.left + innerRect.width * 0.25, innerRect.top + innerRect.height * 0.25),
         Offset(innerRect.left + innerRect.width * 0.45, innerRect.top + innerRect.height * 0.45),
-        Paint()..color = Colors.white24..strokeWidth = 1.5,
+        Paint()..color = isDark ? Colors.white24 : Colors.black12..strokeWidth = 1.5,
       );
     } else if (isCoulissant) {
       final sashW = innerRect.width * 0.54;
@@ -2005,14 +2024,14 @@ class _AluCadPainter extends CustomPainter {
       _drawDashedTriangle(canvas, s2.topRight, s2.bottomRight, Offset(s2.left, s2.center.dy), dashPaint);
 
       // Handle dots
-      canvas.drawCircle(Offset(s1.right - 3, s1.center.dy), 2.2, Paint()..color = Colors.white);
-      canvas.drawCircle(Offset(s2.left + 3, s2.center.dy), 2.2, Paint()..color = Colors.white);
+      canvas.drawCircle(Offset(s1.right - 3, s1.center.dy), 2.2, Paint()..color = isDark ? Colors.white : const Color(0xFF1E293B));
+      canvas.drawCircle(Offset(s2.left + 3, s2.center.dy), 2.2, Paint()..color = isDark ? Colors.white : const Color(0xFF1E293B));
     } else {
       // 1 Vantail
       canvas.drawRect(innerRect, glassPaint);
       canvas.drawRect(innerRect, framePaint);
       _drawDashedTriangle(canvas, innerRect.topLeft, innerRect.bottomLeft, Offset(innerRect.right, innerRect.center.dy), dashPaint);
-      canvas.drawCircle(Offset(innerRect.right - 4, innerRect.center.dy), 2.5, Paint()..color = Colors.white);
+      canvas.drawCircle(Offset(innerRect.right - 4, innerRect.center.dy), 2.5, Paint()..color = isDark ? Colors.white : const Color(0xFF1E293B));
     }
   }
 
@@ -2046,7 +2065,8 @@ class _AluCadPainter extends CustomPainter {
       oldDelegate.heightMm != heightMm ||
       oldDelegate.openingType != openingType ||
       oldDelegate.shutterType != shutterType ||
-      oldDelegate.primaryColor != primaryColor;
+      oldDelegate.primaryColor != primaryColor ||
+      oldDelegate.isDark != isDark;
 }
 
 // ----------------------------------------------------
@@ -2057,12 +2077,14 @@ class _WoodCadPainter extends CustomPainter {
   final double heightMm;
   final double depthMm;
   final Color primaryColor;
+  final bool isDark;
 
   _WoodCadPainter({
     required this.widthMm,
     required this.heightMm,
     required this.depthMm,
     required this.primaryColor,
+    this.isDark = true,
   });
 
   @override
@@ -2105,7 +2127,7 @@ class _WoodCadPainter extends CustomPainter {
     canvas.drawRect(dRect, carcassPaint);
 
     // Drawer Handle
-    final handlePaint = Paint()..color = Colors.white70..strokeWidth = 2.0;
+    final handlePaint = Paint()..color = isDark ? Colors.white70 : const Color(0xFF334155)..strokeWidth = 2.0;
     canvas.drawLine(
       Offset(dRect.center.dx - 14, dRect.center.dy),
       Offset(dRect.center.dx + 14, dRect.center.dy),
@@ -2118,7 +2140,7 @@ class _WoodCadPainter extends CustomPainter {
     canvas.drawLine(Offset(left + panelThick, shelfY), Offset(left + drawW - panelThick, shelfY), shelfPaint);
 
     // Peg hole dots
-    final dotPaint = Paint()..color = Colors.white38..style = PaintingStyle.fill;
+    final dotPaint = Paint()..color = isDark ? Colors.white38 : const Color(0xFF64748B)..style = PaintingStyle.fill;
     for (double yOffset = -8; yOffset <= 8; yOffset += 8) {
       canvas.drawCircle(Offset(left + panelThick + 3, shelfY + yOffset), 1.0, dotPaint);
       canvas.drawCircle(Offset(left + drawW - panelThick - 3, shelfY + yOffset), 1.0, dotPaint);
@@ -2136,13 +2158,13 @@ class _WoodCadPainter extends CustomPainter {
     canvas.drawRect(door2, carcassPaint);
 
     // ISO swing triangles
-    final dashPaint = Paint()..color = Colors.white38..style = PaintingStyle.stroke..strokeWidth = 1.0;
+    final dashPaint = Paint()..color = isDark ? Colors.white38 : const Color(0xFF64748B)..style = PaintingStyle.stroke..strokeWidth = 1.0;
     _drawDashedTriangle(canvas, door1.topLeft, door1.bottomLeft, Offset(door1.right, door1.center.dy), dashPaint);
     _drawDashedTriangle(canvas, door2.topRight, door2.bottomRight, Offset(door2.left, door2.center.dy), dashPaint);
 
     // Door handles
-    canvas.drawCircle(Offset(door1.right - 4, door1.center.dy), 2.0, Paint()..color = Colors.white);
-    canvas.drawCircle(Offset(door2.left + 4, door2.center.dy), 2.0, Paint()..color = Colors.white);
+    canvas.drawCircle(Offset(door1.right - 4, door1.center.dy), 2.0, Paint()..color = isDark ? Colors.white : const Color(0xFF1E293B));
+    canvas.drawCircle(Offset(door2.left + 4, door2.center.dy), 2.0, Paint()..color = isDark ? Colors.white : const Color(0xFF1E293B));
   }
 
   void _drawDashedTriangle(Canvas canvas, Offset p1, Offset p2, Offset target, Paint paint) {
@@ -2174,7 +2196,8 @@ class _WoodCadPainter extends CustomPainter {
       oldDelegate.widthMm != widthMm ||
       oldDelegate.heightMm != heightMm ||
       oldDelegate.depthMm != depthMm ||
-      oldDelegate.primaryColor != primaryColor;
+      oldDelegate.primaryColor != primaryColor ||
+      oldDelegate.isDark != isDark;
 }
 
 // ----------------------------------------------------
@@ -2184,11 +2207,13 @@ class _MetalCadPainter extends CustomPainter {
   final double widthMm;
   final double heightMm;
   final Color primaryColor;
+  final bool isDark;
 
   _MetalCadPainter({
     required this.widthMm,
     required this.heightMm,
     required this.primaryColor,
+    this.isDark = true,
   });
 
   @override
@@ -2244,16 +2269,17 @@ class _MetalCadPainter extends CustomPainter {
 
     // Lock Box plate on right side
     final lockRect = Rect.fromLTWH(left + drawW - 14, midY - 14, 12, 28);
-    canvas.drawRect(lockRect, Paint()..color = const Color(0xFF1E293B));
-    canvas.drawRect(lockRect, Paint()..color = Colors.white54..style = PaintingStyle.stroke);
-    canvas.drawCircle(Offset(lockRect.center.dx, lockRect.center.dy - 2), 1.8, Paint()..color = Colors.white);
+    canvas.drawRect(lockRect, Paint()..color = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0));
+    canvas.drawRect(lockRect, Paint()..color = (isDark ? Colors.white54 : const Color(0xFF64748B))..style = PaintingStyle.stroke);
+    canvas.drawCircle(Offset(lockRect.center.dx, lockRect.center.dy - 2), 1.8, Paint()..color = isDark ? Colors.white : const Color(0xFF1E293B));
   }
 
   @override
   bool shouldRepaint(covariant _MetalCadPainter oldDelegate) =>
       oldDelegate.widthMm != widthMm ||
       oldDelegate.heightMm != heightMm ||
-      oldDelegate.primaryColor != primaryColor;
+      oldDelegate.primaryColor != primaryColor ||
+      oldDelegate.isDark != isDark;
 }
 
 // ----------------------------------------------------
@@ -2263,11 +2289,13 @@ class _TapestryCadPainter extends CustomPainter {
   final double widthMm;
   final double heightMm;
   final Color primaryColor;
+  final bool isDark;
 
   _TapestryCadPainter({
     required this.widthMm,
     required this.heightMm,
     required this.primaryColor,
+    this.isDark = true,
   });
 
   @override
@@ -2297,7 +2325,7 @@ class _TapestryCadPainter extends CustomPainter {
     canvas.drawCircle(Offset(left + drawW + 8, rodY), 4.5, finialPaint);
 
     // Wall Brackets
-    final bracketPaint = Paint()..color = Colors.white38..strokeWidth = 2.0;
+    final bracketPaint = Paint()..color = isDark ? Colors.white38 : const Color(0xFF64748B)..strokeWidth = 2.0;
     canvas.drawLine(Offset(left + 8, rodY - 6), Offset(left + 8, rodY + 4), bracketPaint);
     canvas.drawLine(Offset(left + drawW - 8, rodY - 6), Offset(left + drawW - 8, rodY + 4), bracketPaint);
 
@@ -2343,6 +2371,7 @@ class _TapestryCadPainter extends CustomPainter {
   bool shouldRepaint(covariant _TapestryCadPainter oldDelegate) =>
       oldDelegate.widthMm != widthMm ||
       oldDelegate.heightMm != heightMm ||
-      oldDelegate.primaryColor != primaryColor;
+      oldDelegate.primaryColor != primaryColor ||
+      oldDelegate.isDark != isDark;
 }
 

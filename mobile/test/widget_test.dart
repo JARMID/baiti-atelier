@@ -11,6 +11,7 @@ import 'package:monyun_mobile/screens/splash_screen.dart';
 import 'package:monyun_mobile/screens/auth_screen.dart';
 import 'package:monyun_mobile/widgets/laser_measure_dialog.dart';
 import 'package:monyun_mobile/widgets/devis_preview_sheet.dart';
+import 'package:monyun_mobile/services/app_settings.dart';
 
 void main() {
   setUp(() {
@@ -136,7 +137,7 @@ void main() {
     // Enter non-matching query
     await tester.enterText(find.byType(TextField), 'inexistantxyz');
     await tester.pumpAndSettle();
-    expect(find.text('Aucun atelier trouvé'), findsOneWidget);
+    expect(find.text(AppSettings.instance.tr('workshops_empty')), findsOneWidget);
 
     // Tap reset button
     await tester.tap(find.text('Réinitialiser les filtres'));

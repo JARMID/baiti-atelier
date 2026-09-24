@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/storage_service.dart';
+import '../services/app_settings.dart';
 import 'auth_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -70,8 +71,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final settings = AppSettings.instance;
     return Scaffold(
-      backgroundColor: const Color(0xFF040B16),
+      backgroundColor: settings.scaffoldBackground,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -106,7 +108,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         'assets/images/baiti_logo.png',
                         fit: BoxFit.cover,
                         errorBuilder: (ctx, err, stack) => Container(
-                          color: const Color(0xFF0F1B2D),
+                          color: settings.chipBackground,
                           child: const Icon(Icons.architecture_rounded, color: Color(0xFFD4AF37), size: 45),
                         ),
                       ),
@@ -116,13 +118,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   const SizedBox(height: 24),
 
                   // BRAND TITLE
-                  const Text(
+                  Text(
                     'BAITI ATELIER',
                     style: TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      color: settings.primaryText,
                       letterSpacing: 2.5,
                     ),
                   ),
@@ -130,7 +132,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   const SizedBox(height: 4),
 
                   const Text(
-                    'بيتي أتيليي · منضومة الورشات الجزائرية',
+                    'بيتي أتيليي · منظومة الورشات الجزائرية',
                     textDirection: TextDirection.rtl,
                     style: TextStyle(
                       fontSize: 12,
@@ -142,11 +144,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   const SizedBox(height: 30),
 
                   // LOADER
-                  const SizedBox(
+                  SizedBox(
                     width: 140,
                     child: LinearProgressIndicator(
-                      backgroundColor: Color(0xFF1E293B),
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
+                      backgroundColor: settings.chipBackground,
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
                       minHeight: 2.5,
                     ),
                   ),
@@ -156,9 +158,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   // DYNAMIC STATUS
                   Text(
                     _statusText,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF94A3B8),
+                      color: settings.secondaryText,
                       fontFamily: 'monospace',
                     ),
                   ),
