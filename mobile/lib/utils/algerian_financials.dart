@@ -217,3 +217,62 @@ String amountInDzdWordsAr(double amount) {
   final result = parts.join(' و');
   return '$result دينار جزائري';
 }
+
+/// Zone bioclimatique selon la reglementation thermique algerienne DTR C3-2
+class DtrThermalZone {
+  final String code; // 'zone_a', 'zone_b', 'zone_c'
+  final String label;
+  final double maxUw;
+  final String requirement;
+
+  const DtrThermalZone({
+    required this.code,
+    required this.label,
+    required this.maxUw,
+    required this.requirement,
+  });
+}
+
+/// Determine la zone bioclimatique DTR C3-2 selon le nom ou code de la wilaya
+DtrThermalZone getDtrZoneForWilayaName(String wilayaName) {
+  final clean = wilayaName.toLowerCase();
+  
+  // Zone C: Sud & Sahara
+  if (clean.contains('adrar') || clean.contains('biskra') || clean.contains('béchar') || clean.contains('bechar') ||
+      clean.contains('tamanrasset') || clean.contains('ouargla') || clean.contains('el oued') || clean.contains('ghardaïa') ||
+      clean.contains('ghardaia') || clean.contains('illizi') || clean.contains('tindouf') || clean.contains('el bayadh') ||
+      clean.contains('timimoun') || clean.contains('bordj badji') || clean.contains('ouled djellal') || clean.contains('béni abbès') ||
+      clean.contains('in salah') || clean.contains('in guezzam') || clean.contains('touggourt') || clean.contains('djanet') ||
+      clean.contains('el m\'ghair') || clean.contains('el meniaa')) {
+    return const DtrThermalZone(
+      code: 'zone_c',
+      label: 'Zone C (Sud & Sahara)',
+      maxUw: 2.8,
+      requirement: 'Stop-Sol obligatoire (Sw <= 0.35)',
+    );
+  }
+
+  // Zone B: Hauts-Plateaux & Atlas
+  if (clean.contains('sétif') || clean.contains('setif') || clean.contains('batna') || clean.contains('djelfa') ||
+      clean.contains('médéa') || clean.contains('medea') || clean.contains('bordj bou') || clean.contains('constantine') ||
+      clean.contains('laghouat') || clean.contains('oum el bouaghi') || clean.contains('tébessa') || clean.contains('tebessa') ||
+      clean.contains('tiaret') || clean.contains('saïda') || clean.contains('saida') || clean.contains('m\'sila') ||
+      clean.contains('mascara') || clean.contains('khenchela') || clean.contains('souk ahras') || clean.contains('mila') ||
+      clean.contains('naâma') || clean.contains('naama') || clean.contains('tissemsilt') || clean.contains('relizane')) {
+    return const DtrThermalZone(
+      code: 'zone_b',
+      label: 'Zone B (Hauts-Plateaux)',
+      maxUw: 2.6,
+      requirement: 'RPT 24mm + Double Vitrage (Uw <= 2.6)',
+    );
+  }
+
+  // Zone A: Littoral & Tell
+  return const DtrThermalZone(
+    code: 'zone_a',
+    label: 'Zone A (Littoral & Tell)',
+    maxUw: 3.2,
+    requirement: 'Protection saline + Ventilation (Uw <= 3.2)',
+  );
+}
+

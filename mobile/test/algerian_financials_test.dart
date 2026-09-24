@@ -45,5 +45,19 @@ void main() {
       expect(wordsAr, contains('دينار جزائري'));
       expect(wordsAr, contains('ألف'));
     });
+
+    test('Resolves DTR C3-2 bioclimatic zones correctly for wilayas', () {
+      final alger = getDtrZoneForWilayaName('16 - Alger');
+      expect(alger.code, 'zone_a');
+      expect(alger.maxUw, 3.2);
+
+      final setif = getDtrZoneForWilayaName('19 - Sétif');
+      expect(setif.code, 'zone_b');
+      expect(setif.maxUw, 2.6);
+
+      final ouargla = getDtrZoneForWilayaName('30 - Ouargla');
+      expect(ouargla.code, 'zone_c');
+      expect(ouargla.maxUw, 2.8);
+    });
   });
 }

@@ -6,6 +6,7 @@ import '../widgets/quote_summary_card.dart';
 import '../widgets/laser_measure_dialog.dart';
 import '../widgets/baiti_app_bar.dart';
 import '../services/app_settings.dart';
+import '../utils/algerian_financials.dart';
 
 class MeasureTakeScreen extends StatefulWidget {
   final Function(OpeningSpec) onSpecSaved;
@@ -344,6 +345,40 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 6),
+                Builder(
+                  builder: (ctx) {
+                    final dtr = getDtrZoneForWilayaName(_spec.clientWilaya);
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.shield_outlined, size: 12, color: Color(0xFFD4AF37)),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              'DTR C3-2 : ${dtr.label} • ${dtr.requirement}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 9.5,
+                                color: Color(0xFFCBD5E1),
+                                fontFamily: 'monospace',
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
