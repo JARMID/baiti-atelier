@@ -8,6 +8,9 @@ class ArtisanProfile {
   final int avatarIndex;
   final String? nif;
   final String? rc;
+  final String? ccp;
+  final String? ccpKey;
+  final String? rip;
   final String email;
   final bool isSubscriptionActive;
   final String subscriptionExpiry;
@@ -25,6 +28,9 @@ class ArtisanProfile {
     this.avatarIndex = 0,
     this.nif,
     this.rc,
+    this.ccp = '0021458974',
+    this.ccpKey = '42',
+    this.rip = '00799999002145897442',
     this.isSubscriptionActive = true,
     this.subscriptionExpiry = '2027-09-24',
     this.subscriptionTier = 'Abonnement Atelier Pro (35 000 DZD / an)',
@@ -84,9 +90,12 @@ class ArtisanProfile {
       avatarIndex: 0,
       nif: '001916012345678',
       rc: '16/00-1234567B19',
+      ccp: '0021458974',
+      ccpKey: '42',
+      rip: '00799999002145897442',
       isSubscriptionActive: true,
       subscriptionExpiry: '24/09/2027',
-      subscriptionTier: 'Atelier Pro Annuel · 35 000 DZD (3,5 M Centimes)',
+      subscriptionTier: 'Atelier Pro Annuel - 35 000 DZD (3,5 M Centimes)',
       twoFactorEnabled: true,
     );
   }
@@ -102,6 +111,9 @@ class ArtisanProfile {
     int? avatarIndex,
     String? nif,
     String? rc,
+    String? ccp,
+    String? ccpKey,
+    String? rip,
     bool? isSubscriptionActive,
     String? subscriptionExpiry,
     String? subscriptionTier,
@@ -118,6 +130,9 @@ class ArtisanProfile {
       avatarIndex: avatarIndex ?? this.avatarIndex,
       nif: nif ?? this.nif,
       rc: rc ?? this.rc,
+      ccp: ccp ?? this.ccp,
+      ccpKey: ccpKey ?? this.ccpKey,
+      rip: rip ?? this.rip,
       isSubscriptionActive: isSubscriptionActive ?? this.isSubscriptionActive,
       subscriptionExpiry: subscriptionExpiry ?? this.subscriptionExpiry,
       subscriptionTier: subscriptionTier ?? this.subscriptionTier,
@@ -137,6 +152,9 @@ class ArtisanProfile {
       'avatarIndex': avatarIndex,
       'nif': nif,
       'rc': rc,
+      'ccp': ccp,
+      'ccpKey': ccpKey,
+      'rip': rip,
       'isSubscriptionActive': isSubscriptionActive,
       'subscriptionExpiry': subscriptionExpiry,
       'subscriptionTier': subscriptionTier,
@@ -156,9 +174,12 @@ class ArtisanProfile {
       avatarIndex: json['avatarIndex'] as int? ?? 0,
       nif: json['nif'] as String?,
       rc: json['rc'] as String?,
+      ccp: json['ccp'] as String? ?? '0021458974',
+      ccpKey: json['ccpKey'] as String? ?? '42',
+      rip: json['rip'] as String? ?? '00799999002145897442',
       isSubscriptionActive: json['isSubscriptionActive'] as bool? ?? true,
       subscriptionExpiry: json['subscriptionExpiry'] as String? ?? '24/09/2027',
-      subscriptionTier: json['subscriptionTier'] as String? ?? 'Atelier Pro Annuel · 35 000 DZD (3,5 M Centimes)',
+      subscriptionTier: json['subscriptionTier'] as String? ?? 'Atelier Pro Annuel - 35 000 DZD (3,5 M Centimes)',
       twoFactorEnabled: json['twoFactorEnabled'] as bool? ?? true,
     );
   }

@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import QRCode from 'qrcode';
+import { calculateAlgerianTaxes, amountInDzdWords, generateBaridiMobRip } from '../lib/algerianFinancials';
 import type { WindowConfig, CostBreakdown, OpeningType, ProfileSystem, GlassType, ShutterType } from '../types/window';
 import type { CadStructure, WorkshopBOM, HardwareItemDetail } from '../types/cad';
 import { ALGERIAN_WILAYAS_58 } from './algerianWilayas';
@@ -95,13 +96,26 @@ export function formatShutterTypeFr(shutterType: string): string {
   return map[shutterType] || shutterType;
 }
 
+export interface ArtisanInvoiceDetails {
+  workshopName?: string;
+  artisanName?: string;
+  phone?: string;
+  email?: string;
+  wilaya?: string;
+  nif?: string;
+  rc?: string;
+  rip?: string;
+  ccp?: string;
+}
+
 export async function generateClientDevisPdf(
   config: WindowConfig,
   cost: CostBreakdown,
   clientName: string = 'Client Particulier',
   clientPhone: string = '05 50 00 00 00',
   clientWilaya: string = 'Alger',
-  items?: DevisOpeningItem[]
+  items?: DevisOpeningItem[],
+  artisanInfo?: ArtisanInvoiceDetails
 ) {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -112,31 +126,46 @@ export async function generateClientDevisPdf(
   const quoteNumber = `DEV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
   const quoteDate = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
 
+  const workshopName = artisanInfo?.workshopName || 'ATELIER ALUMINIUM KOUBA';
+  const artisanName = artisanInfo?.artisanName || 'Mourad Hadj-Ali';
+  const artisanPhone = artisanInfo?.phone || '+213 (0) 797 78 08 38';
+  const artisanWilaya = artisanInfo?.wilaya || '16 - Alger';
+  const nif = artisanInfo?.nif || '001916012345678';
+  const rc = artisanInfo?.rc || '16/00-1234567B19';
+  const rawRip = artisanInfo?.rip || generateBaridiMobRip('0021458974');
+  const formattedRip = rawRip.replace(/(\d{3})(\d{5})(\d{10})(\d{2})/, '$1 $2 $3 $4');
+
+  const subtotalHt = cost.totalEstimatedDzd;
+  const taxes = calculateAlgerianTaxes(subtotalHt, false, true);
+  const wordsAmount = amountInDzdWords(taxes.totalTtc);
+  const acompte40 = Math.round(taxes.totalTtc * 0.40);
+  const solde60 = taxes.totalTtc - acompte40;
+
   // 1. Header Banner & Workshop Details
   doc.setFillColor(15, 23, 42); // Deep slate #0F172A
   doc.rect(0, 0, 210, 38, 'F');
 
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text('BAITI ATELIER', 14, 18);
+  doc.setFontSize(16);
+  doc.text(workshopName.toUpperCase(), 14, 16);
 
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(203, 213, 225);
-  doc.text('Menuiserie Aluminium & PVC • Fabrication & Pose Qualifiée', 14, 25);
-  doc.text('Zone d’Activité Industrielle • 58 Wilayas Algérie • Tel: +213 (0) 550 12 34 56', 14, 30);
+  doc.text(`Artisan: ${artisanName} • Menuiserie Aluminium & PVC • Wilaya: ${artisanWilaya}`, 14, 23);
+  doc.text(`NIF: ${nif} • RC: ${rc} • Tel: ${artisanPhone} • DTR C3-2`, 14, 29);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(13);
   doc.setTextColor(212, 175, 55); // Accent Gold #D4AF37
-  doc.text('DEVIS CLIENT', 150, 18);
+  doc.text('DEVIS PROFORMA', 148, 16);
 
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(226, 232, 240);
-  doc.text(`N° : ${quoteNumber}`, 150, 25);
-  doc.text(`Date : ${quoteDate}`, 150, 30);
+  doc.text(`N° : ${quoteNumber}`, 148, 23);
+  doc.text(`Date : ${quoteDate}`, 148, 29);
 
   // 2. Client Details Box
   doc.setDrawColor(226, 232, 240);
@@ -180,13 +209,13 @@ export async function generateClientDevisPdf(
           formatGlassTypeFr(config.glassType),
           formatShutterTypeFr(config.shutterType),
           '1',
-          `${cost.totalEstimatedDzd.toLocaleString()} DZD`,
+          `${subtotalHt.toLocaleString()} DZD`,
         ],
       ];
 
   autoTable(doc, {
     startY: 80,
-    head: [['Désignation', 'Dimensions & Type', 'Gamme Profilé', 'Finition', 'Vitrage', 'Volet', 'Qté', 'Total TTC']],
+    head: [['Désignation', 'Dimensions & Type', 'Gamme Profilé', 'Finition', 'Vitrage', 'Volet', 'Qté', 'Sous-total HT']],
     body: tableRows,
     theme: 'grid',
     headStyles: {
@@ -213,68 +242,97 @@ export async function generateClientDevisPdf(
 
   // Get final Y position after table with multi-page safety
   let currentY = (doc as any).lastAutoTable.finalY + 8;
-  if (currentY > 210) {
+  if (currentY > 195) {
     doc.addPage();
     currentY = 25;
   }
 
-  // 4. Detailed Cost Breakdown Box
+  // 4. BaridiMob Payment Card (Left Side)
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(110, currentY, 86, 44, 2, 2, 'FD');
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(14, currentY, 88, 54, 2, 2, 'FD');
+
+  try {
+    const qrDataUrl = await QRCode.toDataURL(
+      `https://baiti.dz/pay?rip=${rawRip}&amount=${acompte40}&ref=${quoteNumber}`,
+      { width: 100, margin: 1 }
+    );
+    doc.addImage(qrDataUrl, 'PNG', 18, currentY + 6, 26, 26);
+  } catch (err) {
+    console.error('QR code error', err);
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Règlement BaridiMob', 48, currentY + 11);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(71, 85, 105);
+  doc.text('Algérie Poste • Virement RIP :', 48, currentY + 16);
+
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text(formattedRip, 48, currentY + 22);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Bénéficiaire : ${artisanName}`, 48, currentY + 27);
+  doc.text('Scannez pour valider acompte', 18, currentY + 36);
+
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(6.5);
+  doc.setTextColor(148, 163, 184);
+  doc.text(`Réf: ${quoteNumber} • Réseau 58 Wilayas`, 18, currentY + 41);
+
+  // 5. Algerian Financial Breakdown Box (Right Side)
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(106, currentY, 90, 54, 2, 2, 'FD');
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(71, 85, 105);
 
-  if (hasMultipleItems && items.length > 1) {
-    const totalQty = items.reduce((s, it) => s + it.quantity, 0);
-    doc.text(`Ensemble châssis (${totalQty} ouvertures) :`, 114, currentY + 7);
-    doc.text(`${cost.totalEstimatedDzd.toLocaleString()} DZD`, 190, currentY + 7, { align: 'right' });
+  doc.text('Total Châssis HT :', 110, currentY + 8);
+  doc.text(`${subtotalHt.toLocaleString()} DZD`, 192, currentY + 8, { align: 'right' });
 
-    doc.text(`Chantier : ${items.length} pièces mesurées`, 114, currentY + 14);
-    doc.text(`Conforme DTR C3-2`, 190, currentY + 14, { align: 'right' });
+  doc.text('TVA Fiscale Légale (19%) :', 110, currentY + 15);
+  doc.text(`${taxes.tvaAmount.toLocaleString()} DZD`, 192, currentY + 15, { align: 'right' });
 
-    doc.text('Quincaillerie & Pose sur chantier :', 114, currentY + 21);
-    doc.text(`Inclus au devis`, 190, currentY + 21, { align: 'right' });
-  } else {
-    doc.text(`Profilés (${cost.profileWeightKg} kg / ${cost.profileLengthMeters}m) :`, 114, currentY + 7);
-    doc.text(`${cost.profileCostDzd.toLocaleString()} DZD`, 190, currentY + 7, { align: 'right' });
-
-    doc.text(`Vitrage (${cost.glassAreaM2} m²) :`, 114, currentY + 14);
-    doc.text(`${cost.glassCostDzd.toLocaleString()} DZD`, 190, currentY + 14, { align: 'right' });
-
-    doc.text('Quincaillerie & Accessoires :', 114, currentY + 21);
-    doc.text(`${cost.hardwareCostDzd.toLocaleString()} DZD`, 190, currentY + 21, { align: 'right' });
-
-    if (cost.shutterCostDzd > 0) {
-      doc.text('Volet Roulant Intégré :', 114, currentY + 28);
-      doc.text(`${cost.shutterCostDzd.toLocaleString()} DZD`, 190, currentY + 28, { align: 'right' });
-    }
-  }
+  doc.text('Droit de Timbre Fiscal :', 110, currentY + 22);
+  doc.text(`${taxes.timbreFiscal.toLocaleString()} DZD`, 192, currentY + 22, { align: 'right' });
 
   doc.setDrawColor(203, 213, 225);
-  doc.line(114, currentY + 32, 192, currentY + 32);
+  doc.line(110, currentY + 26, 192, currentY + 26);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(224, 122, 95);
-  doc.text('Total Net à Payer :', 114, currentY + 39);
-  doc.text(`${cost.totalEstimatedDzd.toLocaleString()} DZD`, 190, currentY + 39, { align: 'right' });
+  doc.setFontSize(9.5);
+  doc.setTextColor(212, 175, 55); // Gold
+  doc.text('TOTAL GÉNÉRAL TTC :', 110, currentY + 33);
+  doc.text(`${taxes.totalTtc.toLocaleString()} DZD`, 192, currentY + 33, { align: 'right' });
 
-  // 5. Verification QR Code
-  try {
-    const qrDataUrl = await QRCode.toDataURL(`https://baiti.dz/verify/${quoteNumber}`, { width: 100, margin: 1 });
-    doc.addImage(qrDataUrl, 'PNG', 16, currentY, 34, 34);
-    doc.setFontSize(7);
-    doc.setTextColor(148, 163, 184);
-    doc.text('Scannez pour vérifier', 33, currentY + 38, { align: 'center' });
-    doc.text('l’authenticité du devis', 33, currentY + 41, { align: 'center' });
-  } catch (err) {
-    console.error('QR code error', err);
-  }
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(16, 185, 129); // Emerald
+  doc.text('Acompte requis (40%) :', 110, currentY + 40);
+  doc.text(`${acompte40.toLocaleString()} DZD`, 192, currentY + 40, { align: 'right' });
 
-  // 6. Payment Terms & Stamp Box
-  let termsY = currentY + 50;
+  doc.setTextColor(59, 130, 246); // Blue
+  doc.text('Solde après pose (60%) :', 110, currentY + 46);
+  doc.text(`${solde60.toLocaleString()} DZD`, 192, currentY + 46, { align: 'right' });
+
+  // 6. Written Legal Sum in Letters
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(7.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Arrêté le présent devis à la somme de : ${wordsAmount}.`, 14, currentY + 60);
+
+  // 7. Payment Terms & Stamp Box
+  let termsY = currentY + 66;
   if (termsY > 235) {
     doc.addPage();
     termsY = 25;
@@ -283,29 +341,29 @@ export async function generateClientDevisPdf(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(15, 23, 42);
-  doc.text('Modalités de Règlement & Conditions :', 14, termsY);
+  doc.text('Modalités de Règlement & Conditions d\'Exécution :', 14, termsY);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setTextColor(71, 85, 105);
-  doc.text('• Acompte de 50% exigible à la validation de la commande.', 14, termsY + 6);
-  doc.text('• Solde de 50% à la livraison et réception des ouvrages sur chantier.', 14, termsY + 11);
-  doc.text('• Profilés thermolaqués certifiés selon normes Qualicoat / Qualanod.', 14, termsY + 16);
-  doc.text('• Garantie de parfait achèvement et étanchéité de 2 ans.', 14, termsY + 21);
+  doc.text('• Acompte de 40% exigible à la commande pour approvisionnement des profilés et vitrages.', 14, termsY + 6);
+  doc.text('• Solde de 60% à la livraison, pose complète et procès-verbal de réception des ouvrages.', 14, termsY + 11);
+  doc.text('• Profilés aluminium thermolaqués selon labels Qualicoat / Qualanod • DTR C3-2.', 14, termsY + 16);
+  doc.text('• Garantie d\'étanchéité à l\'air et à l\'eau (A*E*V) de 24 mois.', 14, termsY + 21);
 
   // Workshop Stamp Box
   doc.setDrawColor(148, 163, 184);
-  doc.roundedRect(120, termsY, 76, 30, 2, 2, 'D');
-  doc.setFontSize(8);
+  doc.roundedRect(120, termsY, 76, 28, 2, 2, 'D');
+  doc.setFontSize(7.5);
   doc.setFont('helvetica', 'italic');
   doc.setTextColor(148, 163, 184);
   doc.text('Cachet et signature de l’Atelier :', 124, termsY + 6);
 
-  // 7. Footer
+  // 8. Footer
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(148, 163, 184);
-  doc.text('Document édité via Baiti Atelier • Logiciel de Conception & Chiffrage Menuiserie Algérie', 105, 288, {
+  doc.text('Document édité via Baiti Atelier • Plateforme de Conception & Chiffrage Menuiserie Algérie', 105, 288, {
     align: 'center',
   });
 

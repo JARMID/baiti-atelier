@@ -69,6 +69,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
   String _generateQuotationText(
     double totalHt,
     double tva19,
+    double timbreFiscal,
     double totalTtc,
     double acompte40,
     double solde60,
@@ -78,26 +79,31 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
     final buffer = StringBuffer();
     final atelierName = _artisanProfile?.workshopName.isNotEmpty == true
         ? _artisanProfile!.workshopName
-        : 'BAITI ATELIER: MENUISERIE & FERMETURES';
-    final artisanPhone = _artisanProfile?.phone.isNotEmpty == true ? _artisanProfile!.phone : '';
+        : 'ATELIER ALUMINIUM KOUBA';
+    final artisanPhone = _artisanProfile?.phone.isNotEmpty == true ? _artisanProfile!.phone : '0797780838';
     final artisanWilaya = _artisanProfile?.wilaya.isNotEmpty == true ? _artisanProfile!.wilaya : wilaya;
+    final artisanName = _artisanProfile?.name.isNotEmpty == true ? _artisanProfile!.name : 'Mourad Hadj-Ali';
+    final rip = _artisanProfile?.rip?.isNotEmpty == true ? _artisanProfile!.rip! : '00799999002145897442';
+    final ccp = _artisanProfile?.ccp?.isNotEmpty == true ? _artisanProfile!.ccp! : '0021458974';
+    final ccpKey = _artisanProfile?.ccpKey?.isNotEmpty == true ? _artisanProfile!.ccpKey! : '42';
 
     buffer.writeln('========================================');
     buffer.writeln('DEVIS CLIENT ET FACTURE PROFORMA');
     buffer.writeln(atelierName);
+    buffer.writeln('Artisan: $artisanName');
     if (artisanPhone.isNotEmpty) {
       buffer.writeln('Contact Atelier: $artisanPhone ($artisanWilaya)');
     }
     if (_artisanProfile?.nif?.isNotEmpty == true || _artisanProfile?.rc?.isNotEmpty == true) {
-      buffer.writeln('NIF: ${_artisanProfile?.nif ?? "-"} | RC: ${_artisanProfile?.rc ?? "-"}');
+      buffer.writeln('NIF: ${_artisanProfile?.nif ?? "001916012345678"} | RC: ${_artisanProfile?.rc ?? "16/00-1234567B19"}');
     }
     buffer.writeln('========================================');
-    buffer.writeln('Référence Devis: $quoteId');
+    buffer.writeln('Reference Devis: $quoteId');
     buffer.writeln('Date: ${DateTime.now().toLocal().toString().split(' ')[0]}');
     buffer.writeln('Chantier: ${widget.projectName}');
     buffer.writeln('Wilaya: $wilaya');
     buffer.writeln('Nombre d\'ouvrages: ${widget.specs.length}');
-    buffer.writeln('Norme: Conforme Document Technique Réglementaire DTR C3-2');
+    buffer.writeln('Norme: Conforme Document Technique Reglementaire DTR C3-2');
     buffer.writeln('----------------------------------------');
     buffer.writeln('DETAIL DES OUVRAGES FACTURES:');
 
@@ -119,11 +125,17 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
     buffer.writeln('RECAPITULATIF FINANCIER ATELIER:');
     buffer.writeln('Total Ouvrages HT: ${_formatDzd(totalHt)}');
     buffer.writeln('TVA Legale 19%: ${_formatDzd(tva19)}');
+    buffer.writeln('Droit de Timbre Fiscal: ${_formatDzd(timbreFiscal)}');
     buffer.writeln('TOTAL GENERAL TTC: ${_formatDzd(totalTtc)}');
     buffer.writeln('');
     buffer.writeln('CONDITIONS DE REGLEMENT:');
     buffer.writeln('Acompte a la commande (40%): ${_formatDzd(acompte40)}');
     buffer.writeln('Solde apres pose et reception (60%): ${_formatDzd(solde60)}');
+    buffer.writeln('');
+    buffer.writeln('PAIEMENT BARIDIMOB ALGERIE POSTE:');
+    buffer.writeln('RIP: $rip');
+    buffer.writeln('Compte CCP: $ccp Cle: $ccpKey');
+    buffer.writeln('Titulaire: $artisanName');
     buffer.writeln('Validite de l\'offre: 30 jours');
     buffer.writeln('Delai moyen de fabrication: 15 a 21 jours ouvrables');
     buffer.writeln('========================================');
@@ -212,13 +224,15 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
       (sum, s) => sum + (s.calculateCost()['grandTotal'] ?? 0.0),
     );
     final tva19 = totalHt * 0.19;
-    final totalTtc = totalHt + tva19;
+    final timbreFiscal = totalHt > 0 ? (totalHt * 0.01).clamp(50.0, 2500.0) : 0.0;
+    final totalTtc = totalHt + tva19 + timbreFiscal;
     final acompte40 = totalTtc * 0.40;
     final solde60 = totalTtc * 0.60;
 
     final quotationText = _generateQuotationText(
       totalHt,
       tva19,
+      timbreFiscal,
       totalTtc,
       acompte40,
       solde60,
@@ -648,6 +662,14 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                 Text(_formatDzd(tva19), style: const TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'monospace')),
                               ],
                             ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Droit de Timbre Fiscal', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                                Text(_formatDzd(timbreFiscal), style: const TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'monospace')),
+                              ],
+                            ),
                             const Padding(
                               padding: EdgeInsets.symmetric(vertical: 8),
                               child: Divider(color: Color(0xFF1E293B), height: 1),
@@ -714,6 +736,98 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                             ),
                           ),
                         ],
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // BaridiMob Direct Payment Card
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF111827),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.35)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFFD4AF37), size: 16),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'PAIEMENT BARIDIMOB',
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37), letterSpacing: 0.6),
+                                    ),
+                                  ],
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0F231D),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: const Color(0xFF059669).withValues(alpha: 0.4)),
+                                  ),
+                                  child: const Text('Algérie Poste', style: TextStyle(fontSize: 9, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E293B).withValues(alpha: 0.6),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text('RIP Virement Algérie Poste (20 chiffres)', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _artisanProfile?.rip ?? '00799999002145897442',
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'monospace'),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.copy_rounded, size: 16, color: Color(0xFFD4AF37)),
+                                    tooltip: 'Copier RIP',
+                                    onPressed: () {
+                                      HapticFeedback.selectionClick();
+                                      Clipboard.setData(ClipboardData(text: _artisanProfile?.rip ?? '00799999002145897442'));
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('RIP BaridiMob copié avec succès.'),
+                                          backgroundColor: Color(0xFF059669),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Titulaire : ${_artisanProfile?.name ?? "Mourad Hadj-Ali"} (${_artisanProfile?.workshopName ?? "Atelier Aluminium Kouba"})',
+                              style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
                       ),
                     ] else ...[
                       // TAB 1: WORKSHOP COLLECTIVE SAW CUT SHEET & GLAZING LIST
