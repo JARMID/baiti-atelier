@@ -7,6 +7,8 @@ import 'package:monyun_mobile/screens/measure_take_screen.dart';
 import 'package:monyun_mobile/screens/workshops_screen.dart';
 import 'package:monyun_mobile/screens/chantiers_screen.dart';
 import 'package:monyun_mobile/screens/artisan_profile_screen.dart';
+import 'package:monyun_mobile/screens/splash_screen.dart';
+import 'package:monyun_mobile/screens/auth_screen.dart';
 import 'package:monyun_mobile/widgets/laser_measure_dialog.dart';
 import 'package:monyun_mobile/widgets/devis_preview_sheet.dart';
 
@@ -15,10 +17,43 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('BaitiMobileApp smoke test', (WidgetTester tester) async {
+  testWidgets('BaitiMobileApp smoke test transitions from SplashScreen to AuthScreen and MainNavigationHolder', (WidgetTester tester) async {
     await tester.pumpWidget(const BaitiMobileApp());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('BAITI ATELIER'), findsWidgets);
+    expect(find.byType(SplashScreen), findsOneWidget);
+
+    await tester.pumpAndSettle();
+    expect(find.text('CONNEXION ATELIER'), findsOneWidget);
+
+    // Tap guest mode to enter MainNavigationHolder
+    await tester.tap(find.text('Accéder immédiatement en Mode Invité / Découverte'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('PRISE DE COTES CAD'), findsOneWidget);
+    expect(find.text('Cotes & Devis'), findsOneWidget);
+    expect(find.text('Ateliers 58W'), findsOneWidget);
+  });
+
+  testWidgets('AuthScreen renders tabs and guest mode with zero overflow', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: AuthScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('CONNEXION ATELIER'), findsOneWidget);
+    expect(find.text('CRÉER UN COMPTE'), findsOneWidget);
+    expect(find.text('Accéder immédiatement en Mode Invité / Découverte'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('MeasureTakeScreen renders with zero overflow on narrow screen (320x568)', (WidgetTester tester) async {
@@ -36,7 +71,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('BAITI ATELIER'), findsOneWidget);
+    expect(find.text('PRISE DE COTES CAD'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     // Switch to Débit Scie tab on narrow screen
@@ -71,7 +106,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('BAITI ATELIER'), findsOneWidget);
+    expect(find.text('PRISE DE COTES CAD'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -90,7 +125,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('RÉPERTOIRE DES ATELIERS'), findsOneWidget);
+    expect(find.text('RÉPERTOIRE 58 WILAYAS'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -145,7 +180,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('BAITI ATELIER'), findsOneWidget);
+    expect(find.text('SUIVI DES CHANTIERS'), findsOneWidget);
     expect(find.text('Villa Hydra R+2'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -238,7 +273,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Espace Atelier Pro & Abonnement'), findsOneWidget);
+    expect(find.text('ESPACE ATELIER PRO'), findsOneWidget);
     expect(find.text('35 000 DZD'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

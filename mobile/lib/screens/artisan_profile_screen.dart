@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/artisan_profile.dart';
 import '../services/storage_service.dart';
+import '../services/app_settings.dart';
+import '../widgets/baiti_app_bar.dart';
+import '../widgets/algerian_payment_dialog.dart';
+import '../widgets/security_2fa_dialog.dart';
+import 'auth_screen.dart';
 
 class ArtisanProfileScreen extends StatefulWidget {
   final VoidCallback? onProfileUpdated;
@@ -19,6 +24,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _workshopController;
   late TextEditingController _phoneController;
+  late TextEditingController _emailController;
   late TextEditingController _nifController;
   late TextEditingController _rcController;
   String _selectedWilaya = '16 - Alger';
@@ -91,6 +97,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
     _nameController = TextEditingController();
     _workshopController = TextEditingController();
     _phoneController = TextEditingController();
+    _emailController = TextEditingController();
     _nifController = TextEditingController();
     _rcController = TextEditingController();
     _loadProfile();
@@ -101,6 +108,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
     _nameController.dispose();
     _workshopController.dispose();
     _phoneController.dispose();
+    _emailController.dispose();
     _nifController.dispose();
     _rcController.dispose();
     super.dispose();
@@ -114,6 +122,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
         _nameController.text = loaded.name;
         _workshopController.text = loaded.workshopName;
         _phoneController.text = loaded.phone;
+        _emailController.text = loaded.email;
         _nifController.text = loaded.nif ?? '';
         _rcController.text = loaded.rc ?? '';
         _selectedWilaya = _wilayasList.contains(loaded.wilaya)
@@ -131,6 +140,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
       name: _nameController.text.trim(),
       workshopName: _workshopController.text.trim(),
       phone: _phoneController.text.trim(),
+      email: _emailController.text.trim(),
       wilaya: _selectedWilaya,
       avatarIndex: _selectedAvatarIndex,
       nif: _nifController.text.trim().isNotEmpty ? _nifController.text.trim() : null,
@@ -185,99 +195,342 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF040B16),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF040B16),
-        elevation: 0,
-        title: const FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            'Espace Atelier Pro & Abonnement',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              letterSpacing: -0.3,
+    return AnimatedBuilder(
+      animation: AppSettings.instance,
+      builder: (context, _) {
+        final settings = AppSettings.instance;
+        final isDark = settings.isDarkMode;
+
+        return Scaffold(
+          backgroundColor: settings.scaffoldBackground,
+          appBar: BaitiAppBar(
+            title: settings.tr('profil_header_title'),
+            subtitle: settings.tr('profil_header_subtitle'),
+            profile: _profile,
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 1. TOP ARTISAN IDENTITY HEADER CARD
+                _buildArtisanHeaderCard(settings, isDark),
+                const SizedBox(height: 16),
+
+                // 2. AVATAR SELECTION CAROUSEL
+                _buildAvatarSelectionSection(settings, isDark),
+                const SizedBox(height: 16),
+
+                // 3. ANNUAL PRO SUBSCRIPTION TIER (35 000 DZD / 3.5M Centimes)
+                _buildSubscriptionCard(settings, isDark),
+                const SizedBox(height: 16),
+
+                // 4. WORKSHOP COORDINATES & CARTOUCHE FORM
+                _buildWorkshopDetailsForm(settings, isDark),
+                const SizedBox(height: 24),
+
+                // SAVE BUTTON
+                SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _isSaving ? null : _saveProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD4AF37),
+                      foregroundColor: const Color(0xFF040B16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                    ),
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                          )
+                        : const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.save_rounded, size: 18),
+                                SizedBox(width: 8),
+                                Text(
+                                  'ENREGISTRER LES COORDONNÉES ATELIER',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 5. SECURITY & 2FA GOOGLE AUTHENTICATOR (RFC 6238 TOTP)
+                _buildSecurity2FASection(settings, isDark),
+                const SizedBox(height: 20),
+
+                // 6. APP SETTINGS & PREFERENCES SECTION
+                _buildSettingsSection(settings, isDark),
+                const SizedBox(height: 20),
+              ],
             ),
           ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 1. TOP ARTISAN IDENTITY HEADER CARD
-            _buildArtisanHeaderCard(),
-            const SizedBox(height: 16),
+        );
+      },
+    );
+  }
 
-            // 2. AVATAR SELECTION CAROUSEL
-            _buildAvatarSelectionSection(),
-            const SizedBox(height: 16),
-
-            // 3. ANNUAL PRO SUBSCRIPTION TIER (35 000 DZD / 3.5M Centimes)
-            _buildSubscriptionCard(),
-            const SizedBox(height: 16),
-
-            // 4. WORKSHOP COORDINATES & CARTOUCHE FORM
-            _buildWorkshopDetailsForm(),
-            const SizedBox(height: 24),
-
-            // SAVE BUTTON
-            SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _saveProfile,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4AF37),
-                  foregroundColor: const Color(0xFF040B16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 4,
+  Widget _buildSecurity2FASection(AppSettings settings, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: settings.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: settings.cardBorder),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-                child: _isSaving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
-                      )
-                    : const FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.save_rounded, size: 18),
-                            SizedBox(width: 8),
-                            Text(
-                              'ENREGISTRER LES COORDONNÉES ATELIER',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.security_rounded, size: 18, color: Color(0xFFD4AF37)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  settings.tr('security_2fa_title'),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFD4AF37),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(width: 6, height: 6, decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFF10B981))),
+                    const SizedBox(width: 4),
+                    Text(
+                      settings.tr('security_2fa_active'),
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Sécurisez l\'accès à votre carnet de chantiers et devis via Google Authenticator, Microsoft Authenticator ou Aegis (standard RFC 6238 TOTP avec code dynamique 30 secondes).',
+            style: TextStyle(fontSize: 11.5, color: settings.secondaryText, height: 1.4),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFD4AF37), width: 1.2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                backgroundColor: const Color(0xFFD4AF37).withValues(alpha: 0.08),
+              ),
+              onPressed: () {
+                Security2FADialog.show(
+                  context,
+                  profile: _profile,
+                  onProfileUpdated: _loadProfile,
+                );
+              },
+              icon: const Icon(Icons.qr_code_scanner_rounded, size: 16, color: Color(0xFFD4AF37)),
+              label: Text(
+                settings.tr('security_setup_btn'),
+                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37)),
               ),
             ),
-            const SizedBox(height: 32),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildArtisanHeaderCard() {
+  Widget _buildSettingsSection(AppSettings settings, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0B172B),
+        color: settings.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: settings.cardBorder),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: settings.isRtl ? Alignment.centerRight : Alignment.centerLeft,
+            child: Row(
+              children: [
+                const Icon(Icons.tune_rounded, size: 16, color: Color(0xFFD4AF37)),
+                const SizedBox(width: 8),
+                Text(
+                  settings.tr('settings_title'),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFD4AF37),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Theme Switcher Tile
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(
+              isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+              color: isDark ? const Color(0xFF38BDF8) : const Color(0xFFF59E0B),
+            ),
+            title: Text(
+              isDark ? settings.tr('theme_dark') : settings.tr('theme_light'),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: settings.primaryText,
+              ),
+            ),
+            subtitle: Text(
+              isDark ? 'Contraste atelier sombre' : 'Contraste élevé plein soleil',
+              style: TextStyle(fontSize: 11, color: settings.secondaryText),
+            ),
+            trailing: Switch(
+              value: isDark,
+              activeThumbColor: const Color(0xFFD4AF37),
+              onChanged: (val) {
+                settings.setDarkMode(val);
+              },
+            ),
+          ),
+
+          Divider(height: 1, color: settings.cardBorder),
+
+          // Language Switcher Tile
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.translate_rounded, color: Color(0xFF10B981)),
+            title: Text(
+              settings.tr('lang_label'),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: settings.primaryText,
+              ),
+            ),
+            subtitle: Text(
+              settings.language == 'ar' ? 'العربية الجزائرية' : 'Français (FR)',
+              style: TextStyle(fontSize: 11, color: settings.secondaryText),
+            ),
+            trailing: GestureDetector(
+              onTap: () {
+                settings.toggleLanguage();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF0F1B2D) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFD4AF37)),
+                ),
+                child: Text(
+                  settings.language == 'fr' ? 'FR -> ع' : 'ع -> FR',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFD4AF37),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          Divider(height: 1, color: settings.cardBorder),
+          const SizedBox(height: 14),
+
+          // Logout / Switch Account
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (ctx) => const AuthScreen()),
+                );
+              },
+              icon: const Icon(Icons.logout_rounded, size: 16, color: Color(0xFFEF4444)),
+              label: const Text(
+                'SE DÉCONNECTER / CHANGER DE COMPTE',
+                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFFEF4444)),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFEF4444)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildArtisanHeaderCard(AppSettings settings, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: settings.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: settings.cardBorder),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Row(
         children: [
@@ -320,10 +573,10 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                         _workshopController.text.isNotEmpty
                             ? _workshopController.text
                             : 'Mon Atelier Aluminium',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: settings.primaryText,
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -359,9 +612,9 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     '${_nameController.text.isNotEmpty ? _nameController.text : "Artisan"} · $_selectedWilaya',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF94A3B8),
+                      color: settings.secondaryText,
                     ),
                   ),
                 ),
@@ -372,10 +625,10 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                   child: Text(
                     _phoneController.text.isNotEmpty
                         ? _phoneController.text
-                        : '0550 12 34 56',
+                        : '0797780838',
                     style: const TextStyle(
                       fontSize: 11,
-                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.bold,
                       color: Color(0xFFD4AF37),
                     ),
                   ),
@@ -388,26 +641,34 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
     );
   }
 
-  Widget _buildAvatarSelectionSection() {
+  Widget _buildAvatarSelectionSection(AppSettings settings, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF081220),
+        color: settings.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: settings.cardBorder),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const FittedBox(
+          FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
               'AVATAR PROFESSIONNEL DE L\'ATELIER',
               style: TextStyle(
                 fontSize: 11,
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF94A3B8),
+                fontWeight: FontWeight.w800,
+                color: settings.secondaryText,
                 letterSpacing: 0.5,
               ),
             ),
@@ -424,10 +685,10 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF0F1B2D),
+                    color: isSelected ? const Color(0xFFD4AF37) : (isDark ? const Color(0xFF0F1B2D) : const Color(0xFFF1F5F9)),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF334155),
+                      color: isSelected ? const Color(0xFFD4AF37) : settings.cardBorder,
                       width: isSelected ? 2 : 1,
                     ),
                     boxShadow: isSelected
@@ -441,7 +702,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                   ),
                   child: Icon(
                     _getAvatarIcon(idx),
-                    color: isSelected ? const Color(0xFF040B16) : Colors.white70,
+                    color: isSelected ? const Color(0xFF040B16) : settings.primaryText.withValues(alpha: 0.8),
                     size: 22,
                   ),
                 ),
@@ -456,7 +717,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
               style: const TextStyle(
                 fontSize: 12,
                 color: Color(0xFFD4AF37),
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -465,20 +726,22 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
     );
   }
 
-  Widget _buildSubscriptionCard() {
+  Widget _buildSubscriptionCard(AppSettings settings, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F2547), Color(0xFF0A1830)],
+        gradient: LinearGradient(
+          colors: isDark
+              ? const [Color(0xFF0F2547), Color(0xFF0A1830)]
+              : const [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.4), width: 1.2),
+        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: isDark ? 0.4 : 0.6), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD4AF37).withValues(alpha: 0.08),
+            color: const Color(0xFFD4AF37).withValues(alpha: isDark ? 0.08 : 0.15),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -490,21 +753,21 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Flexible(
+              Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.workspace_premium_rounded, color: Color(0xFFD4AF37), size: 18),
-                      SizedBox(width: 6),
+                      const Icon(Icons.workspace_premium_rounded, color: Color(0xFFD4AF37), size: 18),
+                      const SizedBox(width: 6),
                       Text(
                         'ABONNEMENT ATELIER PRO',
                         style: TextStyle(
                           fontSize: 12,
-                          fontFamily: 'monospace',
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFD4AF37),
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? const Color(0xFFD4AF37) : const Color(0xFF92400E),
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ],
@@ -530,7 +793,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          const FittedBox(
+          FittedBox(
             fit: BoxFit.scaleDown,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -541,27 +804,27 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : const Color(0xFF78350F),
                   ),
                 ),
-                SizedBox(width: 6),
+                const SizedBox(width: 6),
                 Text(
                   '/ an (3,5 Millions de Centimes)',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFFC5A880),
-                    fontFamily: 'Inter',
+                    color: isDark ? const Color(0xFFC5A880) : const Color(0xFFB45309),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Formule complète pour maîtres ateliers : calculs illimités, plans de débitage, devis proforma WhatsApp certifiés et exports G-Code scies CNC.',
             style: TextStyle(
               fontSize: 11,
-              color: Color(0xFF94A3B8),
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280),
               height: 1.4,
             ),
           ),
@@ -569,39 +832,65 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFD4AF37).withValues(alpha: 0.3)),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Row(
                     children: [
-                      Icon(Icons.payment_rounded, size: 14, color: Color(0xFFD4AF37)),
-                      SizedBox(width: 6),
+                      const Icon(Icons.payment_rounded, size: 14, color: Color(0xFFD4AF37)),
+                      const SizedBox(width: 6),
                       Text(
                         'Paiement : BaridiMob · CCP · CIB / Edahabia',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: isDark ? Colors.white : const Color(0xFF1E293B),
                         ),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
                   'Activation instantanée sur présentation du reçu BaridiMob.',
                   style: TextStyle(
                     fontSize: 10,
-                    color: Color(0xFF94A3B8),
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                AlgerianPaymentDialog.show(
+                  context,
+                  profile: _profile,
+                  onPaymentSuccess: _loadProfile,
+                );
+              },
+              icon: const Icon(Icons.flash_on_rounded, size: 16),
+              label: Text(
+                _profile.isSubscriptionActive
+                    ? 'GÉRER LE PAIEMENT (BaridiMob / Edahabia / CCP)'
+                    : 'SIMULER LE PAIEMENT PRO (35 000 DZD)',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF040B16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
             ),
           ),
         ],
@@ -609,26 +898,34 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
     );
   }
 
-  Widget _buildWorkshopDetailsForm() {
+  Widget _buildWorkshopDetailsForm(AppSettings settings, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF081220),
+        color: settings.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: settings.cardBorder),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const FittedBox(
+          FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
               'COORDONNÉES DE L\'ATELIER (CARTOUCHE DEVIS)',
               style: TextStyle(
                 fontSize: 11,
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF94A3B8),
+                fontWeight: FontWeight.w800,
+                color: settings.secondaryText,
                 letterSpacing: 0.5,
               ),
             ),
@@ -639,6 +936,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
             controller: _workshopController,
             icon: Icons.storefront_rounded,
             hint: 'Ex: Atelier Aluminium Kouba',
+            settings: settings,
           ),
           const SizedBox(height: 10),
           _buildTextField(
@@ -646,44 +944,55 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
             controller: _nameController,
             icon: Icons.person_rounded,
             hint: 'Ex: Mourad Hadj-Ali',
+            settings: settings,
           ),
           const SizedBox(height: 10),
           _buildTextField(
             label: 'Téléphone Atelier (WhatsApp)',
             controller: _phoneController,
             icon: Icons.phone_rounded,
-            hint: '0550 12 34 56',
+            hint: '0797780838',
             keyboardType: TextInputType.phone,
+            settings: settings,
+          ),
+          const SizedBox(height: 10),
+          _buildTextField(
+            label: 'Email Professionnel Atelier (Facturation & Reçus)',
+            controller: _emailController,
+            icon: Icons.alternate_email_rounded,
+            hint: 'midbariola@gmail.com',
+            keyboardType: TextInputType.emailAddress,
+            settings: settings,
           ),
           const SizedBox(height: 10),
           // Wilaya Dropdown
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Wilaya d\'implantation',
-                style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontFamily: 'monospace'),
+                style: TextStyle(fontSize: 11, color: settings.secondaryText),
               ),
               const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF040B16),
+                  color: settings.inputBackground,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF1E293B)),
+                  border: Border.all(color: settings.inputBorder),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedWilaya,
                     isExpanded: true,
-                    dropdownColor: const Color(0xFF0B172B),
+                    dropdownColor: settings.cardBackground,
                     icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFFD4AF37)),
                     items: _wilayasList.map((w) {
                       return DropdownMenuItem(
                         value: w,
                         child: Text(
                           w,
-                          style: const TextStyle(fontSize: 12, color: Colors.white),
+                          style: TextStyle(fontSize: 12, color: settings.primaryText),
                         ),
                       );
                     }).toList(),
@@ -703,6 +1012,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
             controller: _nifController,
             icon: Icons.receipt_long_rounded,
             hint: 'Ex: 001916012345678',
+            settings: settings,
           ),
           const SizedBox(height: 10),
           _buildTextField(
@@ -710,6 +1020,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
             controller: _rcController,
             icon: Icons.business_center_rounded,
             hint: 'Ex: 16/00-1234567B19',
+            settings: settings,
           ),
         ],
       ),
@@ -721,6 +1032,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
     required TextEditingController controller,
     required IconData icon,
     required String hint,
+    required AppSettings settings,
     TextInputType keyboardType = TextInputType.text,
   }) {
     return Column(
@@ -728,24 +1040,24 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontFamily: 'monospace'),
+          style: TextStyle(fontSize: 11, color: settings.secondaryText),
         ),
         const SizedBox(height: 4),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF040B16),
+            color: settings.inputBackground,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFF1E293B)),
+            border: Border.all(color: settings.inputBorder),
           ),
           child: TextField(
             controller: controller,
             keyboardType: keyboardType,
-            style: const TextStyle(fontSize: 12, color: Colors.white),
+            style: TextStyle(fontSize: 12, color: settings.primaryText),
             decoration: InputDecoration(
               isDense: true,
-              prefixIcon: Icon(icon, size: 16, color: const Color(0xFF64748B)),
+              prefixIcon: Icon(icon, size: 16, color: const Color(0xFFD4AF37)),
               hintText: hint,
-              hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
+              hintStyle: TextStyle(fontSize: 11, color: settings.secondaryText.withValues(alpha: 0.6)),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             ),

@@ -3,6 +3,8 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:url_launcher/url_launcher.dart';
 import '../models/opening_spec.dart';
 import '../widgets/devis_preview_sheet.dart';
+import '../widgets/baiti_app_bar.dart';
+import '../services/app_settings.dart';
 
 class ChantiersScreen extends StatefulWidget {
   final List<OpeningSpec> savedSpecs;
@@ -287,87 +289,62 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
   Widget build(BuildContext context) {
     final grouped = _groupedProjects;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0B0F17),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B0F17),
-        elevation: 0,
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'BAITI ATELIER',
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFD4AF37),
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'بيتي',
-                    textDirection: TextDirection.rtl,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFD4AF37),
-                    ),
-                  ),
-                ],
+    return AnimatedBuilder(
+      animation: AppSettings.instance,
+      builder: (context, _) {
+        final settings = AppSettings.instance;
+        final isDark = settings.isDarkMode;
+
+        return Scaffold(
+          backgroundColor: settings.scaffoldBackground,
+          appBar: BaitiAppBar(
+            title: settings.tr('chantiers_header_title'),
+            subtitle: settings.tr('chantiers_header_subtitle'),
+            customActions: [
+              IconButton(
+                icon: const Icon(Icons.create_new_folder_rounded, color: Color(0xFF38BDF8), size: 20),
+                tooltip: 'Nouveau chantier',
+                onPressed: _showNewProjectDialog,
               ),
-              const Text(
-                'Carnet de Chantiers Multi-Ouvrages',
-                style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-              ),
+              if (widget.savedSpecs.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.share_rounded, color: Color(0xFFD4AF37), size: 19),
+                  tooltip: 'Exporter récapitulatif WhatsApp global',
+                  onPressed: _shareAllViaWhatsApp,
+                ),
             ],
           ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.create_new_folder_rounded, color: Color(0xFF38BDF8)),
-            tooltip: 'Nouveau chantier',
-            onPressed: _showNewProjectDialog,
-          ),
-          if (widget.savedSpecs.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: IconButton(
-                icon: const Icon(Icons.share_rounded, color: Color(0xFFD4AF37)),
-                tooltip: 'Exporter récapitulatif WhatsApp global',
-                onPressed: _shareAllViaWhatsApp,
-              ),
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // 1. Financial Aggregation Overview Card
-          if (widget.savedSpecs.isNotEmpty)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF334155)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
+          body: Column(
+            children: [
+              // 1. Financial Aggregation Overview Card
+              if (widget.savedSpecs.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? const [Color(0xFF1E293B), Color(0xFF0F172A)]
+                          : const [Colors.white, Color(0xFFF1F5F9)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: settings.cardBorder),
+                    boxShadow: isDark
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -555,7 +532,7 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
                     itemCount: grouped.length,
                     itemBuilder: (context, idx) {
                       final pName = grouped.keys.elementAt(idx);
@@ -577,11 +554,20 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF121826),
+                          color: settings.cardBackground,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: isExpanded ? const Color(0xFFD4AF37).withValues(alpha: 0.5) : const Color(0xFF1E293B),
+                            color: isExpanded ? const Color(0xFFD4AF37).withValues(alpha: 0.5) : settings.cardBorder,
                           ),
+                          boxShadow: isDark
+                              ? null
+                              : [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                         ),
                         child: Column(
                            children: [
@@ -622,10 +608,10 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
                                             children: [
                                               Text(
                                                 pName,
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
+                                                  color: settings.primaryText,
                                                 ),
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
@@ -941,7 +927,9 @@ class _ChantiersScreenState extends State<ChantiersScreen> {
         ],
       ),
     );
-  }
+  },
+);
+}
 
   Widget _buildFilterChip(String tradeId, String label, Color chipColor) {
     final isSelected = _selectedTradeFilter == tradeId;

@@ -4,6 +4,8 @@ import 'dart:math' as math;
 import '../models/opening_spec.dart';
 import '../widgets/quote_summary_card.dart';
 import '../widgets/laser_measure_dialog.dart';
+import '../widgets/baiti_app_bar.dart';
+import '../services/app_settings.dart';
 
 class MeasureTakeScreen extends StatefulWidget {
   final Function(OpeningSpec) onSpecSaved;
@@ -219,143 +221,129 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
   Widget build(BuildContext context) {
     final tradeColor = _getTradeColor(_spec.tradeType);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0B0F17),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B0F17),
-        elevation: 0,
-        titleSpacing: 12,
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+    return AnimatedBuilder(
+      animation: AppSettings.instance,
+      builder: (context, _) {
+        final settings = AppSettings.instance;
+        final isDark = settings.isDarkMode;
+
+        return Scaffold(
+          backgroundColor: settings.scaffoldBackground,
+          appBar: BaitiAppBar(
+            title: settings.tr('cotes_header_title'),
+            subtitle: settings.tr('cotes_header_subtitle'),
+          ),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'BAITI ATELIER',
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFD4AF37),
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'بيتي',
-                    textDirection: TextDirection.rtl,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFD4AF37),
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                'Prise de Cotes & Chiffrage',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey.shade400,
+              // 0. Project & Opening Reference Assignment Card
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: settings.cardBackground,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: settings.cardBorder),
+                  boxShadow: isDark
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                 ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _spec.clientWilaya,
-                dropdownColor: const Color(0xFF1E293B),
-                style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
-                icon: const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFFD4AF37)),
-                items: _wilayas.map((w) => DropdownMenuItem(value: w, child: Text(w))).toList(),
-                onChanged: (val) {
-                  if (val != null) setState(() => _spec = _spec.copyWith(clientWilaya: val));
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        children: [
-          // 0. Project & Opening Reference Assignment Card
-          Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF121826),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF1E293B)),
-            ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.folder_open_rounded, size: 18, color: Color(0xFFD4AF37)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextFormField(
-                    initialValue: _spec.projectName,
-                    style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      border: InputBorder.none,
-                      hintText: 'Nom du Chantier (ex: Villa Kouba R+2)',
-                      hintStyle: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                      labelText: 'Chantier Assigné',
-                      labelStyle: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                Row(
+                  children: [
+                    const Icon(Icons.folder_open_rounded, size: 18, color: Color(0xFFD4AF37)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        initialValue: _spec.projectName,
+                        style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          hintText: 'Nom du Chantier (ex: Villa Kouba R+2)',
+                          hintStyle: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          labelText: 'Chantier Assigné',
+                          labelStyle: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                        ),
+                        onChanged: (val) {
+                          _spec = _spec.copyWith(
+                            projectName: val.trim().isEmpty ? 'Chantier Villa Principale' : val.trim(),
+                          );
+                        },
+                      ),
                     ),
-                    onChanged: (val) {
-                      _spec = _spec.copyWith(
-                        projectName: val.trim().isEmpty ? 'Chantier Villa Principale' : val.trim(),
-                      );
-                    },
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                Container(
-                  width: 70,
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF334155)),
-                  ),
-                  child: TextFormField(
-                    initialValue: _spec.openingReference,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF38BDF8),
+                const Divider(height: 12, color: Color(0xFF1E293B)),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF334155)),
+                        ),
+                        child: TextFormField(
+                          initialValue: _spec.openingReference,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF38BDF8),
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            border: InputBorder.none,
+                            hintText: 'F1',
+                            labelText: 'Repère',
+                            labelStyle: TextStyle(fontSize: 9, color: Color(0xFF64748B)),
+                          ),
+                          onChanged: (val) {
+                            _spec = _spec.copyWith(
+                              openingReference: val.trim().isEmpty ? 'F1' : val.trim().toUpperCase(),
+                            );
+                          },
+                        ),
+                      ),
                     ),
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      border: InputBorder.none,
-                      hintText: 'F1',
-                      labelText: 'Repère',
-                      labelStyle: TextStyle(fontSize: 9, color: Color(0xFF64748B)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF334155)),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _spec.clientWilaya,
+                            isExpanded: true,
+                            dropdownColor: const Color(0xFF0F1B2D),
+                            style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                            icon: const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFFD4AF37)),
+                            items: _wilayas.map((w) => DropdownMenuItem(value: w, child: Text(w, overflow: TextOverflow.ellipsis))).toList(),
+                            onChanged: (val) {
+                              if (val != null) setState(() => _spec = _spec.copyWith(clientWilaya: val));
+                            },
+                          ),
+                        ),
+                      ),
                     ),
-                    onChanged: (val) {
-                      _spec = _spec.copyWith(
-                        openingReference: val.trim().isEmpty ? 'F1' : val.trim().toUpperCase(),
-                      );
-                    },
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -573,7 +561,9 @@ class _MeasureTakeScreenState extends State<MeasureTakeScreen> {
         ],
       ),
     );
-  }
+  },
+);
+}
 
   // --- TOP TRADE SEGMENT BAR ---
   Widget _buildTradeSelector() {

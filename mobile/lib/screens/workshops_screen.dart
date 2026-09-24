@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../widgets/baiti_app_bar.dart';
+import '../services/app_settings.dart';
 
 class WorkshopItem {
   final String id;
@@ -179,234 +181,235 @@ class _WorkshopsScreenState extends State<WorkshopsScreen> {
 
     final wilayas = ['Toutes', 'Alger', 'Oran', 'Constantine', 'Sétif', 'Batna', 'Blida', 'Médéa'];
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0B0F17),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B0F17),
-        elevation: 0,
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'RÉPERTOIRE DES ATELIERS',
-              style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFD4AF37),
-                letterSpacing: 1.5,
-              ),
-            ),
-            Text(
-              'Menuisiers vérifiés en Algérie (58 Wilayas)',
-              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-            ),
-          ],
-        ),
-      ),
-      body: Column(
-        children: [
-          // Wilaya filter horizontal list
-          SizedBox(
-            height: 48,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              scrollDirection: Axis.horizontal,
-              itemCount: wilayas.length,
-              itemBuilder: (context, idx) {
-                final w = wilayas[idx];
-                final isSelected = _selectedWilaya == w;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    selected: isSelected,
-                    label: Text(w),
-                    labelStyle: TextStyle(
-                      fontSize: 11,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? Colors.white : const Color(0xFF94A3B8),
-                    ),
-                    backgroundColor: const Color(0xFF121826),
-                    selectedColor: const Color(0xFFD4AF37),
-                    side: BorderSide(
-                      color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF1E293B),
-                    ),
-                    onSelected: (val) => setState(() => _selectedWilaya = w),
-                  ),
-                );
-              },
-            ),
+    return AnimatedBuilder(
+      animation: AppSettings.instance,
+      builder: (context, _) {
+        final settings = AppSettings.instance;
+        final isDark = settings.isDarkMode;
+
+        return Scaffold(
+          backgroundColor: settings.scaffoldBackground,
+          appBar: BaitiAppBar(
+            title: settings.tr('ateliers_header_title'),
+            subtitle: settings.tr('ateliers_header_subtitle'),
           ),
+          body: Column(
+            children: [
+              // Wilaya filter horizontal list
+              SizedBox(
+                height: 48,
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: wilayas.length,
+                  itemBuilder: (context, idx) {
+                    final w = wilayas[idx];
+                    final isSelected = _selectedWilaya == w;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        selected: isSelected,
+                        label: Text(w),
+                        labelStyle: TextStyle(
+                          fontSize: 11,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected
+                              ? (isDark ? Colors.black : Colors.white)
+                              : settings.secondaryText,
+                        ),
+                        backgroundColor: isDark ? const Color(0xFF0F1B2D) : const Color(0xFFF1F5F9),
+                        selectedColor: const Color(0xFFD4AF37),
+                        side: BorderSide(
+                          color: isSelected ? const Color(0xFFD4AF37) : settings.cardBorder,
+                        ),
+                        onSelected: (val) => setState(() => _selectedWilaya = w),
+                      ),
+                    );
+                  },
+                ),
+              ),
 
-          const SizedBox(height: 8),
+              const SizedBox(height: 8),
 
-          // Workshops list
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: filtered.length,
-              itemBuilder: (context, idx) {
-                final w = filtered[idx];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF121826),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF1E293B)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+              // Workshops list with 140px bottom clearance for floating navbar
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 140),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, idx) {
+                    final w = filtered[idx];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: settings.cardBackground,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: settings.cardBorder),
+                        boxShadow: isDark
+                            ? null
+                            : [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                      ),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Center(
-                              child: Icon(Icons.business_rounded, color: Color(0xFFD4AF37), size: 22),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: settings.cardBorder),
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.business_rounded, color: Color(0xFFD4AF37), size: 22),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      child: Text(
-                                        w.name,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF059669).withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.star_rounded, size: 12, color: Color(0xFF34D399)),
-                                          const SizedBox(width: 2),
-                                          Text(
-                                            w.rating.toStringAsFixed(1),
-                                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF34D399)),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            w.name,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: settings.primaryText,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                        ],
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF059669).withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.star_rounded, size: 12, color: Color(0xFF10B981)),
+                                              const SizedBox(width: 2),
+                                              Text(
+                                                w.rating.toStringAsFixed(1),
+                                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${w.trade} • ${w.wilayaName} (${w.wilayaCode})',
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFFD4AF37), fontWeight: FontWeight.w600),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      w.address,
+                                      style: TextStyle(fontSize: 11, color: settings.secondaryText),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          Divider(color: settings.cardBorder, height: 20),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Tarif profilé :', style: TextStyle(fontSize: 10, color: settings.secondaryText), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        '${w.aluminumRateKg.toInt()} DZD / kg',
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: settings.primaryText),
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${w.trade} • ${w.wilayaName} (${w.wilayaCode})',
-                                  style: const TextStyle(fontSize: 11, color: Color(0xFFD4AF37), fontWeight: FontWeight.w600),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  w.address,
-                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const Divider(color: Color(0xFF1E293B), height: 20),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Tarif profilé :', style: TextStyle(fontSize: 10, color: Color(0xFF64748B)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    '${w.aluminumRateKg.toInt()} DZD / kg',
-                                    style: const TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Vitrage standard :', style: TextStyle(fontSize: 10, color: Color(0xFF64748B)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                    '${w.glassRateM2.toInt()} DZD / m²',
-                                    style: const TextStyle(fontFamily: 'monospace', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                onPressed: () => _callPhone(w.phone),
-                                icon: const Icon(Icons.call_rounded, size: 16),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1E293B),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.all(8),
-                                  minimumSize: const Size(36, 36),
-                                ),
-                                tooltip: 'Appeler',
                               ),
-                              const SizedBox(width: 4),
-                              IconButton(
-                                onPressed: () => _openWhatsApp(w.whatsapp, w.name),
-                                icon: const Icon(Icons.chat_bubble_rounded, size: 16),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: const Color(0xFF059669),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.all(8),
-                                  minimumSize: const Size(36, 36),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Vitrage standard :', style: TextStyle(fontSize: 10, color: settings.secondaryText), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        '${w.glassRateM2.toInt()} DZD / m²',
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: settings.primaryText),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                tooltip: 'WhatsApp',
+                              ),
+                              const SizedBox(width: 6),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    onPressed: () => _callPhone(w.phone),
+                                    icon: const Icon(Icons.call_rounded, size: 16),
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                                      foregroundColor: settings.primaryText,
+                                      padding: const EdgeInsets.all(8),
+                                      minimumSize: const Size(36, 36),
+                                    ),
+                                    tooltip: 'Appeler',
+                                  ),
+                                  const SizedBox(width: 4),
+                                  IconButton(
+                                    onPressed: () => _openWhatsApp(w.whatsapp, w.name),
+                                    icon: const Icon(Icons.chat_bubble_rounded, size: 16),
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: const Color(0xFF059669),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.all(8),
+                                      minimumSize: const Size(36, 36),
+                                    ),
+                                    tooltip: 'WhatsApp',
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

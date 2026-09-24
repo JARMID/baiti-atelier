@@ -71,3 +71,7 @@ __pycache__/
 
 # Ensure installer binaries in public downloads are preserved
 !web/public/downloads/*.exe
+
+# Phone test capture files
+phone_screenshot_*.png
+

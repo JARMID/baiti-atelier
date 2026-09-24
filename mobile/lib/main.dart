@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'models/opening_spec.dart';
 import 'services/storage_service.dart';
+import 'services/app_settings.dart';
 import 'screens/measure_take_screen.dart';
 import 'screens/workshops_screen.dart';
 import 'screens/chantiers_screen.dart';
 import 'screens/artisan_profile_screen.dart';
+import 'screens/splash_screen.dart';
+import 'widgets/baiti_floating_nav_bar.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppSettings.instance.init();
   runApp(const BaitiMobileApp());
 }
 
@@ -16,38 +21,83 @@ class BaitiMobileApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Baiti Atelier | بيتي',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF040B16),
-        primaryColor: const Color(0xFFD4AF37),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFD4AF37),
-          secondary: Color(0xFF38BDF8),
-          surface: Color(0xFF0A1324),
-          surfaceContainerHighest: Color(0xFF131D33),
-        ),
-        cardTheme: CardThemeData(
-          color: const Color(0xFF0F172A),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFF1E293B), width: 1.2),
+    return AnimatedBuilder(
+      animation: AppSettings.instance,
+      builder: (context, _) {
+        final settings = AppSettings.instance;
+        final isDark = settings.isDarkMode;
+
+        final darkTheme = ThemeData(
+          useMaterial3: true,
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: const Color(0xFF040B16),
+          primaryColor: const Color(0xFFD4AF37),
+          colorScheme: const ColorScheme.dark(
+            primary: Color(0xFFD4AF37),
+            secondary: Color(0xFF38BDF8),
+            surface: Color(0xFF0A1324),
+            surfaceContainerHighest: Color(0xFF131D33),
           ),
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF040B16),
-          elevation: 0,
-          scrolledUnderElevation: 0,
-        ),
-        textTheme: GoogleFonts.interTextTheme(
-          ThemeData.dark().textTheme,
-        ),
-      ),
-      home: const MainNavigationHolder(),
+          cardTheme: CardThemeData(
+            color: const Color(0xFF0F172A),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Color(0xFF1E293B), width: 1.2),
+            ),
+          ),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF040B16),
+            elevation: 0,
+            scrolledUnderElevation: 0,
+          ),
+          textTheme: GoogleFonts.interTextTheme(
+            ThemeData.dark().textTheme,
+          ),
+        );
+
+        final lightTheme = ThemeData(
+          useMaterial3: true,
+          brightness: Brightness.light,
+          scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+          primaryColor: const Color(0xFFB8860B),
+          colorScheme: const ColorScheme.light(
+            primary: Color(0xFFB8860B),
+            secondary: Color(0xFF0284C7),
+            surface: Colors.white,
+            surfaceContainerHighest: Color(0xFFF1F5F9),
+          ),
+          cardTheme: CardThemeData(
+            color: Colors.white,
+            elevation: 1,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+            ),
+          ),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+          ),
+          textTheme: GoogleFonts.interTextTheme(
+            ThemeData.light().textTheme,
+          ),
+        );
+
+        return MaterialApp(
+          title: 'Baiti Atelier | بيتي',
+          debugShowCheckedModeBanner: false,
+          theme: isDark ? darkTheme : lightTheme,
+          builder: (context, child) {
+            return Directionality(
+              textDirection: settings.isRtl ? TextDirection.rtl : TextDirection.ltr,
+              child: child!,
+            );
+          },
+          home: const SplashScreen(),
+        );
+      },
     );
   }
 }
@@ -105,7 +155,7 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFF0B0F17),
+        backgroundColor: Color(0xFF040B16),
         body: Center(
           child: CircularProgressIndicator(color: Color(0xFFD4AF37)),
         ),
@@ -125,46 +175,14 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
     ];
 
     return Scaffold(
+      extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
         children: screens,
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF030812),
-          border: Border(
-            top: BorderSide(color: Color(0xFF0F2547), width: 1),
-          ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          backgroundColor: const Color(0xFF030812),
-          selectedItemColor: const Color(0xFFD4AF37),
-          unselectedItemColor: const Color(0xFF64748B),
-          selectedFontSize: 11,
-          unselectedFontSize: 11,
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          onTap: (index) => setState(() => _currentIndex = index),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.straighten_rounded),
-              label: 'Cotes & Devis',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.storefront_rounded),
-              label: 'Ateliers 58W',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.folder_special_rounded),
-              label: 'Chantiers',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.manage_accounts_rounded),
-              label: 'Mon Atelier',
-            ),
-          ],
-        ),
+      bottomNavigationBar: BaitiFloatingNavBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
       ),
     );
   }

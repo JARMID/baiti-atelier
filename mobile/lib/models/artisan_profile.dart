@@ -8,9 +8,11 @@ class ArtisanProfile {
   final int avatarIndex;
   final String? nif;
   final String? rc;
+  final String email;
   final bool isSubscriptionActive;
   final String subscriptionExpiry;
   final String subscriptionTier;
+  final bool twoFactorEnabled;
 
   const ArtisanProfile({
     required this.id,
@@ -18,6 +20,7 @@ class ArtisanProfile {
     required this.workshopName,
     required this.phone,
     required this.wilaya,
+    this.email = 'midbariola@gmail.com',
     this.role = 'Maître Artisan Fabricant',
     this.avatarIndex = 0,
     this.nif,
@@ -25,7 +28,10 @@ class ArtisanProfile {
     this.isSubscriptionActive = true,
     this.subscriptionExpiry = '2027-09-24',
     this.subscriptionTier = 'Abonnement Atelier Pro (35 000 DZD / an)',
+    this.twoFactorEnabled = false,
   });
+
+  bool get isSubscribed => isSubscriptionActive;
 
   static const List<Map<String, dynamic>> presetAvatars = [
     {
@@ -71,7 +77,8 @@ class ArtisanProfile {
       id: 'artisan-kouba-16',
       name: 'Mourad Hadj-Ali',
       workshopName: 'Atelier Aluminium Kouba',
-      phone: '0550 12 34 56',
+      phone: '0797780838',
+      email: 'midbariola@gmail.com',
       wilaya: '16 - Alger',
       role: 'Maître Artisan Fabricant',
       avatarIndex: 0,
@@ -80,6 +87,7 @@ class ArtisanProfile {
       isSubscriptionActive: true,
       subscriptionExpiry: '24/09/2027',
       subscriptionTier: 'Atelier Pro Annuel · 35 000 DZD (3,5 M Centimes)',
+      twoFactorEnabled: true,
     );
   }
 
@@ -88,6 +96,7 @@ class ArtisanProfile {
     String? name,
     String? workshopName,
     String? phone,
+    String? email,
     String? wilaya,
     String? role,
     int? avatarIndex,
@@ -96,12 +105,14 @@ class ArtisanProfile {
     bool? isSubscriptionActive,
     String? subscriptionExpiry,
     String? subscriptionTier,
+    bool? twoFactorEnabled,
   }) {
     return ArtisanProfile(
       id: id ?? this.id,
       name: name ?? this.name,
       workshopName: workshopName ?? this.workshopName,
       phone: phone ?? this.phone,
+      email: email ?? this.email,
       wilaya: wilaya ?? this.wilaya,
       role: role ?? this.role,
       avatarIndex: avatarIndex ?? this.avatarIndex,
@@ -110,6 +121,7 @@ class ArtisanProfile {
       isSubscriptionActive: isSubscriptionActive ?? this.isSubscriptionActive,
       subscriptionExpiry: subscriptionExpiry ?? this.subscriptionExpiry,
       subscriptionTier: subscriptionTier ?? this.subscriptionTier,
+      twoFactorEnabled: twoFactorEnabled ?? this.twoFactorEnabled,
     );
   }
 
@@ -119,6 +131,7 @@ class ArtisanProfile {
       'name': name,
       'workshopName': workshopName,
       'phone': phone,
+      'email': email,
       'wilaya': wilaya,
       'role': role,
       'avatarIndex': avatarIndex,
@@ -127,6 +140,7 @@ class ArtisanProfile {
       'isSubscriptionActive': isSubscriptionActive,
       'subscriptionExpiry': subscriptionExpiry,
       'subscriptionTier': subscriptionTier,
+      'twoFactorEnabled': twoFactorEnabled,
     };
   }
 
@@ -135,7 +149,8 @@ class ArtisanProfile {
       id: json['id'] as String? ?? 'artisan-kouba-16',
       name: json['name'] as String? ?? 'Mourad Hadj-Ali',
       workshopName: json['workshopName'] as String? ?? 'Atelier Aluminium Kouba',
-      phone: json['phone'] as String? ?? '0550 12 34 56',
+      phone: json['phone'] as String? ?? '0797780838',
+      email: json['email'] as String? ?? 'midbariola@gmail.com',
       wilaya: json['wilaya'] as String? ?? '16 - Alger',
       role: json['role'] as String? ?? 'Maître Artisan Fabricant',
       avatarIndex: json['avatarIndex'] as int? ?? 0,
@@ -144,6 +159,7 @@ class ArtisanProfile {
       isSubscriptionActive: json['isSubscriptionActive'] as bool? ?? true,
       subscriptionExpiry: json['subscriptionExpiry'] as String? ?? '24/09/2027',
       subscriptionTier: json['subscriptionTier'] as String? ?? 'Atelier Pro Annuel · 35 000 DZD (3,5 M Centimes)',
+      twoFactorEnabled: json['twoFactorEnabled'] as bool? ?? true,
     );
   }
 }
