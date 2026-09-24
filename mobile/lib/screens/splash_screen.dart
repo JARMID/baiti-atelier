@@ -14,11 +14,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
-  String _statusText = 'Initialisation du moteur CAD...';
+  late String _statusText;
 
   @override
   void initState() {
     super.initState();
+    _statusText = AppSettings.instance.tr('boot_cad');
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
@@ -37,14 +38,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _runBootSequence() async {
+    final settings = AppSettings.instance;
     await Future.delayed(const Duration(milliseconds: 400));
-    if (mounted) setState(() => _statusText = 'Chargement des profils aluminium et PVC...');
+    if (mounted) setState(() => _statusText = settings.tr('boot_profiles'));
 
     await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) setState(() => _statusText = 'Synchronisation des barèmes 58 Wilayas...');
+    if (mounted) setState(() => _statusText = settings.tr('boot_wilayas'));
 
     await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) setState(() => _statusText = 'Vérification des normes DTR C3-2...');
+    if (mounted) setState(() => _statusText = settings.tr('boot_dtr'));
 
     await StorageService.loadArtisanProfile();
     await Future.delayed(const Duration(milliseconds: 600));

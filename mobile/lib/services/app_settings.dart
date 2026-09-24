@@ -228,6 +228,12 @@ class AppSettings extends ChangeNotifier {
     'workshops_empty_subtitle': 'Essayez de modifier vos filtres de recherche ou de wilaya.',
     'workshops_reset_filters': 'Réinitialiser les filtres',
 
+    // Boot Sequence Status Messages
+    'boot_cad': 'Initialisation du moteur CAD...',
+    'boot_profiles': 'Chargement des profils aluminium et PVC...',
+    'boot_wilayas': 'Synchronisation des barèmes 58 Wilayas...',
+    'boot_dtr': 'Vérification des normes DTR C3-2...',
+
     'settings_title': 'PARAMÈTRES & PRÉFÉRENCES',
     'theme_dark': 'Mode Sombre Atelier',
     'theme_light': 'Mode Clair Haute Luminosité',
@@ -600,6 +606,12 @@ class AppSettings extends ChangeNotifier {
     'workshops_empty': 'لم يتم العثور على ورشات بهذه المواصفات',
     'workshops_empty_subtitle': 'يرجى تغيير خيارات البحث أو تحديد ولاية أخرى.',
     'workshops_reset_filters': 'إعادة ضبط الفلاتر',
+
+    // Boot Sequence Status Messages
+    'boot_cad': 'تهيئة محرك الرسم الهندسي CAD...',
+    'boot_profiles': 'تحميل قطاعات الألمنيوم والـ PVC...',
+    'boot_wilayas': 'مزامنة أسعار ورشات 58 ولاية...',
+    'boot_dtr': 'التحقق من مطابقة المعايير الحرارية DTR C3-2...',
 
     'settings_title': 'إعدادات المنظومة',
     'theme_dark': 'الوضع الليلي للورشة',
