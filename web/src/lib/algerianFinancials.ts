@@ -38,6 +38,16 @@ export function generateBaridiMobRip(accountNumber: string | number): string {
 }
 
 /**
+ * Formats a 20-digit Algerian BaridiMob RIP with postal grouping
+ * Example: 007 99999 0021458974 42
+ */
+export function formatBaridiMobRip(rip: string): string {
+  const clean = rip.replace(/\D/g, '');
+  if (clean.length !== 20) return rip;
+  return `${clean.slice(0, 3)} ${clean.slice(3, 8)} ${clean.slice(8, 18)} ${clean.slice(18, 20)}`;
+}
+
+/**
  * Calculates Algerian invoice taxes including Timbre Fiscal
  */
 export function calculateAlgerianTaxes(
@@ -121,4 +131,79 @@ export function amountInDzdWords(amount: number): string {
   }
 
   return words;
+}
+
+/**
+ * Converts Algerian Dinars amount into standard Arabic legal text
+ * Example: فقط مليون ومائتان وخمسون ألف دينار جزائري لا غير
+ */
+export function amountInDzdWordsAr(amount: number): string {
+  const integerPart = Math.floor(amount);
+  if (integerPart === 0) return 'صفر دينار جزائري';
+
+  const unitsAr = ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة'];
+  const teensAr = ['عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'];
+  const tensAr = ['', 'عشرة', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'];
+  const hundredsAr = ['', 'مائة', 'مائتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'];
+
+  function convertGroupAr(n: number): string {
+    const parts: string[] = [];
+    const h = Math.floor(n / 100);
+    const rest = n % 100;
+
+    if (h > 0) {
+      parts.push(hundredsAr[h]);
+    }
+
+    if (rest > 0) {
+      if (rest >= 10 && rest < 20) {
+        parts.push(teensAr[rest - 10]);
+      } else {
+        const t = Math.floor(rest / 10);
+        const u = rest % 10;
+        if (u > 0 && t > 0) {
+          parts.push(`${unitsAr[u]} و${tensAr[t]}`);
+        } else if (u > 0) {
+          parts.push(unitsAr[u]);
+        } else if (t > 0) {
+          parts.push(tensAr[t]);
+        }
+      }
+    }
+
+    return parts.join(' و');
+  }
+
+  const millions = Math.floor(integerPart / 1_000_000);
+  const thousands = Math.floor((integerPart % 1_000_000) / 1000);
+  const rem = integerPart % 1000;
+
+  const parts: string[] = [];
+
+  if (millions > 0) {
+    if (millions === 1) {
+      parts.push('مليون');
+    } else if (millions === 2) {
+      parts.push('مليونان');
+    } else {
+      parts.push(`${convertGroupAr(millions)} مليون`);
+    }
+  }
+
+  if (thousands > 0) {
+    if (thousands === 1) {
+      parts.push('ألف');
+    } else if (thousands === 2) {
+      parts.push('ألفان');
+    } else {
+      parts.push(`${convertGroupAr(thousands)} ألف`);
+    }
+  }
+
+  if (rem > 0) {
+    parts.push(convertGroupAr(rem));
+  }
+
+  const result = parts.join(' و');
+  return `فقط ${result} دينار جزائري لا غير`;
 }

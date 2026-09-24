@@ -28,13 +28,21 @@ export interface BaridiMobTransactionRecord {
 const STORAGE_ACCOUNTS_KEY = 'baiti_workshop_baridimob_account_v1';
 const STORAGE_TRANSACTIONS_KEY = 'baiti_baridimob_transactions_v1';
 
+import { amountInDzdWordsAr, formatBaridiMobRip } from '../lib/algerianFinancials';
+
+export { formatBaridiMobRip };
+
 export const DEFAULT_WORKSHOP_BARIDIMOB: BaridiMobAccountDetails = {
-  ccpNumber: '0012345678',
-  ccpKey: '89',
-  rip20Digits: '00799999001234567889',
+  ccpNumber: '0021458974',
+  ccpKey: '42',
+  rip20Digits: '00799999002145897442',
   accountHolderName: 'Atelier Aluminium Kouba (Mourad Hadj-Ali)',
   phoneNumber: '0797780838',
 };
+
+export function convertAmountToArabicWordsDzd(amount: number): string {
+  return amountInDzdWordsAr(amount);
+}
 
 // 1. Algorithme officiel de calcul de la Clé CCP Algérie Poste
 export function calculateAlgerianCcpKey(accountNumber: string): string {
@@ -204,7 +212,7 @@ export function formatBaridiMobPaymentInstructionsWhatsApp(
   msg += `*COORDONNÉES BANCAIRES ALGÉRIE POSTE :*\n`;
   msg += `• Titulaire du compte : *${account.accountHolderName}*\n`;
   msg += `• Numéro CCP : *${account.ccpNumber}* Clé : *${account.ccpKey}*\n`;
-  msg += `• Numéro RIP (20 chiffres) :\n\`${account.rip20Digits}\`\n\n`;
+  msg += `• Numéro RIP (20 chiffres) :\n\`${formatBaridiMobRip(account.rip20Digits)}\`\n\n`;
 
   msg += `*INSTRUCTIONS D ENVOI SUR BARIDIMOB :*\n`;
   msg += `1. Ouvrez l application BaridiMob.\n`;
@@ -233,6 +241,7 @@ export function formatBaridiMobReceiptWhatsApp(
   msg += `*DÉTAIL DU VERSEMENT :*\n`;
   msg += `• Montant versé : *+${tx.amountDzd.toLocaleString('fr-DZ')} DZD*\n`;
   msg += `• Montant en lettres : _${tx.amountInWordsFr}_\n`;
+  msg += `• المبلغ بالحروف : _${convertAmountToArabicWordsDzd(tx.amountDzd)}_\n`;
   msg += `• Mode de paiement : ${tx.paymentMethod === 'baridimob' ? 'BaridiMob (Algérie Poste)' : tx.paymentMethod === 'virement_ccp' ? 'Virement CCP' : 'Règlement Direct'}\n`;
   if (tx.senderRipLast4) msg += `• Compte émetteur : RIP finissant par ****${tx.senderRipLast4}\n`;
   msg += `• État : Validé et encaissé ✓\n\n`;

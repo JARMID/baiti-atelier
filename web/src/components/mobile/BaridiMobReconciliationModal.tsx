@@ -18,6 +18,8 @@ import {
   calculateAlgerianCcpKey,
   validateAlgerianRip,
   convertAmountToFrenchWordsDzd,
+  convertAmountToArabicWordsDzd,
+  formatBaridiMobRip,
   saveBaridiMobTransaction,
   getBaridiMobTransactions,
   formatBaridiMobPaymentInstructionsWhatsApp,
@@ -83,9 +85,13 @@ export const BaridiMobReconciliationModal: React.FC<BaridiMobReconciliationModal
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Convert current amount to French words
+  // Convert current amount to French & Arabic words
   const amountInWords = useMemo(() => {
     return convertAmountToFrenchWordsDzd(amountDzd);
+  }, [amountDzd]);
+
+  const amountInWordsAr = useMemo(() => {
+    return convertAmountToArabicWordsDzd(amountDzd);
   }, [amountDzd]);
 
   // Validation of RIP
@@ -409,9 +415,14 @@ export const BaridiMobReconciliationModal: React.FC<BaridiMobReconciliationModal
                   }`}
                 />
 
-                {/* Amount in Words Display */}
-                <div className="p-2 rounded-xl bg-black/5 dark:bg-black/30 border border-black/5 dark:border-white/5 text-[10px] text-zinc-400 italic">
-                  {amountInWords}
+                {/* Amount in Words Display (FR + AR) */}
+                <div className="p-2.5 rounded-xl bg-black/5 dark:bg-black/30 border border-black/5 dark:border-white/5 space-y-1">
+                  <div className="text-[10px] text-zinc-400 italic">
+                    {amountInWords}
+                  </div>
+                  <div className="text-[11px] text-[#D4AF37] font-medium text-right" dir="rtl">
+                    {amountInWordsAr}
+                  </div>
                 </div>
 
                 {/* Quick Increment Chips */}
@@ -648,6 +659,25 @@ export const BaridiMobReconciliationModal: React.FC<BaridiMobReconciliationModal
                 <span className="text-[9px] text-zinc-500 block mt-1">
                   {ripValidation.messageFr}
                 </span>
+
+                {account.rip20Digits.length === 20 && (
+                  <div className="mt-2 p-2.5 rounded-xl bg-black/5 dark:bg-black/30 border border-black/5 dark:border-white/5 flex items-center justify-between">
+                    <div>
+                      <span className="text-[9px] text-zinc-500 uppercase font-mono block">RIP Formaté (Algérie Poste)</span>
+                      <span className="text-xs font-mono font-bold text-[#D4AF37] tracking-wider">
+                        {formatBaridiMobRip(account.rip20Digits)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyRip}
+                      className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] text-zinc-300 flex items-center gap-1 cursor-pointer transition-all"
+                    >
+                      <Copy className="w-3 h-3 text-[#D4AF37]" />
+                      <span>Copier</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div>
