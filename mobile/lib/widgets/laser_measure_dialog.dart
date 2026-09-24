@@ -120,7 +120,7 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'VISEUR LASER CHANTIER',
+                          settings.tr('laser_title'),
                           style: TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 12,
@@ -130,7 +130,7 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                           ),
                         ),
                         Text(
-                          'Mesure optique tableau & équerrage maçonnerie',
+                          settings.tr('laser_subtitle'),
                           style: TextStyle(fontSize: 10, color: settings.secondaryText),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -247,7 +247,7 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                                   _updateDimensionsFromPoints(size);
                                 });
                               },
-                              child: _buildCrosshairMarker('B (Coin Bas Droit)', const Color(0xFFEF4444)),
+                              child: _buildCrosshairMarker(settings.tr('laser_corner_b'), const Color(0xFFEF4444)),
                             ),
                           ),
 
@@ -278,7 +278,7 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      _isCalibrated ? 'CALIBRAGE LASER 1:1' : 'RECALIBRAGE REQUIS',
+                                      _isCalibrated ? settings.tr('laser_calibrated') : settings.tr('laser_recalibrate'),
                                       style: TextStyle(
                                         fontFamily: 'monospace',
                                         fontSize: 9,
@@ -349,7 +349,7 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'COTE TABLEAU BRUT',
+                                settings.tr('laser_raw_opening'),
                                 style: TextStyle(
                                   fontFamily: 'monospace',
                                   fontSize: 9,
@@ -395,7 +395,7 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      'ÉQUERRAGE',
+                                      settings.tr('laser_squaring'),
                                       style: TextStyle(
                                         fontFamily: 'monospace',
                                         fontSize: 9,
@@ -405,7 +405,7 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      _diagonalDiff <= 4.0 ? 'CONFORME' : 'FAUX-ÉQUERRE',
+                                      _diagonalDiff <= 4.0 ? settings.tr('laser_square_conforming') : settings.tr('laser_square_warning'),
                                       style: TextStyle(
                                         fontFamily: 'monospace',
                                         fontSize: 8,
@@ -448,15 +448,15 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                     child: Row(
                       children: [
                         Text(
-                          'Jeu de pose:',
+                          settings.tr('laser_clearance'),
                           style: TextStyle(fontSize: 11, color: settings.secondaryText),
                         ),
                         const SizedBox(width: 8),
-                        _buildPlayChip('Standard (-10mm)', 0),
+                        _buildPlayChip(settings.tr('laser_clearance_std'), 0),
                         const SizedBox(width: 4),
-                        _buildPlayChip('Rénov (-15mm)', 1),
+                        _buildPlayChip(settings.tr('laser_clearance_reno'), 1),
                         const SizedBox(width: 4),
-                        _buildPlayChip('Brut (0mm)', 2),
+                        _buildPlayChip(settings.tr('laser_clearance_raw'), 2),
                       ],
                     ),
                   ),
@@ -477,9 +477,9 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'COTE DE FABRICATION ATELIER',
-                                style: TextStyle(
+                              Text(
+                                settings.tr('laser_fab_dimension'),
+                                style: const TextStyle(
                                   fontFamily: 'monospace',
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
@@ -513,11 +513,11 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                           icon: const Icon(Icons.check_circle_outline, size: 15),
-                          label: const FittedBox(
+                          label: FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Text(
-                              'Appliquer au Devis',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                              settings.tr('laser_apply_btn'),
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                             ),
                           ),
                           onPressed: () {
@@ -561,21 +561,21 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
 
   Widget _buildStandardPresetsBar() {
     final presets = [
-      {'label': '1200×1200 (Fenêtre)', 'w': 1200.0, 'h': 1200.0},
-      {'label': '1400×2200 (Porte-Fenêtre)', 'w': 1400.0, 'h': 2200.0},
-      {'label': '2400×2200 (Baie Salon)', 'w': 2400.0, 'h': 2200.0},
-      {'label': '1000×1400 (Cuisine)', 'w': 1000.0, 'h': 1400.0},
-      {'label': '600×600 (Vasistas SDB)', 'w': 600.0, 'h': 600.0},
-      {'label': '800×500 (Imposte)', 'w': 800.0, 'h': 500.0},
+      {'label': settings.tr('laser_preset_window'), 'w': 1200.0, 'h': 1200.0},
+      {'label': settings.tr('laser_preset_french_door'), 'w': 1400.0, 'h': 2200.0},
+      {'label': settings.tr('laser_preset_bay'), 'w': 2400.0, 'h': 2200.0},
+      {'label': settings.tr('laser_preset_kitchen'), 'w': 1000.0, 'h': 1400.0},
+      {'label': settings.tr('laser_preset_bathroom'), 'w': 600.0, 'h': 600.0},
+      {'label': settings.tr('laser_preset_transom'), 'w': 800.0, 'h': 500.0},
     ];
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          const Text(
-            'Tableau std:',
-            style: TextStyle(fontSize: 11, color: Color(0xFFD4AF37), fontWeight: FontWeight.bold),
+          Text(
+            settings.tr('laser_std_presets'),
+            style: const TextStyle(fontSize: 11, color: Color(0xFFD4AF37), fontWeight: FontWeight.bold),
           ),
           const SizedBox(width: 8),
           ...presets.map((p) {

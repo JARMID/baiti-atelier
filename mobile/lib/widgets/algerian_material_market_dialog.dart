@@ -162,10 +162,10 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
 
     Clipboard.setData(ClipboardData(text: buffer.toString()));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Grille tarifaire copiée pour WhatsApp'),
-        backgroundColor: Color(0xFF10B981),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(settings.tr('calib_snack_copied')),
+        backgroundColor: const Color(0xFF10B981),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -208,7 +208,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'ARGUS DES COURS & CALIBRATEUR DZD',
+                        settings.tr('market_header_code'),
                         style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 10.5,
@@ -219,7 +219,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Bourse des Matières Premières Algérie',
+                        settings.tr('market_header_title'),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -228,7 +228,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                       ),
                       const SizedBox(height: 1),
                       Text(
-                        'Cotations industrielles 58 wilayas',
+                        settings.tr('market_header_subtitle'),
                         style: TextStyle(
                           fontSize: 9.5,
                           color: settings.secondaryText,
@@ -263,7 +263,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                 children: [
                   Expanded(
                     child: _buildTabButton(
-                      title: 'ARGUS BOURSE',
+                      title: settings.tr('market_tab_bourse'),
                       icon: Icons.trending_up_rounded,
                       isActive: _activeTab == 0,
                       onTap: () => setState(() => _activeTab = 0),
@@ -272,7 +272,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                   const SizedBox(width: 4),
                   Expanded(
                     child: _buildTabButton(
-                      title: 'CALIBRATEUR ATELIER',
+                      title: settings.tr('market_tab_calibrator'),
                       icon: Icons.tune_rounded,
                       isActive: _activeTab == 1,
                       onTap: () => setState(() => _activeTab = 1),
@@ -355,12 +355,12 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
-              _buildCategoryChip('Tous', MaterialCategory.all),
-              _buildCategoryChip('Aluminium', MaterialCategory.aluminum),
-              _buildCategoryChip('Vitrage', MaterialCategory.glass),
-              _buildCategoryChip('Acier / Métal', MaterialCategory.metal),
-              _buildCategoryChip('Bois', MaterialCategory.wood),
-              _buildCategoryChip('Quincaillerie', MaterialCategory.hardware),
+              _buildCategoryChip(settings.tr('market_cat_all'), MaterialCategory.all),
+              _buildCategoryChip(settings.tr('market_cat_aluminum'), MaterialCategory.aluminum),
+              _buildCategoryChip(settings.tr('market_cat_glass'), MaterialCategory.glass),
+              _buildCategoryChip(settings.tr('market_cat_metal'), MaterialCategory.metal),
+              _buildCategoryChip(settings.tr('market_cat_wood'), MaterialCategory.wood),
+              _buildCategoryChip(settings.tr('market_cat_hardware'), MaterialCategory.hardware),
             ],
           ),
         ),
@@ -383,7 +383,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
               style: TextStyle(fontSize: 11.5, color: settings.primaryText),
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'Rechercher un profilé, verre ou fournisseur...',
+                hintText: settings.tr('market_search_hint'),
                 hintStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
                 prefixIcon: const Icon(Icons.search_rounded, size: 16, color: Color(0xFFD4AF37)),
                 suffixIcon: _searchQuery.isNotEmpty
@@ -414,7 +414,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                       Icon(Icons.inventory_2_outlined, size: 36, color: settings.secondaryText),
                       const SizedBox(height: 6),
                       Text(
-                        'Aucun matériau trouvé pour cette recherche',
+                        settings.tr('market_empty_search'),
                         style: TextStyle(fontSize: 11, color: settings.secondaryText),
                       ),
                     ],
@@ -642,9 +642,9 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'PRÉRÉGLAGES RÉGIONAUX & CONDITIONS ATELIER',
-                  style: TextStyle(
+                Text(
+                  settings.tr('calib_presets_title'),
+                  style: const TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -657,7 +657,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                   children: [
                     Expanded(
                       child: _buildPresetButton(
-                        label: 'Gros (-6%)',
+                        label: settings.tr('calib_preset_wholesale'),
                         icon: Icons.inventory_rounded,
                         onTap: () => _applyPreset('wholesale'),
                       ),
@@ -665,7 +665,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                     const SizedBox(width: 6),
                     Expanded(
                       child: _buildPresetButton(
-                        label: 'Standard',
+                        label: settings.tr('calib_preset_standard'),
                         icon: Icons.check_circle_outline_rounded,
                         onTap: () => _applyPreset('standard'),
                       ),
@@ -673,7 +673,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                     const SizedBox(width: 6),
                     Expanded(
                       child: _buildPresetButton(
-                        label: 'Sud (+15%)',
+                        label: settings.tr('calib_preset_south'),
                         icon: Icons.local_shipping_rounded,
                         onTap: () => _applyPreset('south'),
                       ),
@@ -688,8 +688,8 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
 
           // Sliders Configuration
           _buildSliderCard(
-            title: 'Multiplicateur Profilés Aluminium',
-            subtitle: 'Ajustement cours TPR, Profilor, Sidal',
+            title: settings.tr('calib_slider_alu_title'),
+            subtitle: settings.tr('calib_slider_alu_sub'),
             value: _calibration.aluminumPriceMultiplier,
             min: 0.85,
             max: 1.30,
@@ -702,8 +702,8 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
           const SizedBox(height: 8),
 
           _buildSliderCard(
-            title: 'Multiplicateur Vitrage & Miroiterie',
-            subtitle: 'Ajustement verre simple, double vitrage MFG Cevital',
+            title: settings.tr('calib_slider_glass_title'),
+            subtitle: settings.tr('calib_slider_glass_sub'),
             value: _calibration.glassPriceMultiplier,
             min: 0.85,
             max: 1.30,
@@ -716,8 +716,8 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
           const SizedBox(height: 8),
 
           _buildSliderCard(
-            title: 'Marge Cible Atelier',
-            subtitle: 'Bénéfice net artisan après charges',
+            title: settings.tr('calib_slider_margin_title'),
+            subtitle: settings.tr('calib_slider_margin_sub'),
             value: _calibration.workshopTargetMarginPercent,
             min: 15.0,
             max: 40.0,
@@ -730,8 +730,8 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
           const SizedBox(height: 8),
 
           _buildSliderCard(
-            title: 'Taux Horaire Main d\'Œuvre',
-            subtitle: 'Coût horaire fabrication et montage',
+            title: settings.tr('calib_slider_labor_title'),
+            subtitle: settings.tr('calib_slider_labor_sub'),
             value: _calibration.artisanHourlyRateDzd,
             min: 1200.0,
             max: 3500.0,
@@ -757,13 +757,13 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'SIMULATION DEVIS ATELIER TYPE',
-                          style: TextStyle(
+                          settings.tr('calib_sim_title'),
+                          style: const TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -775,7 +775,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Fenêtre 2V 1200×1200 mm',
+                      settings.tr('calib_sim_spec'),
                       style: TextStyle(
                         fontSize: 9.5,
                         color: settings.secondaryText,
@@ -789,7 +789,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                   children: [
                     Expanded(
                       child: Text(
-                        'Prix Estimé HT avec marge :',
+                        settings.tr('calib_sim_price_label'),
                         style: TextStyle(fontSize: 11, color: settings.secondaryText),
                       ),
                     ),
@@ -840,11 +840,11 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                   child: OutlinedButton.icon(
                     onPressed: _shareViaWhatsApp,
                     icon: const Icon(Icons.share_rounded, size: 16, color: Color(0xFF10B981)),
-                    label: const FittedBox(
+                    label: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        'PARTAGER WHATSAPP',
-                        style: TextStyle(
+                        settings.tr('calib_btn_whatsapp'),
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF10B981),
@@ -871,7 +871,7 @@ class _AlgerianMaterialMarketDialogState extends State<AlgerianMaterialMarketDia
                     label: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        _isSaved ? 'ENREGISTRÉ' : 'ENREGISTRER',
+                        _isSaved ? settings.tr('calib_btn_saved') : settings.tr('calib_btn_save'),
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ),
