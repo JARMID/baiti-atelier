@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/opening_spec.dart';
 import '../models/artisan_profile.dart';
 import '../services/storage_service.dart';
+import '../utils/algerian_financials.dart';
 
 class DevisPreviewSheet extends StatefulWidget {
   final String projectName;
@@ -127,6 +128,8 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
     buffer.writeln('TVA Legale 19%: ${_formatDzd(tva19)}');
     buffer.writeln('Droit de Timbre Fiscal: ${_formatDzd(timbreFiscal)}');
     buffer.writeln('TOTAL GENERAL TTC: ${_formatDzd(totalTtc)}');
+    buffer.writeln('Arrete le present devis a la somme de:');
+    buffer.writeln('  ${amountInDzdWordsFr(totalTtc)}');
     buffer.writeln('');
     buffer.writeln('CONDITIONS DE REGLEMENT:');
     buffer.writeln('Acompte a la commande (40%): ${_formatDzd(acompte40)}');
@@ -689,6 +692,24 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                 ),
                               ],
                             ),
+                            const SizedBox(height: 8),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E293B).withValues(alpha: 0.6),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFF334155)),
+                              ),
+                              child: Text(
+                                'Arrêté à la somme de : ${amountInDzdWordsFr(totalTtc)}',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontStyle: FontStyle.italic,
+                                  color: Color(0xFFCBD5E1),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -798,7 +819,7 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                         const Text('RIP Virement Algérie Poste (20 chiffres)', style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
                                         const SizedBox(height: 2),
                                         Text(
-                                          _artisanProfile?.rip ?? '00799999002145897442',
+                                          formatBaridiMobRip(_artisanProfile?.rip ?? '00799999002145897442'),
                                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'monospace'),
                                         ),
                                       ],

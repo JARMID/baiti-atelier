@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/artisan_profile.dart';
 import '../services/storage_service.dart';
 import '../services/app_settings.dart';
+import '../utils/algerian_financials.dart';
 import '../widgets/baiti_app_bar.dart';
 import '../widgets/algerian_payment_dialog.dart';
 import '../widgets/security_2fa_dialog.dart';
@@ -123,27 +124,11 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
     super.dispose();
   }
 
-  String _calculateCcpKey(String ccp) {
-    final clean = ccp.replaceAll(RegExp(r'\D'), '');
-    if (clean.isEmpty) return '00';
-    final num = BigInt.tryParse(clean);
-    if (num == null) return '00';
-    final remainder = ((num * BigInt.from(100)) % BigInt.from(97)).toInt();
-    final key = (97 - remainder) % 97;
-    return key < 10 ? '0$key' : '$key';
-  }
-
-  String _generateRip(String ccp, String key) {
-    final cleanCcp = ccp.replaceAll(RegExp(r'\D'), '').padLeft(10, '0');
-    final cleanKey = key.padLeft(2, '0');
-    return '00799999$cleanCcp$cleanKey';
-  }
-
   void _onCcpChanged(String val) {
     final clean = val.replaceAll(RegExp(r'\D'), '');
     if (clean.isNotEmpty) {
-      final key = _calculateCcpKey(clean);
-      final rip = _generateRip(clean, key);
+      final key = calculateCcpKey(clean);
+      final rip = generateBaridiMobRip(clean);
       setState(() {
         _ccpKeyController.text = key;
         _ripController.text = rip;

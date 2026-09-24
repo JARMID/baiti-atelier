@@ -262,6 +262,38 @@ export const CuttingStudio: React.FC = () => {
     window.open(url, '_blank');
   };
 
+  const handleShareWhatsApp2DPlan = () => {
+    playTactileClick();
+    const totalSheets = guillotineResult.totalSheetsUsed;
+    const totalYield = (guillotineResult.overallUtilization * 100).toFixed(1);
+    const totalArea = guillotineResult.totalPieceAreaM2.toFixed(2);
+    const totalPasses = guillotineResult.cuts.length;
+
+    const lines: string[] = [
+      '========================================',
+      'BAITI ATELIER | بيتي : PLAN DE COUPE VITRAGE 2D',
+      `DATE : ${new Date().toLocaleDateString('fr-FR')}`,
+      `RENDEMENT : ${totalYield}% | PLAQUES : ${totalSheets} | SURFACE : ${totalArea} m²`,
+      `COUPES GUILLOTINE : ${totalPasses} passes`,
+      '========================================',
+      '',
+    ];
+
+    guillotineResult.boards.forEach((board) => {
+      const boardPieces = guillotineResult.allPlacedPieces.filter((p) => p.boardIndex === board.index);
+      lines.push(`--- PLAQUE #${board.index + 1} (${board.width} × ${board.height} mm) : ${boardPieces.length} pieces ---`);
+      boardPieces.forEach((piece, i) => {
+        lines.push(`  ${i + 1}. [${piece.label}] : ${piece.width} × ${piece.height} mm ${piece.rotated ? '(Pivote 90°)' : ''} @ [X:${piece.x.toFixed(0)}, Y:${piece.y.toFixed(0)}]`);
+      });
+      lines.push('');
+    });
+
+    lines.push('Genere via Baiti Atelier • Norme Vitrage Algérie');
+    const text = lines.join('\n');
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <section id="debitage-optimizer" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
       {/* Section Header */}
@@ -849,9 +881,22 @@ export const CuttingStudio: React.FC = () => {
 
           {/* SVG Visual Board Renderers */}
           <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className={`text-base font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Cartographie de Découpe Guillotine</h3>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={handleShareWhatsApp2DPlan}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono transition-all cursor-pointer shadow-sm hover-lift ${
+                    isLight
+                      ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800'
+                      : 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
+                  }`}
+                  title="Partager le plan de calepinage 2D directement sur WhatsApp Miroiterie"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>WhatsApp Vitrage</span>
+                </button>
+
                 <button
                   onClick={() => {
                     playTactileClick();
