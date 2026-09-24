@@ -1,5 +1,6 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { Edges } from '@react-three/drei';
 import * as THREE from 'three';
 import { useConfigStore } from '../../store/configStore';
 import type { FinishColor } from '../../types/window';
@@ -40,13 +41,32 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
 
   const palette = FINISH_PALETTES[finishColor] || FINISH_PALETTES.ral_7016;
 
-  // Materials with clipping support
+  // Architectural CAD Vector drafting line colors
+  const cadEdgeColor = useMemo(() => {
+    return isLightMode ? '#334155' : '#D4AF37';
+  }, [isLightMode]);
+
+  const cadAccentEdgeColor = useMemo(() => {
+    return isLightMode ? '#0284C7' : '#38BDF8';
+  }, [isLightMode]);
+
+  const glassCadEdgeColor = useMemo(() => {
+    return isLightMode ? '#0EA5E9' : '#38BDF8';
+  }, [isLightMode]);
+
+  const thermalBreakEdgeColor = useMemo(() => {
+    return isLightMode ? '#0F172A' : '#F59E0B';
+  }, [isLightMode]);
+
+  // Materials with clipping support & architectural clearcoat
   const frameMaterial = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshPhysicalMaterial({
       color: palette.color,
       roughness: palette.roughness,
       metalness: palette.metalness,
-      envMapIntensity: 1.4,
+      clearcoat: 0.35,
+      clearcoatRoughness: 0.18,
+      envMapIntensity: 1.6,
       side: THREE.DoubleSide,
     });
     if (clippingPlane) {
@@ -58,10 +78,12 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
 
   // Monobloc roller shutter caisson (dynamic: Deep Sleek Black in dark mode, Pure Architectural White in light mode)
   const shutterMaterial = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshPhysicalMaterial({
       color: isLightMode ? '#FFFFFF' : '#0B0F19',
       roughness: isLightMode ? 0.25 : 0.45,
       metalness: isLightMode ? 0.08 : 0.65,
+      clearcoat: 0.3,
+      clearcoatRoughness: 0.15,
       envMapIntensity: isLightMode ? 1.2 : 1.6,
       side: THREE.DoubleSide,
     });
@@ -71,8 +93,6 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
     }
     return mat;
   }, [isLightMode, clippingPlane]);
-
-
 
   const hardwareSteelMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
@@ -120,13 +140,13 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
   const glassMaterial = useMemo(() => {
     const mat = new THREE.MeshPhysicalMaterial({
       color: '#DCEDEB',
-      roughness: 0.05,
-      transmission: 0.9,
-      thickness: 0.02,
+      roughness: 0.04,
+      transmission: 0.92,
+      thickness: 0.03,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.58,
       ior: 1.52,
-      reflectivity: 0.82,
+      reflectivity: 0.88,
       side: THREE.DoubleSide,
     });
     if (clippingPlane) {
@@ -150,11 +170,13 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
     return mat;
   }, [finishColor, clippingPlane]);
 
-
   // Interpolation calculations based on scrollProgress
-  const openProgress = Math.min(1, Math.max(0, (scrollProgress - 0.35) / 0.3));
+  // Stage 1 (0.00 to 0.30): Genesis overview & entrance scale 0.92 -> 1.0
+  // Stage 2 (0.30 to 0.68): Technical reveal & macro scale zoom 1.0 -> 1.28
+  // Stage 3 (0.68 to 1.00): Exploded isometric view settling to 1.05
+  const openProgress = Math.min(1, Math.max(0, (scrollProgress - 0.30) / 0.32));
   const effectiveOpen = isOpen ? 1 : openProgress;
-  const explodeFactor = isExploded ? 1 : Math.min(1, Math.max(0, (scrollProgress - 0.5) / 0.25));
+  const explodeFactor = isExploded ? 1 : Math.min(1, Math.max(0, (scrollProgress - 0.60) / 0.30));
 
   const explodeZ = explodeFactor * 0.32;
   const explodeGlassZ = explodeFactor * 0.58;
@@ -163,18 +185,39 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
   useFrame((state, delta) => {
     if (!rootRef.current) return;
 
-    // Stage 1 breathing rotation
-    if (scrollProgress < 0.35) {
-      const breathing = Math.sin(state.clock.elapsedTime * 0.8) * 0.06;
-      rootRef.current.rotation.y = THREE.MathUtils.lerp(rootRef.current.rotation.y, breathing, delta * 3);
-      rootRef.current.rotation.x = THREE.MathUtils.lerp(rootRef.current.rotation.x, 0.04, delta * 3);
-    } else if (scrollProgress >= 0.35 && scrollProgress < 0.7) {
-      // Stage 2: Sweeping technical tilt
-      const targetY = 0.45;
-      const targetX = 0.12;
-      rootRef.current.rotation.y = THREE.MathUtils.lerp(rootRef.current.rotation.y, targetY, delta * 4);
-      rootRef.current.rotation.x = THREE.MathUtils.lerp(rootRef.current.rotation.x, targetX, delta * 4);
+    // Dynamic Scale & Orientation calculation
+    let targetScale = 1.0;
+    let targetRotY = 0;
+    let targetRotX = 0.04;
+
+    if (scrollProgress < 0.30) {
+      // Stage 1: Subtle breathing & smooth genesis scaling 0.92 to 1.0
+      targetScale = THREE.MathUtils.lerp(0.92, 1.0, scrollProgress / 0.30);
+      const breathing = Math.sin(state.clock.elapsedTime * 0.8) * 0.05;
+      targetRotY = breathing;
+      targetRotX = 0.04;
+    } else if (scrollProgress >= 0.30 && scrollProgress < 0.68) {
+      // Stage 2: Technical zoom into profile miter & thermal break (Dynamic Scale 1.28x)
+      const t = (scrollProgress - 0.30) / 0.38;
+      targetScale = THREE.MathUtils.lerp(1.0, 1.28, t);
+      targetRotY = THREE.MathUtils.lerp(0, 0.44, t);
+      targetRotX = THREE.MathUtils.lerp(0.04, 0.12, t);
+    } else {
+      // Stage 3: Exploded overview settling to 1.05x with part separation
+      const t = (scrollProgress - 0.68) / 0.32;
+      targetScale = THREE.MathUtils.lerp(1.28, 1.05, t);
+      targetRotY = THREE.MathUtils.lerp(0.44, 0.22, t);
+      targetRotX = THREE.MathUtils.lerp(0.12, 0.06, t);
     }
+
+    // Smooth lerp for scale
+    const currentScale = rootRef.current.scale.x || 1.0;
+    const smoothScale = THREE.MathUtils.lerp(currentScale, targetScale, delta * 4);
+    rootRef.current.scale.set(smoothScale, smoothScale, smoothScale);
+
+    // Smooth lerp for rotation
+    rootRef.current.rotation.y = THREE.MathUtils.lerp(rootRef.current.rotation.y, targetRotY, delta * 4);
+    rootRef.current.rotation.x = THREE.MathUtils.lerp(rootRef.current.rotation.x, targetRotX, delta * 4);
 
     // Aluminum kinematics based on window model
     if (trade === 'aluminum') {
@@ -230,6 +273,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
             material={shutterMaterial}
           >
             <boxGeometry args={[1.44 + explodeDilation * 2, 0.19, 0.12]} />
+            <Edges threshold={15} color={cadEdgeColor} />
           </mesh>
 
           {/* Outer Frame (Dormant Bi-Rail 45/52 RPT avec profondeur 110mm) */}
@@ -237,18 +281,22 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
             {/* Top Dormant Track */}
             <mesh position={[0, 0.72 + explodeDilation, 0]} material={frameMaterial}>
               <boxGeometry args={[1.44 + explodeDilation * 2, 0.08, 0.11]} />
+              <Edges threshold={15} color={cadEdgeColor} />
             </mesh>
             {/* Bottom Dormant Track */}
             <mesh position={[0, -0.72 - explodeDilation, 0]} material={frameMaterial}>
               <boxGeometry args={[1.44 + explodeDilation * 2, 0.08, 0.11]} />
+              <Edges threshold={15} color={cadEdgeColor} />
             </mesh>
             {/* Left Upright Jamb */}
             <mesh position={[-0.68 - explodeDilation, 0, 0]} material={frameMaterial}>
               <boxGeometry args={[0.08, 1.36, 0.11]} />
+              <Edges threshold={15} color={cadEdgeColor} />
             </mesh>
             {/* Right Upright Jamb */}
             <mesh position={[0.68 + explodeDilation, 0, 0]} material={frameMaterial}>
               <boxGeometry args={[0.08, 1.36, 0.11]} />
+              <Edges threshold={15} color={cadEdgeColor} />
             </mesh>
 
             {/* Polyamide Thermal Break Bars (clearance-isolated during technical clipping) */}
@@ -256,9 +304,11 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
               <>
                 <mesh position={[0, 0.72 + explodeDilation, 0]} material={thermalBreakMaterial} renderOrder={2}>
                   <boxGeometry args={[1.4, 0.02, 0.025]} />
+                  <Edges threshold={15} color={thermalBreakEdgeColor} />
                 </mesh>
                 <mesh position={[0, -0.72 - explodeDilation, 0]} material={thermalBreakMaterial} renderOrder={2}>
                   <boxGeometry args={[1.4, 0.02, 0.025]} />
+                  <Edges threshold={15} color={thermalBreakEdgeColor} />
                 </mesh>
               </>
             )}
@@ -273,28 +323,35 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
               <group ref={leftSashRef} position={[-0.32, 0, 0.034 + explodeZ]}>
                 <mesh position={[0, 0.63, 0]} material={frameMaterial}>
                   <boxGeometry args={[0.72, 0.075, 0.044]} />
+                  <Edges threshold={15} color={cadAccentEdgeColor} />
                 </mesh>
                 <mesh position={[0, -0.63, 0]} material={frameMaterial}>
                   <boxGeometry args={[0.72, 0.075, 0.044]} />
+                  <Edges threshold={15} color={cadAccentEdgeColor} />
                 </mesh>
                 <mesh position={[-0.32, 0, 0]} material={frameMaterial}>
                   <boxGeometry args={[0.075, 1.18, 0.044]} />
+                  <Edges threshold={15} color={cadAccentEdgeColor} />
                 </mesh>
                 {/* Meeting Stile (Chicane avant) */}
                 <mesh position={[0.32, 0, 0]} material={frameMaterial}>
                   <boxGeometry args={[0.07, 1.18, 0.044]} />
+                  <Edges threshold={15} color={cadAccentEdgeColor} />
                 </mesh>
                 {/* Interlocking Labyrinth Weatherstrip Hook */}
                 <mesh position={[0.35, 0, -0.012]} material={hardwareSteelMaterial}>
                   <boxGeometry args={[0.012, 1.18, 0.014]} />
+                  <Edges threshold={15} color={cadEdgeColor} />
                 </mesh>
                 {/* Double Glazing Panel */}
                 <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial}>
                   <boxGeometry args={[0.58, 1.18, 0.018]} />
+                  <Edges threshold={15} color={glassCadEdgeColor} />
                 </mesh>
                 {/* Modern Cremone Grip */}
                 <mesh position={[0.26, 0, 0.032]} material={goldAccentMaterial}>
                   <boxGeometry args={[0.026, 0.16, 0.022]} />
+                  <Edges threshold={15} color="#F59E0B" />
                 </mesh>
               </group>
 
@@ -302,24 +359,30 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
               <group position={[0.32, 0, -0.034 + explodeZ]}>
                 <mesh position={[0, 0.63, 0]} material={frameMaterial}>
                   <boxGeometry args={[0.72, 0.075, 0.044]} />
+                  <Edges threshold={15} color={cadAccentEdgeColor} />
                 </mesh>
                 <mesh position={[0, -0.63, 0]} material={frameMaterial}>
                   <boxGeometry args={[0.72, 0.075, 0.044]} />
+                  <Edges threshold={15} color={cadAccentEdgeColor} />
                 </mesh>
                 {/* Meeting Stile (Chicane arrière) */}
                 <mesh position={[-0.32, 0, 0]} material={frameMaterial}>
                   <boxGeometry args={[0.07, 1.18, 0.044]} />
+                  <Edges threshold={15} color={cadAccentEdgeColor} />
                 </mesh>
                 {/* Interlocking Counter Labyrinth Hook */}
                 <mesh position={[-0.35, 0, 0.012]} material={hardwareSteelMaterial}>
                   <boxGeometry args={[0.012, 1.18, 0.014]} />
+                  <Edges threshold={15} color={cadEdgeColor} />
                 </mesh>
                 <mesh position={[0.32, 0, 0]} material={frameMaterial}>
                   <boxGeometry args={[0.075, 1.18, 0.044]} />
+                  <Edges threshold={15} color={cadAccentEdgeColor} />
                 </mesh>
                 {/* Double Glazing Panel */}
                 <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial}>
                   <boxGeometry args={[0.58, 1.18, 0.018]} />
+                  <Edges threshold={15} color={glassCadEdgeColor} />
                 </mesh>
               </group>
             </>
@@ -333,6 +396,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
               {/* Central Mullion / Fixed Partition Divider */}
               <mesh position={[0, 0, 0]} material={frameMaterial}>
                 <boxGeometry args={[0.07, 1.36, 0.08]} />
+                <Edges threshold={15} color={cadEdgeColor} />
               </mesh>
 
               {/* Left Tilt-and-Turn Sash (Pivoting from bottom) */}
@@ -341,22 +405,28 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
                   <group position={[0, 0.63, 0]}>
                     <mesh position={[0, 0.63, 0]} material={frameMaterial}>
                       <boxGeometry args={[0.64, 0.075, 0.065]} />
+                      <Edges threshold={15} color={cadAccentEdgeColor} />
                     </mesh>
                     <mesh position={[0, -0.63, 0]} material={frameMaterial}>
                       <boxGeometry args={[0.64, 0.075, 0.065]} />
+                      <Edges threshold={15} color={cadAccentEdgeColor} />
                     </mesh>
                     <mesh position={[-0.28, 0, 0]} material={frameMaterial}>
                       <boxGeometry args={[0.075, 1.18, 0.065]} />
+                      <Edges threshold={15} color={cadAccentEdgeColor} />
                     </mesh>
                     <mesh position={[0.28, 0, 0]} material={frameMaterial}>
                       <boxGeometry args={[0.075, 1.18, 0.065]} />
+                      <Edges threshold={15} color={cadAccentEdgeColor} />
                     </mesh>
                     <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial}>
                       <boxGeometry args={[0.5, 1.18, 0.02]} />
+                      <Edges threshold={15} color={glassCadEdgeColor} />
                     </mesh>
                     {/* Modern Ergonomic German Handle */}
                     <mesh position={[0.23, 0, 0.05]} material={goldAccentMaterial}>
                       <boxGeometry args={[0.025, 0.15, 0.03]} />
+                      <Edges threshold={15} color="#F59E0B" />
                     </mesh>
                     {/* Top Scissor Arm Hardware */}
                     <mesh position={[0.1, 0.65, -0.015]} rotation={[0, 0, 0.3]} material={hardwareSteelMaterial}>
@@ -370,18 +440,23 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
               <group position={[0.35, 0, 0]}>
                 <mesh position={[0, 0.63, 0]} material={frameMaterial}>
                   <boxGeometry args={[0.64, 0.075, 0.065]} />
+                  <Edges threshold={15} color={cadAccentEdgeColor} />
                 </mesh>
                 <mesh position={[0, -0.63, 0]} material={frameMaterial}>
                   <boxGeometry args={[0.64, 0.075, 0.065]} />
+                  <Edges threshold={15} color={cadAccentEdgeColor} />
                 </mesh>
                 <mesh position={[-0.28, 0, 0]} material={frameMaterial}>
                   <boxGeometry args={[0.075, 1.18, 0.065]} />
+                  <Edges threshold={15} color={cadAccentEdgeColor} />
                 </mesh>
                 <mesh position={[0.28, 0, 0]} material={frameMaterial}>
                   <boxGeometry args={[0.075, 1.18, 0.065]} />
+                  <Edges threshold={15} color={cadAccentEdgeColor} />
                 </mesh>
                 <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial}>
                   <boxGeometry args={[0.5, 1.18, 0.02]} />
+                  <Edges threshold={15} color={glassCadEdgeColor} />
                 </mesh>
               </group>
             </group>
@@ -398,22 +473,28 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
                   <group position={[0.32, 0, 0]}>
                     <mesh position={[0, 0.63, 0]} material={frameMaterial}>
                       <boxGeometry args={[0.64, 0.075, 0.065]} />
+                      <Edges threshold={15} color={cadAccentEdgeColor} />
                     </mesh>
                     <mesh position={[0, -0.63, 0]} material={frameMaterial}>
                       <boxGeometry args={[0.64, 0.075, 0.065]} />
+                      <Edges threshold={15} color={cadAccentEdgeColor} />
                     </mesh>
                     <mesh position={[-0.28, 0, 0]} material={frameMaterial}>
                       <boxGeometry args={[0.075, 1.18, 0.065]} />
+                      <Edges threshold={15} color={cadAccentEdgeColor} />
                     </mesh>
                     <mesh position={[0.28, 0, 0]} material={frameMaterial}>
                       <boxGeometry args={[0.075, 1.18, 0.065]} />
+                      <Edges threshold={15} color={cadAccentEdgeColor} />
                     </mesh>
                     <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial}>
                       <boxGeometry args={[0.5, 1.18, 0.02]} />
+                      <Edges threshold={15} color={glassCadEdgeColor} />
                     </mesh>
                     {/* Espagnolette Cremone Handle */}
                     <mesh position={[0.26, 0, 0.05]} material={goldAccentMaterial}>
                       <boxGeometry args={[0.025, 0.16, 0.03]} />
+                      <Edges threshold={15} color="#F59E0B" />
                     </mesh>
                     {/* Stainless Steel Hinges */}
                     <mesh position={[-0.31, 0.45, -0.02]} material={hardwareSteelMaterial}>
@@ -432,22 +513,28 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
                   <group position={[-0.32, 0, 0]}>
                     <mesh position={[0, 0.63, 0]} material={frameMaterial}>
                       <boxGeometry args={[0.64, 0.075, 0.065]} />
+                      <Edges threshold={15} color={cadAccentEdgeColor} />
                     </mesh>
                     <mesh position={[0, -0.63, 0]} material={frameMaterial}>
                       <boxGeometry args={[0.64, 0.075, 0.065]} />
+                      <Edges threshold={15} color={cadAccentEdgeColor} />
                     </mesh>
                     <mesh position={[-0.28, 0, 0]} material={frameMaterial}>
                       <boxGeometry args={[0.075, 1.18, 0.065]} />
+                      <Edges threshold={15} color={cadAccentEdgeColor} />
                     </mesh>
                     <mesh position={[0.28, 0, 0]} material={frameMaterial}>
                       <boxGeometry args={[0.075, 1.18, 0.065]} />
+                      <Edges threshold={15} color={cadAccentEdgeColor} />
                     </mesh>
                     <mesh position={[0, 0, explodeGlassZ]} material={glassMaterial}>
                       <boxGeometry args={[0.5, 1.18, 0.02]} />
+                      <Edges threshold={15} color={glassCadEdgeColor} />
                     </mesh>
                     {/* Central Overlap Beating Strip (Batteuse) */}
                     <mesh position={[-0.31, 0, 0.025]} material={frameMaterial}>
                       <boxGeometry args={[0.03, 1.22, 0.02]} />
+                      <Edges threshold={15} color={cadAccentEdgeColor} />
                     </mesh>
                     {/* Stainless Steel Hinges */}
                     <mesh position={[0.31, 0.45, -0.02]} material={hardwareSteelMaterial}>
@@ -472,10 +559,12 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
                 <group key={`mullion-${idx}`} position={[mx, 0, 0]}>
                   <mesh material={frameMaterial}>
                     <boxGeometry args={[0.06, 1.48, 0.12]} />
+                    <Edges threshold={15} color={cadEdgeColor} />
                   </mesh>
                   {/* Exterior Architectural Pressure Cap (Capot serre-joint) */}
                   <mesh position={[0, 0, 0.065]} material={goldAccentMaterial}>
                     <boxGeometry args={[0.05, 1.48, 0.015]} />
+                    <Edges threshold={15} color="#F59E0B" />
                   </mesh>
                 </group>
               ))}
@@ -485,9 +574,11 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
                 <group key={`transom-${idx}`} position={[0, ty, 0]}>
                   <mesh material={frameMaterial}>
                     <boxGeometry args={[1.44, 0.05, 0.08]} />
+                    <Edges threshold={15} color={cadEdgeColor} />
                   </mesh>
                   <mesh position={[0, 0, 0.045]} material={goldAccentMaterial}>
                     <boxGeometry args={[1.44, 0.04, 0.015]} />
+                    <Edges threshold={15} color="#F59E0B" />
                   </mesh>
                 </group>
               ))}
@@ -505,6 +596,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
                   material={glassMaterial}
                 >
                   <boxGeometry args={[0.44, 0.72, 0.024]} />
+                  <Edges threshold={15} color={glassCadEdgeColor} />
                 </mesh>
               ))}
             </group>
@@ -522,26 +614,32 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
             {/* Top Board */}
             <mesh position={[0, 0.74, 0]} material={woodMaterial}>
               <boxGeometry args={[1.3, 0.03, 0.6]} />
+              <Edges threshold={15} color={cadEdgeColor} />
             </mesh>
             {/* Bottom Board */}
             <mesh position={[0, -0.74, 0]} material={woodMaterial}>
               <boxGeometry args={[1.3, 0.03, 0.6]} />
+              <Edges threshold={15} color={cadEdgeColor} />
             </mesh>
             {/* Left Side Panel */}
             <mesh position={[-0.635, 0, 0]} material={woodMaterial}>
               <boxGeometry args={[0.03, 1.45, 0.6]} />
+              <Edges threshold={15} color={cadEdgeColor} />
             </mesh>
             {/* Right Side Panel */}
             <mesh position={[0.635, 0, 0]} material={woodMaterial}>
               <boxGeometry args={[0.03, 1.45, 0.6]} />
+              <Edges threshold={15} color={cadEdgeColor} />
             </mesh>
             {/* Middle Shelf */}
             <mesh position={[0, 0, 0]} material={woodMaterial}>
               <boxGeometry args={[1.24, 0.03, 0.56]} />
+              <Edges threshold={15} color={cadEdgeColor} />
             </mesh>
             {/* Back Panel */}
             <mesh position={[0, 0, -0.29]} material={woodMaterial}>
               <boxGeometry args={[1.24, 1.45, 0.015]} />
+              <Edges threshold={15} color={cadEdgeColor} />
             </mesh>
           </group>
 
@@ -549,6 +647,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
           <group position={[0, 0.54, 0.31 + explodeZ]}>
             <mesh material={frameMaterial}>
               <boxGeometry args={[1.22, 0.28, 0.03]} />
+              <Edges threshold={15} color={cadAccentEdgeColor} />
             </mesh>
             {/* Drawer Pull Bar */}
             <mesh position={[0, 0, 0.025]} material={goldAccentMaterial}>
@@ -561,6 +660,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
             <group ref={leftDoorRef}>
               <mesh position={[0.3, 0, 0]} material={frameMaterial}>
                 <boxGeometry args={[0.6, 0.98, 0.025]} />
+                <Edges threshold={15} color={cadAccentEdgeColor} />
               </mesh>
               {/* Gold Handle */}
               <mesh position={[0.54, 0, 0.025]} material={goldAccentMaterial}>
@@ -574,6 +674,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
             <group ref={rightDoorRef}>
               <mesh position={[-0.3, 0, 0]} material={frameMaterial}>
                 <boxGeometry args={[0.6, 0.98, 0.025]} />
+                <Edges threshold={15} color={cadAccentEdgeColor} />
               </mesh>
               {/* Gold Handle */}
               <mesh position={[-0.54, 0, 0.025]} material={goldAccentMaterial}>
@@ -592,23 +693,29 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
           {/* Outer Heavy Steel Tube 40x40 Frame */}
           <mesh position={[0, 0.78, 0]} material={frameMaterial}>
             <boxGeometry args={[1.4, 0.06, 0.06]} />
+            <Edges threshold={15} color={cadEdgeColor} />
           </mesh>
           <mesh position={[0, -0.78, 0]} material={frameMaterial}>
             <boxGeometry args={[1.4, 0.06, 0.06]} />
+            <Edges threshold={15} color={cadEdgeColor} />
           </mesh>
           <mesh position={[-0.67, 0, 0]} material={frameMaterial}>
             <boxGeometry args={[0.06, 1.5, 0.06]} />
+            <Edges threshold={15} color={cadEdgeColor} />
           </mesh>
           <mesh position={[0.67, 0, 0]} material={frameMaterial}>
             <boxGeometry args={[0.06, 1.5, 0.06]} />
+            <Edges threshold={15} color={cadEdgeColor} />
           </mesh>
 
           {/* Horizontal Reinforcement Rails */}
           <mesh position={[0, 0.15, 0]} material={frameMaterial}>
             <boxGeometry args={[1.28, 0.04, 0.04]} />
+            <Edges threshold={15} color={cadEdgeColor} />
           </mesh>
           <mesh position={[0, -0.4, 0]} material={frameMaterial}>
             <boxGeometry args={[1.28, 0.04, 0.04]} />
+            <Edges threshold={15} color={cadEdgeColor} />
           </mesh>
 
           {/* Vertical Square 14mm Iron Bars with Forged Spearheads */}
@@ -617,10 +724,12 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
               {/* Main Bar */}
               <mesh material={frameMaterial}>
                 <boxGeometry args={[0.022, 1.5, 0.022]} />
+                <Edges threshold={15} color={cadAccentEdgeColor} />
               </mesh>
               {/* Golden Spearhead ornament on top */}
               <mesh position={[0, 0.88, 0]} material={goldAccentMaterial}>
                 <coneGeometry args={[0.035, 0.14, 4]} />
+                <Edges threshold={15} color="#F59E0B" />
               </mesh>
               {/* Decorative center ring */}
               <mesh position={[0, 0.15, 0.02]} rotation={[Math.PI / 2, 0, 0]} material={goldAccentMaterial}>
@@ -646,21 +755,26 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
           {/* Top Extruded Aluminum Caisson Box 180x180mm */}
           <mesh position={[0, 0.84, 0]} material={shutterMaterial}>
             <boxGeometry args={[1.5, 0.2, 0.16]} />
+            <Edges threshold={15} color={cadEdgeColor} />
           </mesh>
           {/* Motorized Cable Gland / End Caps */}
           <mesh position={[-0.76, 0.84, 0]} material={goldAccentMaterial}>
             <boxGeometry args={[0.025, 0.18, 0.14]} />
+            <Edges threshold={15} color="#F59E0B" />
           </mesh>
           <mesh position={[0.76, 0.84, 0]} material={goldAccentMaterial}>
             <boxGeometry args={[0.025, 0.18, 0.14]} />
+            <Edges threshold={15} color="#F59E0B" />
           </mesh>
 
           {/* Lateral Guide Rails (Coulisses avec brosses) */}
           <mesh position={[-0.72, -0.02, 0]} material={frameMaterial}>
             <boxGeometry args={[0.06, 1.54, 0.06]} />
+            <Edges threshold={15} color={cadEdgeColor} />
           </mesh>
           <mesh position={[0.72, -0.02, 0]} material={frameMaterial}>
             <boxGeometry args={[0.06, 1.54, 0.06]} />
+            <Edges threshold={15} color={cadEdgeColor} />
           </mesh>
 
           {/* Articulated Roller Curtain Slats (Tablier de lames aluminium) */}
@@ -678,6 +792,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
                   {/* Extruded Thermal Aluminum Slat */}
                   <mesh material={frameMaterial}>
                     <boxGeometry args={[1.38, 0.076, 0.022]} />
+                    <Edges threshold={15} color={cadAccentEdgeColor} />
                   </mesh>
                   {/* Subtle Beveled Joint Line */}
                   <mesh position={[0, -0.038, 0.012]} material={goldAccentMaterial}>
@@ -693,6 +808,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
               material={goldAccentMaterial}
             >
               <boxGeometry args={[1.4, 0.06, 0.028]} />
+              <Edges threshold={15} color="#F59E0B" />
             </mesh>
           </group>
         </group>

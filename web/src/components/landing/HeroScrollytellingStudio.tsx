@@ -40,31 +40,31 @@ const CameraRig: React.FC<CameraRigProps> = ({ scrollProgress, mouseOffset, is36
   useFrame(({ camera }) => {
     if (is360Active) return;
 
-    const baseZ = isMobile ? 4.4 : 3.6;
+    const baseZ = isMobile ? 4.5 : 3.6;
     const stage1TargetX = isMobile ? 0 : -0.55;
     const stage1LookX = isMobile ? 0 : -0.1;
 
-    // Stage 1 (0.0 - 0.35): Overview perspective (3D model gracefully shifted to right on desktop)
+    // Stage 1 (0.00 - 0.30): Overview perspective (3D model gracefully shifted to right on desktop)
     let targetX = stage1TargetX;
     let targetY = isMobile ? 0.08 : 0.04;
     let targetZ = baseZ;
     let lookX = stage1LookX;
     let lookY = 0;
 
-    if (scrollProgress >= 0.35 && scrollProgress < 0.7) {
-      // Stage 2: Technical zoom on profile & interior assembly
-      const t = (scrollProgress - 0.35) / 0.35;
+    if (scrollProgress >= 0.30 && scrollProgress < 0.68) {
+      // Stage 2: Technical zoom on profile & interior assembly (Macro view)
+      const t = (scrollProgress - 0.30) / 0.38;
       targetX = isMobile ? 0 : THREE.MathUtils.lerp(stage1TargetX, 0.45, t);
       targetY = THREE.MathUtils.lerp(targetY, 0.2, t);
-      targetZ = THREE.MathUtils.lerp(baseZ, isMobile ? 2.9 : 2.2, t);
+      targetZ = THREE.MathUtils.lerp(baseZ, isMobile ? 2.8 : 2.15, t);
       lookX = isMobile ? 0 : THREE.MathUtils.lerp(stage1LookX, 0.25, t);
       lookY = THREE.MathUtils.lerp(0, 0.1, t);
-    } else if (scrollProgress >= 0.7) {
+    } else if (scrollProgress >= 0.68) {
       // Stage 3: Dynamic cinematic multi-angle inspection view
-      const t = (scrollProgress - 0.7) / 0.3;
+      const t = (scrollProgress - 0.68) / 0.32;
       targetX = isMobile ? 0 : THREE.MathUtils.lerp(0.45, 0, t);
       targetY = THREE.MathUtils.lerp(0.2, 0.1, t);
-      targetZ = THREE.MathUtils.lerp(isMobile ? 2.9 : 2.2, isMobile ? 4.1 : 3.2, t);
+      targetZ = THREE.MathUtils.lerp(isMobile ? 2.8 : 2.15, isMobile ? 4.2 : 3.3, t);
       lookX = 0;
       lookY = 0;
     }
@@ -164,9 +164,20 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
     setIsExploded(!isExploded);
   };
 
-  const isStage1 = scrollVal < 0.35;
-  const isStage2 = scrollVal >= 0.35 && scrollVal < 0.7;
-  const isStage3 = scrollVal >= 0.7;
+  const isStage1 = scrollVal < 0.30;
+  const isStage2 = scrollVal >= 0.30 && scrollVal < 0.68;
+  const isStage3 = scrollVal >= 0.68;
+
+  // Real-time architectural dynamic scale calculation matching 3D workpiece scale
+  const liveScale = useMemo(() => {
+    if (scrollVal < 0.30) {
+      return (0.92 + (scrollVal / 0.30) * 0.08).toFixed(2);
+    } else if (scrollVal < 0.68) {
+      return (1.00 + ((scrollVal - 0.30) / 0.38) * 0.28).toFixed(2);
+    } else {
+      return (1.28 - ((scrollVal - 0.68) / 0.32) * 0.23).toFixed(2);
+    }
+  }, [scrollVal]);
 
   const colorSwatches: { id: FinishColor; label: string; hex: string }[] = [
     { id: 'ral_9016', label: 'Blanc RAL 9016', hex: '#FFFFFF' },
@@ -195,7 +206,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
   return (
     <div
       ref={containerRef}
-      className={`relative w-full h-[200vh] md:h-[260vh] select-none transition-colors duration-300 ${
+      className={`relative w-full h-[460vh] md:h-[520vh] select-none transition-colors duration-300 ${
         isLight ? 'bg-[#F8FAFC] text-slate-900' : 'bg-[#06080C] text-white'
       }`}
       onMouseMove={handleMouseMove}
@@ -218,8 +229,110 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
           />
         </div>
 
-        {/* Spacer for sticky header */}
-        <div className="relative z-20 pt-3 px-4 pointer-events-none" />
+        {/* Architectural Drafting Grid Overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-40 z-0"
+          style={{
+            backgroundImage: isLight
+              ? 'radial-gradient(circle, rgba(100, 116, 139, 0.14) 1px, transparent 1px), linear-gradient(to right, rgba(148, 163, 184, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.08) 1px, transparent 1px)'
+              : 'radial-gradient(circle, rgba(212, 175, 55, 0.14) 1px, transparent 1px), linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px)',
+            backgroundSize: '40px 40px, 120px 120px, 120px 120px',
+          }}
+        />
+
+        {/* Architectural Datum Registration Crosses */}
+        <div className="absolute top-3 left-4 z-20 text-[10px] font-mono select-none pointer-events-none opacity-50 flex items-center gap-1.5">
+          <span className="text-[#D4AF37] font-bold text-xs">+</span>
+          <span>X: 0000.00 | Y: 1400.00 MM</span>
+        </div>
+        <div className="absolute top-3 right-4 z-20 text-[10px] font-mono select-none pointer-events-none opacity-50 hidden sm:flex items-center gap-1.5">
+          <span>X: 1440.00 | Y: 1400.00 MM</span>
+          <span className="text-[#D4AF37] font-bold text-xs">+</span>
+        </div>
+        <div className="absolute bottom-20 left-4 z-20 text-[10px] font-mono select-none pointer-events-none opacity-50 hidden sm:flex items-center gap-1.5">
+          <span className="text-[#D4AF37] font-bold text-xs">+</span>
+          <span>DATUM BASELINE 0.00 MM</span>
+        </div>
+        <div className="absolute bottom-20 right-4 z-20 text-[10px] font-mono select-none pointer-events-none opacity-50 hidden sm:flex items-center gap-1.5">
+          <span>NORME DTR C3-2 ALGERIA</span>
+          <span className="text-[#D4AF37] font-bold text-xs">+</span>
+        </div>
+
+        {/* TOP ARCHITECTURAL TITLE BLOCK & SCALE HUD */}
+        <div className="relative z-20 pt-3 px-4 sm:px-8 flex items-start justify-between pointer-events-none text-xs font-mono">
+          {/* Left Workshop & CAD Genesis Spec */}
+          <div
+            className={`p-2.5 sm:p-3 rounded-xl border backdrop-blur-md transition-all ${
+              isLight
+                ? 'bg-white/90 border-slate-200 text-slate-800 shadow-xs'
+                : 'bg-black/75 border-white/15 text-zinc-300 shadow-xl'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse" />
+              <span className="font-bold text-[10px] sm:text-[11px] tracking-wider uppercase text-[#D4AF37]">
+                CAO INDUSTRIELLE · WILAYAS 01-58
+              </span>
+            </div>
+            <div className="mt-1 text-[11px] sm:text-xs flex items-center gap-2">
+              <span className="font-semibold text-slate-900 dark:text-white">
+                {selectedTrade === 'aluminum'
+                  ? 'Châssis RPT Haute Performance'
+                  : selectedTrade === 'woodworking'
+                  ? 'Menuiserie Agencement'
+                  : selectedTrade === 'metalwork'
+                  ? 'Ferronnerie de Précision'
+                  : 'Fermetures Architecturales'}
+              </span>
+              <span className="opacity-40">|</span>
+              <span className="text-[#D4AF37] font-bold">Tolérance ±0.1 mm</span>
+            </div>
+          </div>
+
+          {/* Right Dynamic Architectural Scale Badge */}
+          <div
+            className={`p-2.5 sm:p-3 rounded-xl border backdrop-blur-md transition-all flex flex-col items-end ${
+              isLight
+                ? 'bg-white/90 border-slate-200 text-slate-800 shadow-xs'
+                : 'bg-black/75 border-white/15 text-zinc-300 shadow-xl'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-[10px] sm:text-[11px] uppercase tracking-wider ${
+                  isLight ? 'text-slate-500' : 'text-zinc-400'
+                }`}
+              >
+                ÉCHELLE CAO
+              </span>
+              <span className="px-2 py-0.5 rounded bg-[#D4AF37]/20 border border-[#D4AF37]/40 text-[#D4AF37] font-bold text-[11px]">
+                {isStage2
+                  ? `ZOOM ${liveScale}× MACRO`
+                  : isStage3
+                  ? `${liveScale}× ISOMÉTRIE`
+                  : `${liveScale}× RÉFÉRENCE`}
+              </span>
+            </div>
+
+            {/* Visual Dynamic Blueprint Scale Bar */}
+            <div className="mt-1.5 flex flex-col items-end gap-0.5">
+              <div className="flex items-center justify-between w-28 sm:w-36 text-[9px] text-zinc-400 font-mono">
+                <span>0 mm</span>
+                <span>500</span>
+                <span>1 000 mm</span>
+              </div>
+              <div
+                className="h-1.5 bg-slate-300 dark:bg-zinc-700 rounded-sm overflow-hidden flex transition-all duration-300"
+                style={{ width: `${Math.round(110 * (parseFloat(liveScale) / 1.0))}px` }}
+              >
+                <div className="h-full w-1/4 bg-[#D4AF37]" />
+                <div className="h-full w-1/4 bg-slate-400 dark:bg-zinc-600" />
+                <div className="h-full w-1/4 bg-[#D4AF37]" />
+                <div className="h-full w-1/4 bg-slate-400 dark:bg-zinc-600" />
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* 3D WEBGL CANVAS */}
         <div className="absolute inset-0 z-10">
@@ -258,7 +371,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                 finishColor={config.finishColor}
                 scrollProgress={scrollVal}
                 isExploded={isExploded}
-                isOpen={scrollVal >= 0.35}
+                isOpen={scrollVal >= 0.30}
                 windowModel={windowModel}
                 clippingPlane={clippingPlane}
                 isLight={isLight}
@@ -293,13 +406,118 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
           </Canvas>
         </div>
 
+        {/* CAD HORIZONTAL DIMENSION BRACKET (OVER WINDOW) */}
+        {!isStage3 && (
+          <div className="hidden lg:flex absolute top-28 left-1/2 -translate-x-1/2 z-20 items-center justify-center pointer-events-none transition-opacity duration-500">
+            <div
+              className={`flex items-center gap-2 px-3 py-1 rounded-md border text-[11px] font-mono shadow-md backdrop-blur-md ${
+                isLight ? 'bg-white/90 border-slate-200 text-slate-800' : 'bg-black/70 border-white/10 text-zinc-200'
+              }`}
+            >
+              <span className="text-[#D4AF37] font-bold">|←</span>
+              <span className="font-semibold">1 440 mm</span>
+              <span className="text-[10px] text-zinc-400">(Largeur Hors-Tout)</span>
+              <span className="text-[#D4AF37] font-bold">→|</span>
+            </div>
+          </div>
+        )}
+
+        {/* CAD VERTICAL DIMENSION BRACKET (RIGHT FLANK) */}
+        {!isStage3 && (
+          <div className="hidden lg:flex absolute right-16 top-1/2 -translate-y-1/2 z-20 items-center pointer-events-none [writing-mode:vertical-rl] transition-opacity duration-500">
+            <div
+              className={`flex items-center gap-2 px-2.5 py-2 rounded-md border text-[11px] font-mono shadow-md backdrop-blur-md ${
+                isLight ? 'bg-white/90 border-slate-200 text-slate-800' : 'bg-black/70 border-white/10 text-zinc-200'
+              }`}
+            >
+              <span className="text-[#D4AF37] font-bold">|↑</span>
+              <span className="font-semibold">1 400 mm</span>
+              <span className="text-[10px] text-zinc-400">(Hauteur Hors-Tout)</span>
+              <span className="text-[#D4AF37] font-bold">↓|</span>
+            </div>
+          </div>
+        )}
+
+        {/* STAGE 2 ARCHITECTURAL PIN CALLOUTS */}
+        {isStage2 && (
+          <div className="hidden md:block pointer-events-none z-20">
+            {/* Pin 1: Top Left - Corner Miter */}
+            <div className="absolute top-36 left-8 lg:left-20 max-w-xs transition-all duration-500">
+              <div
+                className={`p-3 rounded-xl border backdrop-blur-xl shadow-xl ${
+                  isLight ? 'bg-white/95 border-slate-200 text-slate-800' : 'bg-black/85 border-[#D4AF37]/30 text-white'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-[#D4AF37] font-mono font-bold text-[11px] mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+                  <span>ONGLET 45° SERTI HYDRAULIQUE</span>
+                </div>
+                <p className="text-[11px] leading-tight text-slate-600 dark:text-zinc-300">
+                  Équerres en fonte d'aluminium injectée sous pression assurant un assemblage indéformable.
+                </p>
+              </div>
+            </div>
+
+            {/* Pin 2: Center Left - Thermal Break Polyamide */}
+            <div className="absolute top-1/2 -translate-y-1/2 left-6 lg:left-14 max-w-xs transition-all duration-500">
+              <div
+                className={`p-3 rounded-xl border backdrop-blur-xl shadow-xl ${
+                  isLight ? 'bg-white/95 border-slate-200 text-slate-800' : 'bg-black/85 border-amber-500/30 text-white'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-amber-500 font-mono font-bold text-[11px] mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  <span>RUPTURE PONT THERMIQUE 24 MM</span>
+                </div>
+                <p className="text-[11px] leading-tight text-slate-600 dark:text-zinc-300">
+                  Barrettes PA66-GF25 armées à 25% de fibre de verre. Coefficient d'isolation Uw 1.4 W/m²K.
+                </p>
+              </div>
+            </div>
+
+            {/* Pin 3: Center Right - EPDM Central Seals */}
+            <div className="absolute top-1/2 -translate-y-1/2 right-6 lg:right-14 max-w-xs transition-all duration-500 text-right">
+              <div
+                className={`p-3 rounded-xl border backdrop-blur-xl shadow-xl ${
+                  isLight ? 'bg-white/95 border-slate-200 text-slate-800' : 'bg-black/85 border-cyan-500/30 text-white'
+                }`}
+              >
+                <div className="flex items-center justify-end gap-1.5 text-cyan-400 font-mono font-bold text-[11px] mb-1">
+                  <span>JOINTS EPDM MULTI-CHAMBRES</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                </div>
+                <p className="text-[11px] leading-tight text-slate-600 dark:text-zinc-300">
+                  Étanchéité continue à compression dynamique. Élimine l'infiltration d'air et de sable saharien.
+                </p>
+              </div>
+            </div>
+
+            {/* Pin 4: Bottom Right - Double Glazing */}
+            <div className="absolute bottom-36 right-8 lg:right-20 max-w-xs transition-all duration-500 text-right">
+              <div
+                className={`p-3 rounded-xl border backdrop-blur-xl shadow-xl ${
+                  isLight ? 'bg-white/95 border-slate-200 text-slate-800' : 'bg-black/85 border-sky-500/30 text-white'
+                }`}
+              >
+                <div className="flex items-center justify-end gap-1.5 text-sky-400 font-mono font-bold text-[11px] mb-1">
+                  <span>DOUBLE VITRAGE 4/16/4 LOW-E</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+                </div>
+                <p className="text-[11px] leading-tight text-slate-600 dark:text-zinc-300">
+                  Intercalaire thermique warm-edge avec gaz Argon 90% pour un confort d'été et d'hiver optimal.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* DYNAMIC SCROLLYTELLING OVERLAY CONTENT */}
         <div
           className={`relative z-20 flex-1 flex flex-col px-4 sm:px-12 lg:px-20 pointer-events-none transition-all duration-500 ${
             isStage1 ? 'justify-start pt-16 sm:pt-20 lg:pt-24' : 'justify-center'
           }`}
         >
-          {/* STAGE 1: HERO OVERVIEW (0.0 to 0.35) */}
+          {/* STAGE 1: HERO OVERVIEW (0.0 to 0.30) */}
           <div
             className={`max-w-xl transition-all duration-700 ${
               isStage1
@@ -350,7 +568,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
             </div>
           </div>
 
-          {/* STAGE 2: CRAFTSMANSHIP & TECHNICAL REVEAL (0.35 to 0.70) */}
+          {/* STAGE 2: CRAFTSMANSHIP & TECHNICAL REVEAL (0.30 to 0.68) */}
           <div
             className={`max-w-2xl mx-auto text-center transition-all duration-700 ${
               isStage2
@@ -423,7 +641,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
             </div>
           </div>
 
-          {/* STAGE 3: 360° INTERACTIVE MULTI-AXIS INSPECTION (0.70 to 1.0) */}
+          {/* STAGE 3: 360° INTERACTIVE MULTI-AXIS INSPECTION (0.68 to 1.0) */}
           <div
             className={`max-w-xl mx-auto text-center transition-all duration-700 ${
               isStage3
