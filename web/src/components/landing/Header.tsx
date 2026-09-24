@@ -22,6 +22,8 @@ import {
   KeyRound,
 } from 'lucide-react';
 import { Setup2FAModal } from '../auth/Setup2FAModal';
+import { AuthAccountModal } from '../auth/AuthAccountModal';
+import { useAuthStore, PRESET_AVATARS } from '../../store/authStore';
 import {
   isSoundEnabled,
   toggleSound,
@@ -54,6 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
     selectedWilaya,
     setSelectedWilaya,
   } = useConfigStore();
+  const { user, openAuthModal } = useAuthStore();
   const t = getTranslation(language);
   const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
   const [isOnline, setIsOnline] = useState(
@@ -434,6 +437,37 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
+          {/* Artisan Profile & Avatar Capsule */}
+          <button
+            onClick={() => {
+              playTactileClick();
+              openAuthModal('profile');
+            }}
+            className={`flex items-center gap-2 pl-1 pr-2.5 sm:pr-3 py-1 rounded-full border backdrop-blur-xl transition-all cursor-pointer hover:border-[#D4AF37]/60 active:scale-95 ${
+              isLight
+                ? 'bg-slate-100/90 border-slate-200 text-slate-800 shadow-xs'
+                : 'bg-white/[0.05] border-white/10 text-zinc-100 shadow-sm'
+            }`}
+            title="Mon Profil Atelier & Avatar"
+          >
+            <div className="relative shrink-0">
+              <img
+                src={user?.avatarUrl || PRESET_AVATARS[0].url}
+                alt={user?.name || 'Artisan'}
+                className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover border border-[#D4AF37]/60"
+              />
+              <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-500 border border-black ring-1 ring-emerald-400" />
+            </div>
+            <div className="flex flex-col text-left rtl:text-right hidden sm:flex leading-none">
+              <span className="text-[11px] font-bold font-mono truncate max-w-[105px]">
+                {user?.workshopName || 'Mon Atelier'}
+              </span>
+              <span className="text-[9px] text-[#D4AF37] font-mono mt-0.5">
+                {user?.role === 'bureau_etude' ? 'Bureau d’Études' : 'Maître Artisan'}
+              </span>
+            </div>
+          </button>
+
           {/* Primary Action Button / Toggle Mode Atelier Pro */}
           {onToggleWorkshopMode ? (
             <button
@@ -485,6 +519,38 @@ export const Header: React.FC<HeaderProps> = ({
             isLight ? 'bg-white/95 border-slate-200' : 'bg-gradient-to-b from-[#030e20]/98 to-[#020b18]/98 border-sky-500/25 text-white'
           }`}
         >
+          {/* Mobile Artisan Identity Card */}
+          <div
+            onClick={() => {
+              playTactileClick();
+              setIsMobileMenuOpen(false);
+              openAuthModal('profile');
+            }}
+            className={`flex items-center justify-between p-3 rounded-2xl border text-xs cursor-pointer transition-colors ${
+              isLight
+                ? 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-slate-100'
+                : 'bg-white/[0.04] border-white/10 text-white hover:bg-white/8'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative shrink-0">
+                <img
+                  src={user?.avatarUrl || PRESET_AVATARS[0].url}
+                  alt={user?.name || 'Artisan'}
+                  className="w-10 h-10 rounded-full object-cover border border-[#D4AF37]"
+                />
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-black" />
+              </div>
+              <div className="flex flex-col text-left rtl:text-right">
+                <span className="font-bold text-sm leading-tight">{user?.workshopName || 'Mon Atelier'}</span>
+                <span className="text-[11px] text-zinc-400 font-mono mt-0.5">{user?.name} · {user?.wilaya}</span>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-lg bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#D4AF37] font-mono text-[10px] font-bold shrink-0">
+              Gérer
+            </span>
+          </div>
+
           {/* Mobile Wilaya Selector Card */}
           <div
             className={`flex items-center justify-between p-3 rounded-2xl border text-xs ${
@@ -625,6 +691,9 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* 2FA Authenticator Modal */}
       <Setup2FAModal isOpen={is2FaOpen} onClose={() => setIs2FaOpen(false)} />
+
+      {/* Account & Profile Modal */}
+      <AuthAccountModal onOpen2FaModal={() => setIs2FaOpen(true)} />
     </header>
   );
 };
