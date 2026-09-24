@@ -276,3 +276,18 @@ DtrThermalZone getDtrZoneForWilayaName(String wilayaName) {
   );
 }
 
+/// Formate un montant en Dinars Algeriens avec separateur de milliers (ex: 35 000 DZD)
+String formatDzdCurrency(double amount) {
+  final integerPart = amount.round().abs();
+  final s = integerPart.toString();
+  final buffer = StringBuffer();
+  for (int i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) {
+      buffer.write(' ');
+    }
+    buffer.write(s[i]);
+  }
+  final formatted = buffer.toString();
+  return amount < 0 ? '-$formatted DZD' : '$formatted DZD';
+}
+

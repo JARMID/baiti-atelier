@@ -328,6 +328,29 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('PAIEMENT SÉCURISÉ ALGÉRIE'), findsNothing);
     }
+
+    // Scroll to and tap the material market button
+    final marketBtn = find.textContaining('CONSULTER L\'ARGUS');
+    if (marketBtn.evaluate().isNotEmpty) {
+      await tester.ensureVisible(marketBtn);
+      await tester.pumpAndSettle();
+      await tester.tap(marketBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('ARGUS DES COURS & CALIBRATEUR DZD'), findsOneWidget);
+      expect(find.text('ARGUS BOURSE'), findsOneWidget);
+      expect(find.text('CALIBRATEUR ATELIER'), findsOneWidget);
+
+      // Switch to calibrator tab
+      await tester.tap(find.text('CALIBRATEUR ATELIER'));
+      await tester.pumpAndSettle();
+      expect(find.text('PRÉRÉGLAGES RÉGIONAUX & CONDITIONS ATELIER'), findsOneWidget);
+
+      // Close dialog
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pumpAndSettle();
+      expect(find.text('ARGUS DES COURS & CALIBRATEUR DZD'), findsNothing);
+    }
     expect(tester.takeException(), isNull);
   });
 }

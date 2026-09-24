@@ -5,6 +5,7 @@ import '../services/app_settings.dart';
 import '../utils/algerian_financials.dart';
 import '../widgets/baiti_app_bar.dart';
 import '../widgets/algerian_payment_dialog.dart';
+import '../widgets/algerian_material_market_dialog.dart';
 import '../widgets/security_2fa_dialog.dart';
 import 'auth_screen.dart';
 
@@ -235,6 +236,13 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
             title: settings.tr('profil_header_title'),
             subtitle: settings.tr('profil_header_subtitle'),
             profile: _profile,
+            customActions: [
+              IconButton(
+                icon: const Icon(Icons.analytics_rounded, color: Color(0xFFD4AF37), size: 20),
+                tooltip: 'Argus Matières & Calibrateur',
+                onPressed: () => AlgerianMaterialMarketDialog.show(context),
+              ),
+            ],
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
@@ -253,7 +261,11 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                 _buildSubscriptionCard(settings, isDark),
                 const SizedBox(height: 16),
 
-                // 4. WORKSHOP COORDINATES & CARTOUCHE FORM
+                // 4. ARGUS MATIÈRES PREMIÈRES & CALIBRATEUR DZD
+                _buildMaterialMarketCard(settings, isDark),
+                const SizedBox(height: 16),
+
+                // 5. WORKSHOP COORDINATES & CARTOUCHE FORM
                 _buildWorkshopDetailsForm(settings, isDark),
                 const SizedBox(height: 24),
 
@@ -923,6 +935,197 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMaterialMarketCard(AppSettings settings, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: settings.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: settings.cardBorder),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.analytics_rounded, color: Color(0xFFD4AF37), size: 18),
+                      const SizedBox(width: 6),
+                      Text(
+                        'ARGUS MATIÈRES & CALIBRATEUR DZD',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: settings.primaryText,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                ),
+                child: const Text(
+                  'En Direct',
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF10B981),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Cotations des profilés (TPR, Profilor, Sidal), vitrage (MFG Cevital) et acier (El Hadjar / Tosyali). Ajustez vos multiplicateurs et taux horaire d\'atelier.',
+            style: TextStyle(
+              fontSize: 10.5,
+              color: settings.secondaryText,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF070F1E) : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              children: [
+                _buildSpotMiniRow(
+                  label: 'Alu 45 Thermique (TPR)',
+                  price: '10 500 DZD',
+                  trend: '+2.9%',
+                  isUp: true,
+                  settings: settings,
+                ),
+                const SizedBox(height: 6),
+                _buildSpotMiniRow(
+                  label: 'Double Vitrage 4/16/4 (MFG)',
+                  price: '5 800 DZD',
+                  trend: '+3.5%',
+                  isUp: true,
+                  settings: settings,
+                ),
+                const SizedBox(height: 6),
+                _buildSpotMiniRow(
+                  label: 'Tube Carré 40×40 (El Hadjar)',
+                  price: '3 200 DZD',
+                  trend: '-3.0%',
+                  isUp: false,
+                  settings: settings,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                AlgerianMaterialMarketDialog.show(context);
+              },
+              icon: const Icon(Icons.tune_rounded, size: 16, color: Color(0xFFD4AF37)),
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'CONSULTER L\'ARGUS & CALIBRER LES MARGES',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFD4AF37),
+                  ),
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFD4AF37)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpotMiniRow({
+    required String label,
+    required String price,
+    required String trend,
+    required bool isUp,
+    required AppSettings settings,
+  }) {
+    final trendColor = isUp ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 10.5, color: settings.primaryText),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              price,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFD4AF37),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: trendColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                trend,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: trendColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
