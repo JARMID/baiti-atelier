@@ -5,6 +5,7 @@ import 'services/storage_service.dart';
 import 'screens/measure_take_screen.dart';
 import 'screens/workshops_screen.dart';
 import 'screens/chantiers_screen.dart';
+import 'screens/artisan_profile_screen.dart';
 
 void main() {
   runApp(const BaitiMobileApp());
@@ -120,6 +121,7 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
         onUpdate: _updateSpec,
         onAddSpec: (spec) => _saveSpec(spec),
       ),
+      const ArtisanProfileScreen(),
     ];
 
     return Scaffold(
@@ -156,6 +158,10 @@ class _MainNavigationHolderState extends State<MainNavigationHolder> {
             BottomNavigationBarItem(
               icon: Icon(Icons.folder_special_rounded),
               label: 'Chantiers',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.manage_accounts_rounded),
+              label: 'Mon Atelier',
             ),
           ],
         ),

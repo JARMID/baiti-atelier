@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/opening_spec.dart';
+import '../models/artisan_profile.dart';
 
 class StorageService {
   static const String _openingsKey = 'baiti_offline_openings_v1';
   static const String _legacyKey = 'monyun_offline_openings_v1';
+  static const String _profileKey = 'baiti_artisan_profile_v1';
 
   /// Loads all saved openings from local device disk
   static Future<List<OpeningSpec>> loadOpenings() async {
@@ -61,6 +63,28 @@ class StorageService {
       await saveOpenings(current);
     }
     return current;
+  }
+
+  /// Loads artisan profile from local preferences
+  static Future<ArtisanProfile> loadArtisanProfile() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_profileKey);
+      if (raw != null && raw.isNotEmpty) {
+        return ArtisanProfile.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      }
+    } catch (_) {}
+    return ArtisanProfile.defaultProfile();
+  }
+
+  /// Persists artisan profile
+  static Future<bool> saveArtisanProfile(ArtisanProfile profile) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return await prefs.setString(_profileKey, jsonEncode(profile.toJson()));
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Initial seed openings for first-time artisan exploration

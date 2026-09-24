@@ -6,6 +6,7 @@ import 'package:monyun_mobile/models/opening_spec.dart';
 import 'package:monyun_mobile/screens/measure_take_screen.dart';
 import 'package:monyun_mobile/screens/workshops_screen.dart';
 import 'package:monyun_mobile/screens/chantiers_screen.dart';
+import 'package:monyun_mobile/screens/artisan_profile_screen.dart';
 import 'package:monyun_mobile/widgets/laser_measure_dialog.dart';
 import 'package:monyun_mobile/widgets/devis_preview_sheet.dart';
 
@@ -219,6 +220,26 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('RÉSUMÉ DÉBITS CHANTIER'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ArtisanProfileScreen renders on 360x640 with zero overflow', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ArtisanProfileScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Espace Atelier Pro & Abonnement'), findsOneWidget);
+    expect(find.text('35 000 DZD'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

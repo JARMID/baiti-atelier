@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:url_launcher/url_launcher.dart';
 import '../models/opening_spec.dart';
+import '../models/artisan_profile.dart';
+import '../services/storage_service.dart';
 
 class DevisPreviewSheet extends StatefulWidget {
   final String projectName;
@@ -41,11 +43,22 @@ class DevisPreviewSheet extends StatefulWidget {
 
 class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
   late int _activeTab;
+  ArtisanProfile? _artisanProfile;
 
   @override
   void initState() {
     super.initState();
     _activeTab = widget.initialTab;
+    _loadArtisanProfile();
+  }
+
+  Future<void> _loadArtisanProfile() async {
+    final profile = await StorageService.loadArtisanProfile();
+    if (mounted) {
+      setState(() {
+        _artisanProfile = profile;
+      });
+    }
   }
 
   String _formatDzd(double amount) {
@@ -63,9 +76,21 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
     String quoteId,
   ) {
     final buffer = StringBuffer();
+    final atelierName = _artisanProfile?.workshopName.isNotEmpty == true
+        ? _artisanProfile!.workshopName
+        : 'BAITI ATELIER: MENUISERIE & FERMETURES';
+    final artisanPhone = _artisanProfile?.phone.isNotEmpty == true ? _artisanProfile!.phone : '';
+    final artisanWilaya = _artisanProfile?.wilaya.isNotEmpty == true ? _artisanProfile!.wilaya : wilaya;
+
     buffer.writeln('========================================');
     buffer.writeln('DEVIS CLIENT ET FACTURE PROFORMA');
-    buffer.writeln('BAITI ATELIER: MENUISERIE & FERMETURES');
+    buffer.writeln(atelierName);
+    if (artisanPhone.isNotEmpty) {
+      buffer.writeln('Contact Atelier: $artisanPhone ($artisanWilaya)');
+    }
+    if (_artisanProfile?.nif?.isNotEmpty == true || _artisanProfile?.rc?.isNotEmpty == true) {
+      buffer.writeln('NIF: ${_artisanProfile?.nif ?? "-"} | RC: ${_artisanProfile?.rc ?? "-"}');
+    }
     buffer.writeln('========================================');
     buffer.writeln('Référence Devis: $quoteId');
     buffer.writeln('Date: ${DateTime.now().toLocal().toString().split(' ')[0]}');
@@ -109,8 +134,11 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
 
   String _generateCollectiveCutSheetText(String wilaya) {
     final buffer = StringBuffer();
+    final atelierName = _artisanProfile?.workshopName.isNotEmpty == true
+        ? _artisanProfile!.workshopName
+        : 'BAITI ATELIER | بيتي';
     buffer.writeln('========================================');
-    buffer.writeln('BAITI ATELIER | بيتي: FICHE DE DÉBIT COLLECTIVE');
+    buffer.writeln('$atelierName: FICHE DE DÉBIT COLLECTIVE');
     buffer.writeln('CHANTIER: ${widget.projectName} | WILAYA: $wilaya');
     buffer.writeln('DATE: ${DateTime.now().toLocal().toString().split(' ')[0]}');
     buffer.writeln('TOTAL OUVRAGES: ${widget.specs.length}');
@@ -428,13 +456,15 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Expanded(
+                                Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'BAITI ATELIER SARL | بيتي',
-                                        style: TextStyle(
+                                        _artisanProfile?.workshopName.isNotEmpty == true
+                                            ? _artisanProfile!.workshopName
+                                            : 'BAITI ATELIER SARL | بيتي',
+                                        style: const TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w900,
                                           color: Colors.white,
@@ -443,10 +473,12 @@ class _DevisPreviewSheetState extends State<DevisPreviewSheet> {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      SizedBox(height: 2),
+                                      const SizedBox(height: 2),
                                       Text(
-                                        'Menuiserie Aluminium, PVC & Agencement',
-                                        style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                        _artisanProfile?.phone.isNotEmpty == true
+                                            ? 'Atelier ${_artisanProfile!.wilaya} • Tél: ${_artisanProfile!.phone}'
+                                            : 'Menuiserie Aluminium, PVC & Agencement',
+                                        style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
