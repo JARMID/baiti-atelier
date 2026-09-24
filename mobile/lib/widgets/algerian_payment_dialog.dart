@@ -88,21 +88,21 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
       Navigator.pop(context);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Color(0xFF10B981),
+        SnackBar(
+          backgroundColor: const Color(0xFF10B981),
           content: Row(
             children: [
-              Icon(Icons.verified_rounded, color: Colors.white, size: 20),
-              SizedBox(width: 8),
+              const Icon(Icons.verified_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Abonnement Pro activé avec succès ! Reçu de 35 000 DZD émis.',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  AppSettings.instance.tr('pay_dialog_success_snack'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                 ),
               ),
             ],
           ),
-          duration: Duration(seconds: 4),
+          duration: const Duration(seconds: 4),
         ),
       );
     }
@@ -110,7 +110,8 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = AppSettings.instance.isDarkMode;
+    final settings = AppSettings.instance;
+    final isDark = settings.isDarkMode;
     final bgColor = isDark ? const Color(0xFF071224) : Colors.white;
     final cardColor = isDark ? const Color(0xFF0F1D33) : const Color(0xFFF8FAFC);
     final borderColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
@@ -150,18 +151,18 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'PAIEMENT SÉCURISÉ ALGÉRIE',
-                        style: TextStyle(
+                        settings.tr('pay_dialog_secure'),
+                        style: const TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFFD4AF37),
+                          color: Color(0xFFD4AF37),
                           letterSpacing: 1.0,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Abonnement Atelier Pro · 35 000 DZD',
+                        settings.tr('pay_dialog_pro_title'),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -203,11 +204,11 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                _buildMethodPill(0, 'BaridiMob', Icons.send_to_mobile_rounded, const Color(0xFF10B981)),
+                _buildMethodPill(0, settings.tr('pay_baridimob'), Icons.send_to_mobile_rounded, const Color(0xFF10B981)),
                 const SizedBox(width: 8),
-                _buildMethodPill(1, 'Edahabia/CIB', Icons.credit_card_rounded, const Color(0xFFD4AF37)),
+                _buildMethodPill(1, settings.tr('pay_edahabia'), Icons.credit_card_rounded, const Color(0xFFD4AF37)),
                 const SizedBox(width: 8),
-                _buildMethodPill(2, 'CCP Mandat', Icons.account_balance_rounded, const Color(0xFF38BDF8)),
+                _buildMethodPill(2, settings.tr('pay_ccp'), Icons.account_balance_rounded, const Color(0xFF38BDF8)),
               ],
             ),
           ),
@@ -217,8 +218,8 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
               child: _isOtpStep
-                  ? _buildOtpVerificationView(textColor, cardColor, borderColor)
-                  : _buildActiveMethodView(textColor, cardColor, borderColor),
+                  ? _buildOtpVerificationView(textColor, cardColor, borderColor, settings)
+                  : _buildActiveMethodView(textColor, cardColor, borderColor, settings),
             ),
           ),
 
@@ -253,7 +254,7 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              _isOtpStep ? 'CONFIRMER LE CODE OTP' : 'SIMULER LE RÈGLEMENT (35 000 DZD)',
+                              _isOtpStep ? settings.tr('pay_dialog_confirm_otp') : settings.tr('pay_dialog_simulate_btn'),
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                             ),
                           ],
@@ -309,7 +310,7 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
     );
   }
 
-  Widget _buildActiveMethodView(Color textColor, Color cardColor, Color borderColor) {
+  Widget _buildActiveMethodView(Color textColor, Color cardColor, Color borderColor, AppSettings settings) {
     if (_activeMethod == 0) {
       // BARIDIMOB
       return Column(
@@ -333,22 +334,31 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Virement BaridiMob Instantané', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
-                          Text('Sans déplacement · Confirmation par SMS', style: TextStyle(fontSize: 11, color: Colors.grey.shade400)),
+                          Text(
+                            settings.tr('pay_dialog_baridimob_title'),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: textColor),
+                          ),
+                          Text(
+                            settings.tr('pay_dialog_baridimob_sub'),
+                            style: TextStyle(fontSize: 11, color: settings.secondaryText),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
-                const Text('RIP DESTINATAIRE (SARL BAITI)', style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: Color(0xFF94A3B8))),
+                Text(
+                  settings.tr('pay_dialog_rip_dest'),
+                  style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: settings.secondaryText),
+                ),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF071224),
+                    color: settings.inputBackground,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF1E293B)),
+                    border: Border.all(color: settings.inputBorder),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -356,7 +366,7 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                       Expanded(
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
+                          alignment: settings.isRtl ? Alignment.centerRight : Alignment.centerLeft,
                           child: Text(
                             _baridimobRip,
                             style: const TextStyle(
@@ -373,7 +383,10 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                         onTap: () {
                           Clipboard.setData(ClipboardData(text: _baridimobRip));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('RIP copié dans le presse-papier !'), duration: Duration(seconds: 1)),
+                            SnackBar(
+                              content: Text(settings.tr('pay_dialog_rip_copied')),
+                              duration: const Duration(seconds: 1),
+                            ),
                           );
                         },
                         child: const Icon(Icons.copy_rounded, size: 16, color: Color(0xFF10B981)),
@@ -386,8 +399,8 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
           ),
           const SizedBox(height: 12),
           Text(
-            'En cliquant sur Simuler, un ordre de virement BaridiMob test de 35 000 DZD sera généré avec vérification OTP simulée.',
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+            settings.tr('pay_dialog_baridimob_note'),
+            style: TextStyle(fontSize: 11, color: settings.secondaryText),
           ),
         ],
       );
@@ -410,20 +423,28 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('SATIM 3D-SECURE', style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
-                    Icon(Icons.contactless_rounded, color: Colors.white70, size: 20),
+                    Text(
+                      settings.tr('pay_dialog_satim_title'),
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 10,
+                        color: Color(0xFFD4AF37),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Icon(Icons.contactless_rounded, color: Colors.white70, size: 20),
                   ],
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: _cardNumberController,
                   style: const TextStyle(fontFamily: 'monospace', fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: 'Numéro de Carte (Edahabia / CIB)',
-                    labelStyle: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                  decoration: InputDecoration(
+                    labelText: settings.tr('pay_dialog_card_num'),
+                    labelStyle: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                     isDense: true,
                     border: InputBorder.none,
                   ),
@@ -435,9 +456,9 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                       child: TextField(
                         controller: _cardExpiryController,
                         style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.white),
-                        decoration: const InputDecoration(
-                          labelText: 'Expiration (MM/AA)',
-                          labelStyle: TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
+                        decoration: InputDecoration(
+                          labelText: settings.tr('pay_dialog_card_expiry'),
+                          labelStyle: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
                           isDense: true,
                           border: InputBorder.none,
                         ),
@@ -447,9 +468,9 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                       child: TextField(
                         controller: _cardCvvController,
                         style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.white),
-                        decoration: const InputDecoration(
-                          labelText: 'CVV2 / CVC',
-                          labelStyle: TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
+                        decoration: InputDecoration(
+                          labelText: settings.tr('pay_dialog_card_cvv'),
+                          labelStyle: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
                           isDense: true,
                           border: InputBorder.none,
                         ),
@@ -462,8 +483,8 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Passerelle bancaire nationale SATIM certifiée. Test de débit immédiat de 35 000 DZD avec simulation de clé SMS.',
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+            settings.tr('pay_dialog_satim_note'),
+            style: TextStyle(fontSize: 11, color: settings.secondaryText),
           ),
         ],
       );
@@ -490,22 +511,31 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Versement Bureau de Poste CCP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
-                          Text('Bordereau Algérie Poste', style: TextStyle(fontSize: 11, color: Colors.grey.shade400)),
+                          Text(
+                            settings.tr('pay_dialog_ccp_title'),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: textColor),
+                          ),
+                          Text(
+                            settings.tr('pay_dialog_ccp_sub'),
+                            style: TextStyle(fontSize: 11, color: settings.secondaryText),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
-                const Text('COMPTE CCP BÉNÉFICIAIRE', style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: Color(0xFF94A3B8))),
+                Text(
+                  settings.tr('pay_dialog_ccp_dest'),
+                  style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: settings.secondaryText),
+                ),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF071224),
+                    color: settings.inputBackground,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF1E293B)),
+                    border: Border.all(color: settings.inputBorder),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -513,7 +543,7 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                       Expanded(
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
+                          alignment: settings.isRtl ? Alignment.centerRight : Alignment.centerLeft,
                           child: Text(
                             _ccpAccount,
                             style: const TextStyle(
@@ -530,7 +560,10 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                         onTap: () {
                           Clipboard.setData(ClipboardData(text: _ccpAccount));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Compte CCP copié !'), duration: Duration(seconds: 1)),
+                            SnackBar(
+                              content: Text(settings.tr('pay_dialog_ccp_copied')),
+                              duration: const Duration(seconds: 1),
+                            ),
                           );
                         },
                         child: const Icon(Icons.copy_rounded, size: 16, color: Color(0xFF38BDF8)),
@@ -541,10 +574,10 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
                 const SizedBox(height: 10),
                 TextField(
                   controller: _ccpSlipController,
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: 'Numéro de Reçu / Bordereau de Versement',
-                    labelStyle: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                  style: TextStyle(fontFamily: 'monospace', fontSize: 12, color: textColor),
+                  decoration: InputDecoration(
+                    labelText: settings.tr('pay_dialog_ccp_slip'),
+                    labelStyle: TextStyle(fontSize: 10, color: settings.secondaryText),
                     isDense: true,
                   ),
                 ),
@@ -553,15 +586,15 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
           ),
           const SizedBox(height: 12),
           Text(
-            'La validation du versement active automatiquement la clé d\'activation annuelle pour votre atelier.',
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+            settings.tr('pay_dialog_ccp_note'),
+            style: TextStyle(fontSize: 11, color: settings.secondaryText),
           ),
         ],
       );
     }
   }
 
-  Widget _buildOtpVerificationView(Color textColor, Color cardColor, Color borderColor) {
+  Widget _buildOtpVerificationView(Color textColor, Color cardColor, Color borderColor, AppSettings settings) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -577,33 +610,33 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
           child: const Icon(Icons.sms_rounded, color: Color(0xFF10B981), size: 24),
         ),
         const SizedBox(height: 14),
-        const Text(
-          'VÉRIFICATION SMS 3D-SECURE',
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37), fontFamily: 'monospace'),
+        Text(
+          settings.tr('pay_dialog_otp_title'),
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37), fontFamily: 'monospace'),
         ),
         const SizedBox(height: 4),
         Text(
-          'Un code de sécurité test a été généré pour valider le débit de 35 000 DZD :',
+          settings.tr('pay_dialog_otp_desc'),
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+          style: TextStyle(fontSize: 11, color: settings.secondaryText),
         ),
         const SizedBox(height: 16),
         Container(
           width: 200,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFF0F1D33),
+            color: settings.inputBackground,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFFD4AF37)),
           ),
           child: TextField(
             controller: _otpController,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               letterSpacing: 6,
-              color: Colors.white,
+              color: textColor,
               fontFamily: 'monospace',
             ),
             decoration: const InputDecoration(
@@ -613,9 +646,9 @@ class _AlgerianPaymentDialogState extends State<AlgerianPaymentDialog> {
           ),
         ),
         const SizedBox(height: 12),
-        const Text(
-          'Code pré-rempli pour la simulation : 482910',
-          style: TextStyle(fontSize: 10, color: Color(0xFF10B981), fontFamily: 'monospace'),
+        Text(
+          settings.tr('pay_dialog_otp_sim_code'),
+          style: const TextStyle(fontSize: 10, color: Color(0xFF10B981), fontFamily: 'monospace'),
         ),
       ],
     );

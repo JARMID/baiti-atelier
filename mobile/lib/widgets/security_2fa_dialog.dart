@@ -70,7 +70,7 @@ class _Security2FADialogState extends State<Security2FADialog> {
   Future<void> _verifyAndEnable() async {
     final code = _otpController.text.trim();
     if (code.length != 6) {
-      setState(() => _errorMessage = 'Veuillez saisir un code à 6 chiffres valide');
+      setState(() => _errorMessage = AppSettings.instance.tr('sec_2fa_invalid_code'));
       return;
     }
 
@@ -92,21 +92,21 @@ class _Security2FADialogState extends State<Security2FADialog> {
       widget.onProfileUpdated();
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Color(0xFF10B981),
+        SnackBar(
+          backgroundColor: const Color(0xFF10B981),
           content: Row(
             children: [
-              Icon(Icons.verified_user_rounded, color: Colors.white, size: 20),
-              SizedBox(width: 8),
+              const Icon(Icons.verified_user_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Authentification Google Authenticator (TOTP) configurée avec succès !',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  AppSettings.instance.tr('sec_2fa_activated_snack'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                 ),
               ),
             ],
           ),
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -233,7 +233,7 @@ class _Security2FADialogState extends State<Security2FADialog> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Étape 1 : Scanner le QR Code',
+                                settings.tr('sec_2fa_step1_title'),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -242,7 +242,7 @@ class _Security2FADialogState extends State<Security2FADialog> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Ouvrez Google Authenticator, appuyez sur "+" puis scannez ce code pour lier votre atelier.',
+                                settings.tr('sec_2fa_step1_desc'),
                                 style: TextStyle(
                                   fontSize: 10.5,
                                   color: secondaryTextColor,
@@ -256,9 +256,9 @@ class _Security2FADialogState extends State<Security2FADialog> {
                                   color: const Color(0xFF10B981).withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
-                                child: const Text(
-                                  'Compatible Google & Microsoft Auth',
-                                  style: TextStyle(
+                                child: Text(
+                                  settings.tr('sec_2fa_step1_compat'),
+                                  style: const TextStyle(
                                     fontSize: 9.5,
                                     fontWeight: FontWeight.bold,
                                     color: Color(0xFF10B981),
@@ -275,7 +275,7 @@ class _Security2FADialogState extends State<Security2FADialog> {
 
                     // Manual Secret Key Box
                     Text(
-                      'OU SAISIE MANUELLE DE LA CLÉ SECRÈTE :',
+                      settings.tr('sec_2fa_manual_key_label'),
                       style: TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 9.5,
@@ -311,9 +311,9 @@ class _Security2FADialogState extends State<Security2FADialog> {
                               Clipboard.setData(ClipboardData(text: _secretKey.replaceAll(' ', '')));
                               HapticFeedback.selectionClick();
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Clé secrète TOTP copiée dans le presse-papiers'),
-                                  duration: Duration(seconds: 1),
+                                SnackBar(
+                                  content: Text(settings.tr('sec_2fa_key_copied')),
+                                  duration: const Duration(seconds: 1),
                                 ),
                               );
                             },
@@ -342,7 +342,7 @@ class _Security2FADialogState extends State<Security2FADialog> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Étape 2 : Confirmer le code 6 chiffres',
+                          settings.tr('sec_2fa_step2_title'),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -430,7 +430,7 @@ class _Security2FADialogState extends State<Security2FADialog> {
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                       : const Icon(Icons.check_circle_outline_rounded, size: 18),
                   label: Text(
-                    _isVerifying ? 'VÉRIFICATION EN COURS...' : 'ACTIVER GOOGLE AUTHENTICATOR (2FA)',
+                    _isVerifying ? '...' : settings.tr('sec_2fa_confirm_btn'),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                 ),

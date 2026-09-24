@@ -183,13 +183,13 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
       });
       widget.onProfileUpdated?.call();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Color(0xFF10B981),
+        SnackBar(
+          backgroundColor: const Color(0xFF10B981),
           content: Text(
-            'Profil atelier et entête de devis enregistrés avec succès !',
-            style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold),
+            AppSettings.instance.tr('profile_saved_snack'),
+            style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold),
           ),
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     }
@@ -288,16 +288,16 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
                           )
-                        : const FittedBox(
+                        : FittedBox(
                             fit: BoxFit.scaleDown,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.save_rounded, size: 18),
-                                SizedBox(width: 8),
+                                const Icon(Icons.save_rounded, size: 18),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'ENREGISTRER LES COORDONNÉES ATELIER',
-                                  style: TextStyle(
+                                  settings.tr('profile_save_btn'),
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                     letterSpacing: 0.5,
@@ -383,7 +383,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            'Sécurisez l\'accès à votre carnet de chantiers et devis via Google Authenticator, Microsoft Authenticator ou Aegis (standard RFC 6238 TOTP avec code dynamique 30 secondes).',
+            settings.tr('profile_2fa_desc'),
             style: TextStyle(fontSize: 11.5, color: settings.secondaryText, height: 1.4),
           ),
           const SizedBox(height: 14),
@@ -472,7 +472,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
               ),
             ),
             subtitle: Text(
-              isDark ? 'Contraste atelier sombre' : 'Contraste élevé plein soleil',
+              isDark ? settings.tr('profile_theme_dark_sub') : settings.tr('profile_theme_light_sub'),
               style: TextStyle(fontSize: 11, color: settings.secondaryText),
             ),
             trailing: Switch(
@@ -540,9 +540,9 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                 );
               },
               icon: const Icon(Icons.logout_rounded, size: 16, color: Color(0xFFEF4444)),
-              label: const Text(
-                'SE DÉCONNECTER / CHANGER DE COMPTE',
-                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFFEF4444)),
+              label: Text(
+                settings.tr('profile_logout_btn'),
+                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFFEF4444)),
               ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFFEF4444)),
@@ -627,14 +627,14 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.verified_rounded, size: 10, color: Color(0xFF10B981)),
-                            SizedBox(width: 3),
+                            const Icon(Icons.verified_rounded, size: 10, color: Color(0xFF10B981)),
+                            const SizedBox(width: 3),
                             Text(
-                              'Agréé',
-                              style: TextStyle(
+                              settings.tr('profile_verified_badge'),
+                              style: const TextStyle(
                                 fontSize: 9,
                                 color: Color(0xFF10B981),
                                 fontWeight: FontWeight.bold,
@@ -704,7 +704,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              'AVATAR PROFESSIONNEL DE L\'ATELIER',
+              settings.tr('profile_avatar_title'),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -802,7 +802,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                       const Icon(Icons.workspace_premium_rounded, color: Color(0xFFD4AF37), size: 18),
                       const SizedBox(width: 6),
                       Text(
-                        'ABONNEMENT ATELIER PRO',
+                        settings.tr('sub_title'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
@@ -821,9 +821,9 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: const Color(0xFF10B981)),
                 ),
-                child: const Text(
-                  'Actif · 1 An',
-                  style: TextStyle(
+                child: Text(
+                  settings.tr('profile_sub_badge_active'),
+                  style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF10B981),
@@ -849,7 +849,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '/ an (3,5 Millions de Centimes)',
+                  settings.tr('sub_period'),
                   style: TextStyle(
                     fontSize: 13,
                     color: isDark ? const Color(0xFFC5A880) : const Color(0xFFB45309),
@@ -861,7 +861,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Formule complète pour maîtres ateliers : calculs illimités, plans de débitage, devis proforma WhatsApp certifiés et exports G-Code scies CNC.',
+            settings.tr('profile_sub_desc'),
             style: TextStyle(
               fontSize: 11,
               color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280),
@@ -886,7 +886,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                       const Icon(Icons.payment_rounded, size: 14, color: Color(0xFFD4AF37)),
                       const SizedBox(width: 6),
                       Text(
-                        'Paiement : BaridiMob · CCP · CIB / Edahabia',
+                        settings.tr('profile_payment_methods'),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -898,7 +898,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Activation instantanée sur présentation du reçu BaridiMob.',
+                  settings.tr('profile_payment_instant'),
                   style: TextStyle(
                     fontSize: 10,
                     color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
@@ -922,8 +922,8 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
               icon: const Icon(Icons.flash_on_rounded, size: 16),
               label: Text(
                 _profile.isSubscriptionActive
-                    ? 'GÉRER LE PAIEMENT (BaridiMob / Edahabia / CCP)'
-                    : 'SIMULER LE PAIEMENT PRO (35 000 DZD)',
+                    ? settings.tr('sub_manage')
+                    : settings.tr('sub_simulate'),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
               ),
               style: ElevatedButton.styleFrom(
@@ -970,7 +970,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                       const Icon(Icons.analytics_rounded, color: Color(0xFFD4AF37), size: 18),
                       const SizedBox(width: 6),
                       Text(
-                        'ARGUS MATIÈRES & CALIBRATEUR DZD',
+                        settings.tr('profile_market_title'),
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w800,
@@ -989,9 +989,9 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
                 ),
-                child: const Text(
-                  'En Direct',
-                  style: TextStyle(
+                child: Text(
+                  settings.tr('profile_market_badge'),
+                  style: const TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF10B981),
@@ -1002,7 +1002,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Cotations des profilés (TPR, Profilor, Sidal), vitrage (MFG Cevital) et acier (El Hadjar / Tosyali). Ajustez vos multiplicateurs et taux horaire d\'atelier.',
+            settings.tr('profile_market_desc'),
             style: TextStyle(
               fontSize: 10.5,
               color: settings.secondaryText,
@@ -1053,11 +1053,11 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
                 AlgerianMaterialMarketDialog.show(context);
               },
               icon: const Icon(Icons.tune_rounded, size: 16, color: Color(0xFFD4AF37)),
-              label: const FittedBox(
+              label: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  'CONSULTER L\'ARGUS & CALIBRER LES MARGES',
-                  style: TextStyle(
+                  settings.tr('profile_market_btn'),
+                  style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFFD4AF37),
@@ -1152,7 +1152,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
-              'COORDONNÉES DE L\'ATELIER (CARTOUCHE DEVIS)',
+              settings.tr('profile_coords_title'),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -1163,23 +1163,23 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           ),
           const SizedBox(height: 12),
           _buildTextField(
-            label: 'Raison sociale de l\'atelier',
+            label: settings.tr('profile_label_workshop_name'),
             controller: _workshopController,
             icon: Icons.storefront_rounded,
-            hint: 'Ex: Atelier Aluminium Kouba',
+            hint: settings.tr('profile_hint_workshop_name'),
             settings: settings,
           ),
           const SizedBox(height: 10),
           _buildTextField(
-            label: 'Nom du responsable / artisan',
+            label: settings.tr('profile_label_artisan_name'),
             controller: _nameController,
             icon: Icons.person_rounded,
-            hint: 'Ex: Mourad Hadj-Ali',
+            hint: settings.tr('profile_hint_artisan_name'),
             settings: settings,
           ),
           const SizedBox(height: 10),
           _buildTextField(
-            label: 'Téléphone Atelier (WhatsApp)',
+            label: settings.tr('profile_label_phone'),
             controller: _phoneController,
             icon: Icons.phone_rounded,
             hint: '0797780838',
@@ -1188,7 +1188,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           ),
           const SizedBox(height: 10),
           _buildTextField(
-            label: 'Email Professionnel Atelier (Facturation & Reçus)',
+            label: settings.tr('profile_label_email'),
             controller: _emailController,
             icon: Icons.alternate_email_rounded,
             hint: 'midbariola@gmail.com',
@@ -1201,7 +1201,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Wilaya d\'implantation',
+                settings.tr('profile_label_wilaya'),
                 style: TextStyle(fontSize: 11, color: settings.secondaryText),
               ),
               const SizedBox(height: 4),
@@ -1239,18 +1239,18 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           ),
           const SizedBox(height: 10),
           _buildTextField(
-            label: 'NIF Fiscal (Optionnel)',
+            label: settings.tr('profile_label_nif'),
             controller: _nifController,
             icon: Icons.receipt_long_rounded,
-            hint: 'Ex: 001916012345678',
+            hint: settings.tr('profile_hint_nif'),
             settings: settings,
           ),
           const SizedBox(height: 10),
           _buildTextField(
-            label: 'Registre de Commerce - RC (Optionnel)',
+            label: settings.tr('profile_label_rc'),
             controller: _rcController,
             icon: Icons.business_center_rounded,
-            hint: 'Ex: 16/00-1234567B19',
+            hint: settings.tr('profile_hint_rc'),
             settings: settings,
           ),
           const SizedBox(height: 10),
@@ -1259,10 +1259,10 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
               Expanded(
                 flex: 7,
                 child: _buildTextField(
-                  label: 'Compte CCP (sans clé)',
+                  label: settings.tr('profile_label_ccp'),
                   controller: _ccpController,
                   icon: Icons.credit_card_rounded,
-                  hint: 'Ex: 0021458974',
+                  hint: settings.tr('profile_hint_ccp'),
                   keyboardType: TextInputType.number,
                   settings: settings,
                   onChanged: _onCcpChanged,
@@ -1272,7 +1272,7 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
               Expanded(
                 flex: 3,
                 child: _buildTextField(
-                  label: 'Clé CCP',
+                  label: settings.tr('profile_label_ccp_key'),
                   controller: _ccpKeyController,
                   icon: Icons.vpn_key_rounded,
                   hint: '42',
@@ -1284,10 +1284,10 @@ class _ArtisanProfileScreenState extends State<ArtisanProfileScreen> {
           ),
           const SizedBox(height: 10),
           _buildTextField(
-            label: 'RIP BaridiMob Algérie Poste (20 chiffres)',
+            label: settings.tr('profile_label_rip'),
             controller: _ripController,
             icon: Icons.account_balance_wallet_rounded,
-            hint: 'Ex: 00799999002145897442',
+            hint: settings.tr('profile_hint_rip'),
             keyboardType: TextInputType.number,
             settings: settings,
           ),
