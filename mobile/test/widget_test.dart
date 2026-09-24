@@ -207,6 +207,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('VISEUR LASER CHANTIER'), findsOneWidget);
+    expect(find.text('Tableau std:'), findsOneWidget);
+    expect(find.text('1400×2200 (Porte-Fenêtre)'), findsOneWidget);
+
+    // Tap standard window opening preset (first visible preset)
+    await tester.tap(find.text('1200×1200 (Fenêtre)'));
+    await tester.pumpAndSettle();
+
+    // With standard 10mm clearance: 1200-10 = 1190, 1200-10 = 1190
+    expect(find.text('1190 × 1190 mm'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

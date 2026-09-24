@@ -73,6 +73,15 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
     });
   }
 
+  void _applyPreset(double widthMm, double heightMm) {
+    setState(() {
+      _measuredWidth = widthMm;
+      _measuredHeight = heightMm;
+      _pointA = const Offset(0.20, 0.25);
+      _pointB = const Offset(0.80, 0.75);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -404,7 +413,7 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                                 fit: BoxFit.scaleDown,
                                 alignment: Alignment.centerLeft,
                                 child: Text(
-                                  'ΔD =  mm',
+                                  'ΔD = ${_diagonalDiff.toStringAsFixed(1)} mm',
                                   style: TextStyle(
                                     fontFamily: 'monospace',
                                     fontSize: 13,
@@ -419,6 +428,10 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
+
+                  // Tableaux Standards Algériens
+                  _buildStandardPresetsBar(),
                   const SizedBox(height: 8),
 
                   // Clearance Selector (Jeux de pose maçonnerie) - Horizontally scrollable
@@ -534,6 +547,57 @@ class _LaserMeasureDialogState extends State<LaserMeasureDialog> {
             shape: BoxShape.circle,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildStandardPresetsBar() {
+    final presets = [
+      {'label': '1200×1200 (Fenêtre)', 'w': 1200.0, 'h': 1200.0},
+      {'label': '1400×2200 (Porte-Fenêtre)', 'w': 1400.0, 'h': 2200.0},
+      {'label': '2400×2200 (Baie Salon)', 'w': 2400.0, 'h': 2200.0},
+      {'label': '1000×1400 (Cuisine)', 'w': 1000.0, 'h': 1400.0},
+      {'label': '600×600 (Vasistas SDB)', 'w': 600.0, 'h': 600.0},
+      {'label': '800×500 (Imposte)', 'w': 800.0, 'h': 500.0},
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          const Text(
+            'Tableau std:',
+            style: TextStyle(fontSize: 11, color: Color(0xFFD4AF37), fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(width: 8),
+          ...presets.map((p) {
+            final isMatch = _measuredWidth == (p['w'] as double) && _measuredHeight == (p['h'] as double);
+            return Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: GestureDetector(
+                onTap: () => _applyPreset(p['w'] as double, p['h'] as double),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isMatch ? const Color(0xFFD4AF37) : const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: isMatch ? const Color(0xFFD4AF37) : const Color(0xFF334155),
+                    ),
+                  ),
+                  child: Text(
+                    p['label'] as String,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: isMatch ? FontWeight.bold : FontWeight.normal,
+                      color: isMatch ? const Color(0xFF0F172A) : Colors.white70,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

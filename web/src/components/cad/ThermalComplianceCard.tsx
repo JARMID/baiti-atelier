@@ -10,6 +10,7 @@ import {
   FileCheck,
   CheckCircle,
   HelpCircle,
+  Share2,
 } from 'lucide-react';
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
 import { playTactileClick, playSwitchSound } from '../../utils/audioFeedback';
@@ -476,8 +477,40 @@ export const ThermalComplianceCard: React.FC<ThermalComplianceCardProps> = ({
           </div>
         )}
 
-        {/* ACTION BUTTON */}
-        <div className="flex justify-end pt-1">
+        {/* ACTION BUTTONS */}
+        <div className="flex flex-wrap items-center justify-end gap-2.5 pt-1">
+          <button
+            onClick={() => {
+              playTactileClick();
+              const lines = [
+                '========================================',
+                'BAITI ATELIER | بيتي : BILAN THERMIQUE DTR C3-2',
+                `DATE : ${new Date().toLocaleDateString('fr-FR')}`,
+                `OUVRAGE : Menuiserie ${widthMm} × ${heightMm} mm`,
+                `WILAYA : ${currentWilaya.code} - ${currentWilaya.nameFr} (${zoneThreshold.label.split(' - ')[0]})`,
+                `TRANSMITTANCE Uw : ${thermalData.uw} W/m²K (Seuil max : ${zoneThreshold.maxUw} W/m²K)`,
+                `FACTEUR SOLAIRE Sw : ${thermalData.sw.toFixed(2)} (Seuil max : ${zoneThreshold.maxSw})`,
+                `ISOLATION ACOUSTIQUE Rw : ${thermalData.rw} dB`,
+                `CLASSE ÉNERGÉTIQUE : Classe ${thermalData.energyClass}`,
+                `STATUT : ${thermalData.isFullyCompliant ? 'CONFORME REGLEMENTATION ALGERIENNE' : 'NON CONFORME - OPTIMISATION REQUISE'}`,
+                '========================================',
+                'Genere via Baiti Atelier • Norme CNERIB DTR C3-2',
+              ];
+              const text = lines.join('\n');
+              const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+              window.open(url, '_blank');
+            }}
+            className={`px-3 py-2 rounded-xl border text-xs font-mono font-medium flex items-center gap-1.5 transition-all shadow-sm cursor-pointer hover-lift ${
+              isLight
+                ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800'
+                : 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
+            }`}
+            title="Partager le bilan thermique DTR C3-2 directement sur WhatsApp"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            <span>WhatsApp DTR</span>
+          </button>
+
           <button
             onClick={async () => {
               playTactileClick();
