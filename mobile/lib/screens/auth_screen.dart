@@ -348,9 +348,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(height: 4),
 
                     Text(
-                      settings.isRtl
-                          ? 'بوابة الحرفيين وورشات النجارة في الجزائر'
-                          : 'Portail des Artisans & Menuisiers Algériens (58 Wilayas)',
+                      settings.tr('auth_portal_desc'),
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12, color: settings.secondaryText),
                     ),
@@ -379,7 +377,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 child: FittedBox(
                                   fit: BoxFit.scaleDown,
                                   child: Text(
-                                    'CONNEXION ATELIER',
+                                    settings.tr('auth_tab_login'),
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 11.5,
@@ -404,7 +402,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 child: FittedBox(
                                   fit: BoxFit.scaleDown,
                                   child: Text(
-                                    'CRÉER UN COMPTE',
+                                    settings.tr('auth_tab_signup'),
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 11.5,
@@ -448,10 +446,14 @@ class _AuthScreenState extends State<AuthScreen> {
                     // Guest Mode Button
                     TextButton.icon(
                       onPressed: _continueAsGuest,
-                      icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF38BDF8)),
-                      label: const Text(
-                        'Accéder immédiatement en Mode Invité / Découverte',
-                        style: TextStyle(
+                      icon: Icon(
+                        settings.isRtl ? Icons.arrow_back_rounded : Icons.arrow_forward_rounded,
+                        size: 16,
+                        color: const Color(0xFF38BDF8),
+                      ),
+                      label: Text(
+                        settings.tr('auth_guest_access'),
+                        style: const TextStyle(
                           color: Color(0xFF38BDF8),
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -500,7 +502,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               size: 14, color: _loginMethod == 0 ? const Color(0xFFD4AF37) : settings.secondaryText),
                           const SizedBox(width: 5),
                           Text(
-                            'Email / Passe',
+                            settings.tr('auth_method_email'),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -540,7 +542,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               size: 14, color: _loginMethod == 1 ? const Color(0xFFD4AF37) : settings.secondaryText),
                           const SizedBox(width: 5),
                           Text(
-                            'Téléphone SMS',
+                            settings.tr('auth_method_phone'),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -566,7 +568,7 @@ class _AuthScreenState extends State<AuthScreen> {
             keyboardType: TextInputType.emailAddress,
             style: TextStyle(color: settings.primaryText, fontSize: 13),
             decoration: InputDecoration(
-              labelText: 'Adresse Email Atelier',
+              labelText: settings.tr('auth_email_label'),
               labelStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
               prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFFD4AF37), size: 18),
               suffixIcon: _isEmailValid
@@ -586,7 +588,7 @@ class _AuthScreenState extends State<AuthScreen> {
             obscureText: _obscurePassword,
             style: TextStyle(color: settings.primaryText, fontSize: 13),
             decoration: InputDecoration(
-              labelText: 'Mot de passe Atelier',
+              labelText: settings.tr('auth_password_label'),
               labelStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
               prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFFD4AF37), size: 18),
               suffixIcon: IconButton(
@@ -610,7 +612,7 @@ class _AuthScreenState extends State<AuthScreen> {
             keyboardType: TextInputType.phone,
             style: TextStyle(color: settings.primaryText, fontSize: 13),
             decoration: InputDecoration(
-              labelText: 'Numéro de Téléphone (ex: 0797780838)',
+              labelText: settings.tr('auth_phone_label'),
               labelStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
               prefixIcon: const Icon(Icons.phone_iphone_rounded, color: Color(0xFFD4AF37), size: 18),
               filled: true,
@@ -627,10 +629,10 @@ class _AuthScreenState extends State<AuthScreen> {
               style: TextStyle(color: settings.primaryText, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 4),
               textAlign: TextAlign.center,
               decoration: InputDecoration(
-                labelText: 'Code de vérification SMS (6 chiffres)',
+                labelText: settings.tr('auth_otp_label'),
                 labelStyle: TextStyle(fontSize: 11, color: settings.secondaryText, letterSpacing: 0),
                 prefixIcon: const Icon(Icons.security_rounded, color: Color(0xFF10B981), size: 18),
-                suffixText: _otpCountdown > 0 ? '${_otpCountdown}s' : 'Renvoyer',
+                suffixText: _otpCountdown > 0 ? '${_otpCountdown}s' : settings.tr('auth_otp_resend'),
                 suffixStyle: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold, fontSize: 12),
                 filled: true,
                 fillColor: settings.inputBackground,
@@ -657,8 +659,8 @@ class _AuthScreenState extends State<AuthScreen> {
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                 : Text(
                     _loginMethod == 1 && !_otpSent
-                        ? 'RECEVOIR LE CODE SMS OTP'
-                        : 'SE CONNECTER À MON ATELIER',
+                        ? settings.tr('auth_btn_get_otp')
+                        : settings.tr('auth_btn_login'),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5),
                   ),
           ),
@@ -676,7 +678,7 @@ class _AuthScreenState extends State<AuthScreen> {
           controller: _nameController,
           style: TextStyle(color: settings.primaryText, fontSize: 13),
           decoration: InputDecoration(
-            labelText: 'Nom & Prénom du Responsable',
+            labelText: settings.tr('auth_name_label'),
             labelStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
             prefixIcon: const Icon(Icons.person_rounded, color: Color(0xFFD4AF37), size: 18),
             filled: true,
@@ -692,7 +694,7 @@ class _AuthScreenState extends State<AuthScreen> {
           controller: _workshopController,
           style: TextStyle(color: settings.primaryText, fontSize: 13),
           decoration: InputDecoration(
-            labelText: 'Nom de l\'Atelier (Raison Sociale)',
+            labelText: settings.tr('auth_workshop_label'),
             labelStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
             prefixIcon: const Icon(Icons.storefront_rounded, color: Color(0xFFD4AF37), size: 18),
             filled: true,
@@ -709,7 +711,7 @@ class _AuthScreenState extends State<AuthScreen> {
           keyboardType: TextInputType.phone,
           style: TextStyle(color: settings.primaryText, fontSize: 13),
           decoration: InputDecoration(
-            labelText: 'Numéro de Téléphone (ex: 0797780838)',
+            labelText: settings.tr('auth_phone_label'),
             labelStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
             prefixIcon: const Icon(Icons.phone_rounded, color: Color(0xFFD4AF37), size: 18),
             filled: true,
@@ -726,7 +728,7 @@ class _AuthScreenState extends State<AuthScreen> {
           keyboardType: TextInputType.emailAddress,
           style: TextStyle(color: settings.primaryText, fontSize: 13),
           decoration: InputDecoration(
-            labelText: 'Adresse Email Atelier (midbariola@gmail.com)',
+            labelText: settings.tr('auth_email_label'),
             labelStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
             prefixIcon: const Icon(Icons.alternate_email_rounded, color: Color(0xFFD4AF37), size: 18),
             suffixIcon: _isEmailValid
@@ -746,7 +748,7 @@ class _AuthScreenState extends State<AuthScreen> {
           obscureText: _obscurePassword,
           style: TextStyle(color: settings.primaryText, fontSize: 13),
           decoration: InputDecoration(
-            labelText: 'Mot de passe sécurisé',
+            labelText: settings.tr('auth_signup_pass_label'),
             labelStyle: TextStyle(fontSize: 11, color: settings.secondaryText),
             prefixIcon: const Icon(Icons.lock_rounded, color: Color(0xFFD4AF37), size: 18),
             suffixIcon: IconButton(
@@ -777,7 +779,7 @@ class _AuthScreenState extends State<AuthScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'CRITÈRES DE SÉCURITÉ DU MOT DE PASSE :',
+                settings.tr('auth_password_policy_title'),
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
@@ -786,11 +788,11 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-              _buildCriteriaRow('Minimum 8 caractères', _hasMinLength, settings),
-              _buildCriteriaRow('Au moins une lettre majuscule (A-Z)', _hasUppercase, settings),
-              _buildCriteriaRow('Au moins une lettre minuscule (a-z)', _hasLowercase, settings),
-              _buildCriteriaRow('Au moins un chiffre (0-9)', _hasNumber, settings),
-              _buildCriteriaRow('Au moins un caractère spécial (!@#\$%...)', _hasSpecialChar, settings),
+              _buildCriteriaRow(settings.tr('auth_crit_min_len'), _hasMinLength, settings),
+              _buildCriteriaRow(settings.tr('auth_crit_upper'), _hasUppercase, settings),
+              _buildCriteriaRow(settings.tr('auth_crit_lower'), _hasLowercase, settings),
+              _buildCriteriaRow(settings.tr('auth_crit_num'), _hasNumber, settings),
+              _buildCriteriaRow(settings.tr('auth_crit_special'), _hasSpecialChar, settings),
             ],
           ),
         ),
@@ -823,7 +825,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
         // Avatar Selection Carousel
         Text(
-          'CHOISIR L\'AVATAR DE VOTRE ATELIER',
+          settings.tr('auth_choose_avatar'),
           style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: settings.secondaryText, letterSpacing: 0.5),
         ),
         const SizedBox(height: 8),
@@ -870,7 +872,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
             child: _isLoading
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                : const Text('CRÉER MON ESPACE ATELIER PRO', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5)),
+                : Text(settings.tr('auth_btn_signup'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.5)),
           ),
         ),
       ],
