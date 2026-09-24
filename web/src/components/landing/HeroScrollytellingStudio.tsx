@@ -8,7 +8,7 @@ import { useConfigStore } from '../../store/configStore';
 import { useDeviceType } from '../../hooks/useDeviceType';
 import type { TradeCategory } from '../../types/trades';
 import type { FinishColor } from '../../types/window';
-import { Hero3DWorkpiece, type WindowModelType } from '../3d/Hero3DWorkpiece';
+import { Hero3DWorkpiece, type WindowModelType, type GraphicRenderMode } from '../3d/Hero3DWorkpiece';
 import {
   Compass,
   Scissors,
@@ -95,6 +95,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
 
   const [selectedTrade, setSelectedTrade] = useState<TradeCategory>(activeTrade);
   const [windowModel, setWindowModel] = useState<WindowModelType>('sliding');
+  const [graphicMode, setGraphicMode] = useState<GraphicRenderMode>('realistic');
   const [mouseOffset, setMouseOffset] = useState({ x: 0, y: 0 });
   const [is360Active, setIs360Active] = useState(false);
   const [isExploded, setIsExploded] = useState(false);
@@ -289,6 +290,61 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
             </div>
           </div>
 
+          {/* Center Graphic Render Mode Selector */}
+          <div
+            className={`pointer-events-auto hidden md:flex items-center gap-1 p-1 rounded-xl border backdrop-blur-md transition-all shadow-lg ${
+              isLight
+                ? 'bg-white/90 border-slate-200 text-slate-700'
+                : 'bg-black/80 border-white/15 text-zinc-300'
+            }`}
+          >
+            <button
+              onClick={() => {
+                playTactileClick();
+                setGraphicMode('realistic');
+              }}
+              className={`px-3 py-1 rounded-lg text-[10px] font-mono tracking-wider transition-all cursor-pointer ${
+                graphicMode === 'realistic'
+                  ? 'bg-[#D4AF37] text-slate-950 font-bold shadow-xs'
+                  : isLight
+                  ? 'text-slate-600 hover:text-slate-900'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              RÉEL CAO
+            </button>
+            <button
+              onClick={() => {
+                playTactileClick();
+                setGraphicMode('blueprint');
+              }}
+              className={`px-3 py-1 rounded-lg text-[10px] font-mono tracking-wider transition-all cursor-pointer ${
+                graphicMode === 'blueprint'
+                  ? 'bg-sky-500 text-slate-950 font-bold shadow-xs'
+                  : isLight
+                  ? 'text-slate-600 hover:text-slate-900'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              BLUEPRINT
+            </button>
+            <button
+              onClick={() => {
+                playTactileClick();
+                setGraphicMode('xray');
+              }}
+              className={`px-3 py-1 rounded-lg text-[10px] font-mono tracking-wider transition-all cursor-pointer ${
+                graphicMode === 'xray'
+                  ? 'bg-cyan-400 text-slate-950 font-bold shadow-xs'
+                  : isLight
+                  ? 'text-slate-600 hover:text-slate-900'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              RAYON-X
+            </button>
+          </div>
+
           {/* Right Dynamic Architectural Scale Badge */}
           <div
             className={`p-2.5 sm:p-3 rounded-xl border backdrop-blur-md transition-all flex flex-col items-end ${
@@ -375,6 +431,7 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                 windowModel={windowModel}
                 clippingPlane={clippingPlane}
                 isLight={isLight}
+                graphicMode={graphicMode}
               />
               <ContactShadows
                 position={[0, -1.05, 0]}
@@ -436,6 +493,112 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
               <span className="text-[#D4AF37] font-bold">↓|</span>
             </div>
           </div>
+        )}
+
+        {/* STAGE 2 RESPONSIVE SVG CAD LEADER LINES */}
+        {isStage2 && (
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none z-15 hidden md:block"
+            viewBox="0 0 1000 1000"
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <filter id="cad-glow-gold" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+              <filter id="cad-glow-cyan" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+
+            {/* Leader 1: Top Left Miter Joint */}
+            <g className="opacity-80 transition-opacity duration-500">
+              <path
+                d="M 270 190 L 360 190 L 425 295"
+                fill="none"
+                stroke={isLight ? '#B45309' : '#D4AF37'}
+                strokeWidth="1.5"
+                strokeDasharray="4 3"
+              />
+              <circle cx="270" cy="190" r="3.5" fill={isLight ? '#B45309' : '#D4AF37'} />
+              <circle
+                cx="425"
+                cy="295"
+                r="5"
+                fill="none"
+                stroke={isLight ? '#B45309' : '#D4AF37'}
+                strokeWidth="1.8"
+                filter="url(#cad-glow-gold)"
+              />
+              <circle cx="425" cy="295" r="2" fill={isLight ? '#B45309' : '#D4AF37'} />
+            </g>
+
+            {/* Leader 2: Thermal Break Core */}
+            <g className="opacity-80 transition-opacity duration-500">
+              <path
+                d="M 255 500 L 380 500 L 465 470"
+                fill="none"
+                stroke="#F59E0B"
+                strokeWidth="1.5"
+                strokeDasharray="4 3"
+              />
+              <circle cx="255" cy="500" r="3.5" fill="#F59E0B" />
+              <circle
+                cx="465"
+                cy="470"
+                r="5"
+                fill="none"
+                stroke="#F59E0B"
+                strokeWidth="1.8"
+              />
+              <circle cx="465" cy="470" r="2" fill="#F59E0B" />
+            </g>
+
+            {/* Leader 3: Central EPDM Weather Seal */}
+            <g className="opacity-80 transition-opacity duration-500">
+              <path
+                d="M 740 500 L 620 500 L 540 475"
+                fill="none"
+                stroke="#06B6D4"
+                strokeWidth="1.5"
+                strokeDasharray="4 3"
+              />
+              <circle cx="740" cy="500" r="3.5" fill="#06B6D4" />
+              <circle
+                cx="540"
+                cy="475"
+                r="5"
+                fill="none"
+                stroke="#06B6D4"
+                strokeWidth="1.8"
+                filter="url(#cad-glow-cyan)"
+              />
+              <circle cx="540" cy="475" r="2" fill="#06B6D4" />
+            </g>
+
+            {/* Leader 4: Double Glazing Pane */}
+            <g className="opacity-80 transition-opacity duration-500">
+              <path
+                d="M 725 640 L 635 640 L 560 560"
+                fill="none"
+                stroke="#38BDF8"
+                strokeWidth="1.5"
+                strokeDasharray="4 3"
+              />
+              <circle cx="725" cy="640" r="3.5" fill="#38BDF8" />
+              <circle
+                cx="560"
+                cy="560"
+                r="5"
+                fill="none"
+                stroke="#38BDF8"
+                strokeWidth="1.8"
+              />
+              <circle cx="560" cy="560" r="2" fill="#38BDF8" />
+            </g>
+          </svg>
         )}
 
         {/* STAGE 2 ARCHITECTURAL PIN CALLOUTS */}
@@ -508,8 +671,135 @@ export const HeroScrollytellingStudio: React.FC<HeroScrollytellingStudioProps> =
                 </p>
               </div>
             </div>
+
+            {/* 2D Profile Extrusion Cross-Section Inset Card */}
+            <div className="hidden lg:block absolute bottom-24 left-8 z-20 pointer-events-none transition-all duration-700">
+              <div
+                className={`p-3 rounded-2xl border backdrop-blur-xl shadow-2xl max-w-[270px] font-mono text-xs ${
+                  isLight ? 'bg-white/95 border-slate-200 text-slate-800' : 'bg-black/85 border-white/15 text-zinc-300'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/10 dark:border-white/10">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
+                    <span className="font-bold text-[10px] text-[#D4AF37] uppercase tracking-wider">
+                      COUPE 2D · DORMANT 45 RPT
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-zinc-400">ÉCH. 1:1</span>
+                </div>
+
+                <div className="w-full h-24 bg-slate-900/70 dark:bg-black/80 rounded-lg p-1.5 border border-white/5 flex items-center justify-center">
+                  <svg viewBox="0 0 160 90" className="w-full h-full">
+                    {/* Outer Aluminum Extrusion */}
+                    <rect x="15" y="10" width="40" height="66" rx="2" fill="none" stroke="#38BDF8" strokeWidth="1.6" />
+                    <line x1="25" y1="10" x2="25" y2="76" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="2 2" />
+                    <line x1="42" y1="22" x2="42" y2="64" stroke="#38BDF8" strokeWidth="0.8" />
+
+                    {/* Dual Polyamide Thermal Break Bars PA66-GF25 */}
+                    <rect x="58" y="18" width="36" height="11" rx="2" fill="#D97706" opacity="0.9" />
+                    <rect x="58" y="56" width="36" height="11" rx="2" fill="#D97706" opacity="0.9" />
+                    <text x="76" y="26" fill="#FFFFFF" fontSize="6" fontWeight="bold" textAnchor="middle">PA66</text>
+                    <text x="76" y="64" fill="#FFFFFF" fontSize="6" fontWeight="bold" textAnchor="middle">PA66</text>
+
+                    {/* Inner Aluminum Extrusion */}
+                    <rect x="97" y="10" width="40" height="66" rx="2" fill="none" stroke="#38BDF8" strokeWidth="1.6" />
+                    <line x1="127" y1="10" x2="127" y2="76" stroke="#38BDF8" strokeWidth="0.8" strokeDasharray="2 2" />
+                    <line x1="110" y1="22" x2="110" y2="64" stroke="#38BDF8" strokeWidth="0.8" />
+
+                    {/* Central EPDM Seal Cavity */}
+                    <path d="M 64 36 Q 76 32 88 36 Q 76 48 64 36" fill="#06B6D4" opacity="0.8" />
+
+                    {/* Dimension Arrows */}
+                    <line x1="15" y1="84" x2="137" y2="84" stroke="#D4AF37" strokeWidth="0.8" />
+                    <line x1="15" y1="81" x2="15" y2="87" stroke="#D4AF37" strokeWidth="0.8" />
+                    <line x1="137" y1="81" x2="137" y2="87" stroke="#D4AF37" strokeWidth="0.8" />
+                    <text x="76" y="82" fill="#D4AF37" fontSize="6" textAnchor="middle">45.0 mm</text>
+                  </svg>
+                </div>
+
+                <div className="mt-1.5 flex items-center justify-between text-[10px] text-zinc-400">
+                  <span>Profilé : RPT Tubulaire</span>
+                  <span className="text-emerald-400 font-semibold">A*4 E*9A V*C3</span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
+
+        {/* CAD NAVIGATION VIEWCUBE WIDGET */}
+        <div className="hidden sm:block absolute bottom-24 right-6 z-25 pointer-events-auto">
+          <div
+            className={`p-2.5 rounded-2xl border backdrop-blur-xl shadow-xl transition-all ${
+              isLight ? 'bg-white/90 border-slate-200 text-slate-800' : 'bg-black/75 border-white/15 text-zinc-300'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5 px-0.5 text-[9px] font-mono font-bold tracking-wider uppercase text-zinc-400">
+              <span>ORIENTATION</span>
+              <span className="text-[#D4AF37]">3D CAO</span>
+            </div>
+
+            {/* Isometric Mini Cube Display */}
+            <div className="relative w-14 h-14 mx-auto flex items-center justify-center">
+              <div
+                className="w-9 h-9 border border-[#D4AF37]/60 rounded-xs relative flex items-center justify-center transition-transform duration-500 shadow-md"
+                style={{
+                  transform: isStage3 || is360Active
+                    ? 'rotateX(25deg) rotateY(-35deg)'
+                    : isStage2
+                    ? 'rotateX(15deg) rotateY(-15deg) scale(1.08)'
+                    : 'rotateX(0deg) rotateY(0deg)',
+                  transformStyle: 'preserve-3d',
+                }}
+              >
+                <span className="text-[8px] font-mono font-bold text-[#D4AF37]">
+                  {isStage3 ? 'ISO' : isStage2 ? 'ZOOM' : 'FACE'}
+                </span>
+              </div>
+
+              {/* Axis Gizmo Indicators */}
+              <div className="absolute bottom-0 left-0 text-[8px] font-mono font-bold flex flex-col gap-0.5 pointer-events-none">
+                <span className="text-red-400">X</span>
+                <span className="text-emerald-400">Y</span>
+                <span className="text-sky-400">Z</span>
+              </div>
+            </div>
+
+            {/* Quick Orientation Buttons */}
+            <div className="mt-2 grid grid-cols-2 gap-1 font-mono text-[9px]">
+              <button
+                onClick={() => {
+                  playTactileClick();
+                  setIs360Active(false);
+                }}
+                className={`px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
+                  !is360Active && isStage1
+                    ? 'bg-[#D4AF37] text-slate-950 font-bold border-[#D4AF37]'
+                    : isLight
+                    ? 'border-slate-200 text-slate-600 hover:bg-slate-100'
+                    : 'border-white/10 text-zinc-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                FACE
+              </button>
+              <button
+                onClick={() => {
+                  playTactileClick();
+                  setIs360Active(true);
+                }}
+                className={`px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
+                  is360Active || isStage3
+                    ? 'bg-[#D4AF37] text-slate-950 font-bold border-[#D4AF37]'
+                    : isLight
+                    ? 'border-slate-200 text-slate-600 hover:bg-slate-100'
+                    : 'border-white/10 text-zinc-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                ISO
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* DYNAMIC SCROLLYTELLING OVERLAY CONTENT */}
         <div

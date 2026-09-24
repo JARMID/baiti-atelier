@@ -8,6 +8,7 @@ import type { TradeCategory } from '../../types/trades';
 import { FINISH_PALETTES } from '../../utils/finishSpecifications';
 
 export type WindowModelType = 'sliding' | 'tilt_and_turn' | 'french_casement' | 'curtain_wall';
+export type GraphicRenderMode = 'realistic' | 'blueprint' | 'xray';
 
 interface Hero3DWorkpieceProps {
   trade: TradeCategory;
@@ -18,6 +19,7 @@ interface Hero3DWorkpieceProps {
   windowModel?: WindowModelType;
   clippingPlane?: THREE.Plane | null;
   isLight?: boolean;
+  graphicMode?: GraphicRenderMode;
 }
 
 export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
@@ -29,6 +31,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
   windowModel = 'sliding',
   clippingPlane = null,
   isLight,
+  graphicMode = 'realistic',
 }) => {
   const rootRef = useRef<THREE.Group>(null);
   const leftSashRef = useRef<THREE.Group>(null);
@@ -43,29 +46,61 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
 
   // Architectural CAD Vector drafting line colors
   const cadEdgeColor = useMemo(() => {
+    if (graphicMode === 'blueprint') return '#38BDF8';
+    if (graphicMode === 'xray') return '#67E8F9';
     return isLightMode ? '#334155' : '#D4AF37';
-  }, [isLightMode]);
+  }, [graphicMode, isLightMode]);
 
   const cadAccentEdgeColor = useMemo(() => {
+    if (graphicMode === 'blueprint') return '#00F0FF';
+    if (graphicMode === 'xray') return '#38BDF8';
     return isLightMode ? '#0284C7' : '#38BDF8';
-  }, [isLightMode]);
+  }, [graphicMode, isLightMode]);
 
   const glassCadEdgeColor = useMemo(() => {
+    if (graphicMode === 'blueprint') return '#0284C7';
+    if (graphicMode === 'xray') return '#A5F3FC';
     return isLightMode ? '#0EA5E9' : '#38BDF8';
-  }, [isLightMode]);
+  }, [graphicMode, isLightMode]);
 
   const thermalBreakEdgeColor = useMemo(() => {
+    if (graphicMode === 'blueprint') return '#F59E0B';
+    if (graphicMode === 'xray') return '#FBBF24';
     return isLightMode ? '#0F172A' : '#F59E0B';
-  }, [isLightMode]);
+  }, [graphicMode, isLightMode]);
 
   // Materials with clipping support & architectural clearcoat
   const frameMaterial = useMemo(() => {
+    let color = palette.color;
+    let roughness = palette.roughness;
+    let metalness = palette.metalness;
+    let clearcoat = 0.35;
+    let clearcoatRoughness = 0.18;
+    let transparent = false;
+    let opacity = 1.0;
+
+    if (graphicMode === 'blueprint') {
+      color = '#0A1A36';
+      roughness = 0.3;
+      metalness = 0.2;
+      transparent = true;
+      opacity = 0.88;
+    } else if (graphicMode === 'xray') {
+      color = '#0369A1';
+      roughness = 0.15;
+      metalness = 0.1;
+      transparent = true;
+      opacity = 0.42;
+    }
+
     const mat = new THREE.MeshPhysicalMaterial({
-      color: palette.color,
-      roughness: palette.roughness,
-      metalness: palette.metalness,
-      clearcoat: 0.35,
-      clearcoatRoughness: 0.18,
+      color,
+      roughness,
+      metalness,
+      clearcoat,
+      clearcoatRoughness,
+      transparent,
+      opacity,
       envMapIntensity: 1.6,
       side: THREE.DoubleSide,
     });
@@ -74,16 +109,34 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
       mat.clipShadows = true;
     }
     return mat;
-  }, [palette, clippingPlane]);
+  }, [palette, graphicMode, clippingPlane]);
 
   // Monobloc roller shutter caisson (dynamic: Deep Sleek Black in dark mode, Pure Architectural White in light mode)
   const shutterMaterial = useMemo(() => {
+    let color = isLightMode ? '#FFFFFF' : '#0B0F19';
+    let roughness = isLightMode ? 0.25 : 0.45;
+    let metalness = isLightMode ? 0.08 : 0.65;
+    let transparent = false;
+    let opacity = 1.0;
+
+    if (graphicMode === 'blueprint') {
+      color = '#0B2247';
+      transparent = true;
+      opacity = 0.85;
+    } else if (graphicMode === 'xray') {
+      color = '#075985';
+      transparent = true;
+      opacity = 0.45;
+    }
+
     const mat = new THREE.MeshPhysicalMaterial({
-      color: isLightMode ? '#FFFFFF' : '#0B0F19',
-      roughness: isLightMode ? 0.25 : 0.45,
-      metalness: isLightMode ? 0.08 : 0.65,
+      color,
+      roughness,
+      metalness,
       clearcoat: 0.3,
       clearcoatRoughness: 0.15,
+      transparent,
+      opacity,
       envMapIntensity: isLightMode ? 1.2 : 1.6,
       side: THREE.DoubleSide,
     });
@@ -92,11 +145,11 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
       mat.clipShadows = true;
     }
     return mat;
-  }, [isLightMode, clippingPlane]);
+  }, [isLightMode, graphicMode, clippingPlane]);
 
   const hardwareSteelMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
-      color: '#94A3B8',
+      color: graphicMode === 'blueprint' ? '#38BDF8' : '#94A3B8',
       roughness: 0.25,
       metalness: 0.85,
       side: THREE.DoubleSide,
@@ -106,7 +159,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
       mat.clipShadows = true;
     }
     return mat;
-  }, [clippingPlane]);
+  }, [graphicMode, clippingPlane]);
 
   const goldAccentMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
@@ -125,7 +178,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
 
   const thermalBreakMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
-      color: '#0B0F19',
+      color: graphicMode === 'blueprint' ? '#F59E0B' : '#0B0F19',
       roughness: 0.9,
       metalness: 0.05,
       side: THREE.DoubleSide,
@@ -135,16 +188,16 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
       mat.clipShadows = true;
     }
     return mat;
-  }, [clippingPlane]);
+  }, [graphicMode, clippingPlane]);
 
   const glassMaterial = useMemo(() => {
     const mat = new THREE.MeshPhysicalMaterial({
-      color: '#DCEDEB',
+      color: graphicMode === 'blueprint' ? '#0284C7' : '#DCEDEB',
       roughness: 0.04,
-      transmission: 0.92,
+      transmission: graphicMode === 'xray' ? 0.96 : 0.92,
       thickness: 0.03,
       transparent: true,
-      opacity: 0.58,
+      opacity: graphicMode === 'blueprint' ? 0.45 : graphicMode === 'xray' ? 0.35 : 0.58,
       ior: 1.52,
       reflectivity: 0.88,
       side: THREE.DoubleSide,
@@ -154,7 +207,7 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
       mat.clipShadows = true;
     }
     return mat;
-  }, [clippingPlane]);
+  }, [graphicMode, clippingPlane]);
 
   const woodMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
@@ -811,6 +864,30 @@ export const Hero3DWorkpiece: React.FC<Hero3DWorkpieceProps> = ({
               <Edges threshold={15} color="#F59E0B" />
             </mesh>
           </group>
+        </group>
+      )}
+
+      {/* Precision CAD Section Cut Plane Visualization */}
+      {clippingPlane && (
+        <group>
+          <mesh
+            position={
+              clippingPlane.normal.x !== 0
+                ? [-clippingPlane.constant * clippingPlane.normal.x, 0, 0]
+                : [0, -clippingPlane.constant * clippingPlane.normal.y, 0]
+            }
+            rotation={clippingPlane.normal.x !== 0 ? [0, Math.PI / 2, 0] : [Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={[1.8, 1.8]} />
+            <meshBasicMaterial
+              color={graphicMode === 'blueprint' ? '#00F0FF' : isLightMode ? '#0284C7' : '#D4AF37'}
+              transparent
+              opacity={0.12}
+              side={THREE.DoubleSide}
+              depthWrite={false}
+            />
+            <Edges threshold={1} color={graphicMode === 'blueprint' ? '#00F0FF' : isLightMode ? '#0284C7' : '#D4AF37'} />
+          </mesh>
         </group>
       )}
     </group>
