@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { safeStorage } from '../lib/safeStorage';
 
 export interface UserProfile {
   id: string;
@@ -59,8 +60,8 @@ export const DEMO_PROFILES: UserProfile[] = [
     id: 'demo-artisan-alger',
     name: 'Mourad Hadj-Ali',
     workshopName: 'Atelier Aluminium Kouba',
-    email: 'm.hadjali@kouba-alu.dz',
-    phone: '0550 12 34 56',
+    email: 'midbariola@gmail.com',
+    phone: '0797780838',
     wilaya: '16 - Alger',
     role: 'artisan',
     avatarUrl: PRESET_AVATARS[0].url,
@@ -102,15 +103,7 @@ export const DEMO_PROFILES: UserProfile[] = [
 const STORAGE_KEY = 'baiti_artisan_user_profile';
 
 function loadPersistedProfile(): UserProfile {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      return JSON.parse(raw);
-    }
-  } catch {
-    // Fallback on default
-  }
-  return DEMO_PROFILES[0];
+  return safeStorage.getJSON<UserProfile>(STORAGE_KEY, DEMO_PROFILES[0]);
 }
 
 interface AuthState {
@@ -143,11 +136,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => {
       if (!state.user) return state;
       const updated: UserProfile = { ...state.user, ...updates };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch {
-        // Ignored
-      }
+      safeStorage.setJSON(STORAGE_KEY, updated);
       return { user: updated };
     }),
 
@@ -155,22 +144,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => {
       if (!state.user) return state;
       const updated: UserProfile = { ...state.user, avatarUrl };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch {
-        // Ignored
-      }
+      safeStorage.setJSON(STORAGE_KEY, updated);
       return { user: updated };
     }),
 
   loginWithDemo: (profileId) =>
     set(() => {
       const match = DEMO_PROFILES.find((p) => p.id === profileId) || DEMO_PROFILES[0];
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(match));
-      } catch {
-        // Ignored
-      }
+      safeStorage.setJSON(STORAGE_KEY, match);
       return { user: match, isAuthenticated: true, isAuthModalOpen: false };
     }),
 
@@ -181,17 +162,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       name: email.split('@')[0],
       workshopName: `Atelier ${email.split('@')[0]}`,
       email,
-      phone: '0550 00 00 00',
+      phone: '0797780838',
       wilaya: '16 - Alger',
       role: 'artisan',
       avatarUrl: PRESET_AVATARS[0].url,
       isVerified: true,
+      twoFactorEnabled: true,
     };
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(profileToUse));
-    } catch {
-      // Ignored
-    }
+    safeStorage.setJSON(STORAGE_KEY, profileToUse);
     set({ user: profileToUse, isAuthenticated: true, isAuthModalOpen: false });
     return true;
   },
@@ -202,20 +180,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       id: `usr-${Date.now()}`,
       isVerified: true,
     };
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(created));
-    } catch {
-      // Ignored
-    }
+    safeStorage.setJSON(STORAGE_KEY, created);
     set({ user: created, isAuthenticated: true, isAuthModalOpen: false });
   },
 
   logout: () => {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // Ignored
-    }
+    safeStorage.removeItem(STORAGE_KEY);
     set({ user: null, isAuthenticated: false, authModalTab: 'login' });
   },
 }));

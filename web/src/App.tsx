@@ -24,6 +24,7 @@ import { MaterialMarketModal } from './components/materials/MaterialMarketModal'
 import { WorkshopProWorkspace } from './components/workshop/WorkshopProWorkspace';
 import { MobileBottomNavigation } from './components/mobile/MobileBottomNavigation';
 import { isTauriDesktop } from './services/desktopBridge';
+import { safeStorage } from './lib/safeStorage';
 import { useConfigStore } from './store/configStore';
 import { getTranslation } from './utils/i18n';
 import { Footer } from './components/landing/Footer';
@@ -51,18 +52,14 @@ export function App() {
 
   // Purge legacy mobile toggle flag so the full responsive site is dynamically rendered on all devices
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('baiti_mobile_mode');
-    }
+    safeStorage.removeItem('baiti_mobile_mode');
   }, []);
 
   // Workshop owners in desktop app start directly in Workshop Pro Workspace
   const [isWorkshopMode, setIsWorkshopMode] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('baiti_workspace_mode');
-      if (saved !== null) {
-        return saved === 'true';
-      }
+    const saved = safeStorage.getItem('baiti_workspace_mode');
+    if (saved !== null) {
+      return saved === 'true';
     }
     return isTauriDesktop();
   });
@@ -70,9 +67,7 @@ export function App() {
   const handleToggleWorkshopMode = () => {
     setIsWorkshopMode((prev) => {
       const next = !prev;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('baiti_workspace_mode', String(next));
-      }
+      safeStorage.setItem('baiti_workspace_mode', String(next));
       return next;
     });
   };

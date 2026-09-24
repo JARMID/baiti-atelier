@@ -1,4 +1,5 @@
 // Algerian CCP and BaridiMob (Algérie Poste) validation & transaction manager
+import { safeStorage } from '../lib/safeStorage';
 
 export interface BaridiMobAccountDetails {
   ccpNumber: string;
@@ -31,8 +32,8 @@ export const DEFAULT_WORKSHOP_BARIDIMOB: BaridiMobAccountDetails = {
   ccpNumber: '0012345678',
   ccpKey: '89',
   rip20Digits: '00799999001234567889',
-  accountHolderName: 'Eurl Baiti Atelier Menuiserie',
-  phoneNumber: '0550 12 34 56',
+  accountHolderName: 'Atelier Aluminium Kouba (Mourad Hadj-Ali)',
+  phoneNumber: '0797780838',
 };
 
 // 1. Algorithme officiel de calcul de la Clé CCP Algérie Poste
@@ -159,35 +160,16 @@ export function convertAmountToFrenchWordsDzd(amount: number): string {
 
 // 4. Persistence des coordonnées de paiement de l'atelier
 export function getSavedWorkshopBaridiMob(): BaridiMobAccountDetails {
-  if (typeof window === 'undefined') return DEFAULT_WORKSHOP_BARIDIMOB;
-  try {
-    const raw = localStorage.getItem(STORAGE_ACCOUNTS_KEY);
-    if (!raw) return DEFAULT_WORKSHOP_BARIDIMOB;
-    return JSON.parse(raw);
-  } catch {
-    return DEFAULT_WORKSHOP_BARIDIMOB;
-  }
+  return safeStorage.getJSON<BaridiMobAccountDetails>(STORAGE_ACCOUNTS_KEY, DEFAULT_WORKSHOP_BARIDIMOB);
 }
 
 export function saveWorkshopBaridiMob(details: BaridiMobAccountDetails): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_ACCOUNTS_KEY, JSON.stringify(details));
-  } catch {
-    // Handled
-  }
+  safeStorage.setJSON(STORAGE_ACCOUNTS_KEY, details);
 }
 
 // 5. Gestion des transactions enregistrées
 export function getBaridiMobTransactions(): BaridiMobTransactionRecord[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_TRANSACTIONS_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
+  return safeStorage.getJSON<BaridiMobTransactionRecord[]>(STORAGE_TRANSACTIONS_KEY, []);
 }
 
 export function saveBaridiMobTransaction(
@@ -202,14 +184,7 @@ export function saveBaridiMobTransaction(
     date: new Date().toISOString(),
   };
 
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(STORAGE_TRANSACTIONS_KEY, JSON.stringify([newRecord, ...current]));
-    } catch {
-      // Handled
-    }
-  }
-
+  safeStorage.setJSON(STORAGE_TRANSACTIONS_KEY, [newRecord, ...current]);
   return newRecord;
 }
 

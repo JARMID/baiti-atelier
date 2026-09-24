@@ -17,6 +17,7 @@ import {
 } from '../../utils/totp';
 import { playTactileClick, playSwitchSound } from '../../utils/audioFeedback';
 import { useConfigStore } from '../../store/configStore';
+import { safeStorage } from '../../lib/safeStorage';
 
 interface Setup2FAModalProps {
   isOpen: boolean;
@@ -26,13 +27,9 @@ interface Setup2FAModalProps {
 const STORAGE_2FA_KEY = 'baiti_totp_2fa_config';
 
 function getInitial2FaStep(): 'intro' | 'active' {
-  try {
-    const existing = localStorage.getItem(STORAGE_2FA_KEY);
-    if (existing && JSON.parse(existing).enabled) {
-      return 'active';
-    }
-  } catch {
-    // Ignored
+  const config = safeStorage.getJSON<{ enabled?: boolean } | null>(STORAGE_2FA_KEY, null);
+  if (config && config.enabled) {
+    return 'active';
   }
   return 'intro';
 }
@@ -94,26 +91,19 @@ export const Setup2FAModal: React.FC<Setup2FAModalProps> = ({ isOpen, onClose })
     setBackupCodes(codes);
 
     // Save active configuration locally
-    try {
-      localStorage.setItem(
-        STORAGE_2FA_KEY,
-        JSON.stringify({
-          enabled: true,
-          secret: secret,
-          backupCodesHashed: codes.map((c) => btoa(c)),
-          enabledAt: new Date().toISOString(),
-        })
-      );
-    } catch (err) {
-      console.error('Failed to save 2FA config', err);
-    }
+    safeStorage.setJSON(STORAGE_2FA_KEY, {
+      enabled: true,
+      secret: secret,
+      backupCodesHashed: codes.map((c) => btoa(c)),
+      enabledAt: new Date().toISOString(),
+    });
 
     setStep('backup');
   };
 
   const handleDisable2Fa = () => {
     playTactileClick();
-    localStorage.removeItem(STORAGE_2FA_KEY);
+    safeStorage.removeItem(STORAGE_2FA_KEY);
     setStep('intro');
   };
 

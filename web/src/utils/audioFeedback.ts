@@ -4,6 +4,8 @@
  * Operates without external audio assets, zero latency, zero bandwidth.
  */
 
+import { safeStorage } from '../lib/safeStorage';
+
 let audioCtx: AudioContext | null = null;
 let soundEnabled = false;
 
@@ -23,22 +25,18 @@ function getAudioContext(): AudioContext | null {
 }
 
 export function isSoundEnabled(): boolean {
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('baiti_sound_enabled') ?? localStorage.getItem('monyun_sound_enabled');
-    if (stored !== null) {
-      soundEnabled = stored === 'true';
-    } else {
-      soundEnabled = false;
-    }
+  const stored = safeStorage.getItem('baiti_sound_enabled') ?? safeStorage.getItem('monyun_sound_enabled');
+  if (stored !== null) {
+    soundEnabled = stored === 'true';
+  } else {
+    soundEnabled = false;
   }
   return soundEnabled;
 }
 
 export function setSoundEnabled(enabled: boolean): void {
   soundEnabled = enabled;
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('baiti_sound_enabled', String(enabled));
-  }
+  safeStorage.setItem('baiti_sound_enabled', String(enabled));
   if (enabled) {
     playTactileClick();
   }

@@ -18,6 +18,9 @@ import { useAuthStore, PRESET_AVATARS, DEMO_PROFILES, type UserProfile } from '.
 import { useConfigStore } from '../../store/configStore';
 import { ALGERIAN_WILAYAS_58 } from '../../utils/algerianWilayas';
 import { playTactileClick, playSwitchSound } from '../../utils/audioFeedback';
+import { validatePhoneNumber } from '../../lib/phoneValidator';
+import { isEmailValidAndReal } from '../../lib/emailChecker';
+import { evaluatePasswordPolicy } from '../../lib/passwordPolicy';
 
 interface AuthAccountModalProps {
   onOpen2FaModal?: () => void;
@@ -59,6 +62,20 @@ export const AuthAccountModal: React.FC<AuthAccountModalProps> = ({ onOpen2FaMod
   const [signupName, setSignupName] = useState('');
   const [signupPhone, setSignupPhone] = useState('');
   const [signupWilaya, setSignupWilaya] = useState('16 - Alger');
+
+  const passwordPolicy = evaluatePasswordPolicy(passwordInput);
+  const emailCheck = isEmailValidAndReal(emailInput);
+  const phoneCheck = validatePhoneNumber(signupPhone);
+
+  const handleFillMouradCredentials = () => {
+    playTactileClick();
+    setEmailInput('midbariola@gmail.com');
+    setPasswordInput('BaitiPro2026!');
+    setSignupName('Mourad Hadj-Ali');
+    setSignupWorkshop('Atelier Aluminium Kouba');
+    setSignupPhone('0797780838');
+    setSignupWilaya('16 - Alger');
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -497,17 +514,46 @@ export const AuthAccountModal: React.FC<AuthAccountModalProps> = ({ onOpen2FaMod
                 </button>
               </div>
 
+              {/* Pre-fill Mourad Hadj-Ali Shortcut Button */}
+              <button
+                type="button"
+                onClick={handleFillMouradCredentials}
+                className="p-2.5 rounded-xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 border border-[#D4AF37]/40 flex items-center justify-between text-left transition-colors cursor-pointer group"
+              >
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+                  <div>
+                    <span className="block text-xs font-bold text-[#D4AF37]">
+                      Compte Test : Mourad Hadj-Ali (Kouba)
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      midbariola@gmail.com · 0797780838 · BaitiPro2026!
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#D4AF37] text-slate-950 font-bold group-hover:scale-105 transition-transform">
+                  Préremplir
+                </span>
+              </button>
+
               {authModalTab === 'login' ? (
                 <form onSubmit={handleLoginSubmit} className="flex flex-col gap-4">
                   <div>
-                    <label className="block text-[11px] font-mono text-zinc-400 mb-1">
-                      ADRESSE EMAIL PROFESSIONNELLE
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-mono text-zinc-400">
+                        ADRESSE EMAIL PROFESSIONNELLE
+                      </label>
+                      {emailInput && (
+                        <span className={`text-[10px] font-mono ${emailCheck.valid ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          {emailCheck.valid ? 'Email Valide' : 'Format Requis'}
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="email"
                       value={emailInput}
                       onChange={(e) => setEmailInput(e.target.value)}
-                      placeholder="votre-atelier@domaine.dz"
+                      placeholder="midbariola@gmail.com"
                       className={`w-full px-3 py-2 rounded-xl text-xs border font-medium focus:outline-none focus:border-[#D4AF37] ${
                         isLight ? 'bg-white border-slate-300' : 'bg-white/5 border-white/10'
                       }`}
@@ -516,7 +562,7 @@ export const AuthAccountModal: React.FC<AuthAccountModalProps> = ({ onOpen2FaMod
                   </div>
                   <div>
                     <label className="block text-[11px] font-mono text-zinc-400 mb-1">
-                      MOT DE PASSE
+                      MOT DE PASSE (BaitiPro2026!)
                     </label>
                     <input
                       type="password"
@@ -546,7 +592,7 @@ export const AuthAccountModal: React.FC<AuthAccountModalProps> = ({ onOpen2FaMod
                       type="text"
                       value={signupWorkshop}
                       onChange={(e) => setSignupWorkshop(e.target.value)}
-                      placeholder="Ex: Atelier Aluminium de l’Atlas"
+                      placeholder="Ex: Atelier Aluminium Kouba"
                       className={`w-full px-3 py-2 rounded-xl text-xs border font-medium focus:outline-none focus:border-[#D4AF37] ${
                         isLight ? 'bg-white border-slate-300' : 'bg-white/5 border-white/10'
                       }`}
@@ -562,7 +608,7 @@ export const AuthAccountModal: React.FC<AuthAccountModalProps> = ({ onOpen2FaMod
                         type="text"
                         value={signupName}
                         onChange={(e) => setSignupName(e.target.value)}
-                        placeholder="Ex: Amine Brahimi"
+                        placeholder="Ex: Mourad Hadj-Ali"
                         className={`w-full px-3 py-2 rounded-xl text-xs border font-medium focus:outline-none focus:border-[#D4AF37] ${
                           isLight ? 'bg-white border-slate-300' : 'bg-white/5 border-white/10'
                         }`}
@@ -593,7 +639,7 @@ export const AuthAccountModal: React.FC<AuthAccountModalProps> = ({ onOpen2FaMod
                         type="email"
                         value={emailInput}
                         onChange={(e) => setEmailInput(e.target.value)}
-                        placeholder="atelier@exemple.dz"
+                        placeholder="midbariola@gmail.com"
                         className={`w-full px-3 py-2 rounded-xl text-xs border font-medium focus:outline-none focus:border-[#D4AF37] ${
                           isLight ? 'bg-white border-slate-300' : 'bg-white/5 border-white/10'
                         }`}
@@ -601,12 +647,19 @@ export const AuthAccountModal: React.FC<AuthAccountModalProps> = ({ onOpen2FaMod
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-mono text-zinc-400 mb-1">TÉLÉPHONE</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-mono text-zinc-400">TÉLÉPHONE</label>
+                        {phoneCheck.operator && (
+                          <span className="text-[9px] font-mono text-emerald-400 font-bold">
+                            {phoneCheck.operator}
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="tel"
                         value={signupPhone}
                         onChange={(e) => setSignupPhone(e.target.value)}
-                        placeholder="0550 12 34 56"
+                        placeholder="0797780838"
                         className={`w-full px-3 py-2 rounded-xl text-xs border font-mono focus:outline-none focus:border-[#D4AF37] ${
                           isLight ? 'bg-white border-slate-300' : 'bg-white/5 border-white/10'
                         }`}
@@ -614,6 +667,49 @@ export const AuthAccountModal: React.FC<AuthAccountModalProps> = ({ onOpen2FaMod
                       />
                     </div>
                   </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono text-zinc-400 mb-1">
+                      MOT DE PASSE SÉCURISÉ
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordInput}
+                      onChange={(e) => setPasswordInput(e.target.value)}
+                      placeholder="BaitiPro2026!"
+                      className={`w-full px-3 py-2 rounded-xl text-xs border font-mono focus:outline-none focus:border-[#D4AF37] ${
+                        isLight ? 'bg-white border-slate-300' : 'bg-white/5 border-white/10'
+                      }`}
+                      required
+                    />
+                  </div>
+
+                  {/* Password Security Checklist */}
+                  <div
+                    className={`p-3 rounded-xl border text-[11px] font-mono flex flex-col gap-1.5 ${
+                      isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/[0.03] border-white/10'
+                    }`}
+                  >
+                    <span className="text-[10px] font-bold text-zinc-400">CRITÈRES DE SÉCURITÉ :</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[10px]">
+                      <span className={`flex items-center gap-1.5 ${passwordPolicy.isLengthValid ? 'text-emerald-400 font-bold' : 'text-zinc-500'}`}>
+                        {passwordPolicy.isLengthValid ? '✓' : '•'} Min. 8 caractères
+                      </span>
+                      <span className={`flex items-center gap-1.5 ${passwordPolicy.hasUpperCase ? 'text-emerald-400 font-bold' : 'text-zinc-500'}`}>
+                        {passwordPolicy.hasUpperCase ? '✓' : '•'} Majuscule (A-Z)
+                      </span>
+                      <span className={`flex items-center gap-1.5 ${passwordPolicy.hasLowerCase ? 'text-emerald-400 font-bold' : 'text-zinc-500'}`}>
+                        {passwordPolicy.hasLowerCase ? '✓' : '•'} Minuscule (a-z)
+                      </span>
+                      <span className={`flex items-center gap-1.5 ${passwordPolicy.hasNumber ? 'text-emerald-400 font-bold' : 'text-zinc-500'}`}>
+                        {passwordPolicy.hasNumber ? '✓' : '•'} Chiffre (0-9)
+                      </span>
+                      <span className={`flex items-center gap-1.5 ${passwordPolicy.hasSpecialChar ? 'text-emerald-400 font-bold' : 'text-zinc-500'}`}>
+                        {passwordPolicy.hasSpecialChar ? '✓' : '•'} Spécial (!@#$%)
+                      </span>
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
                     className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#C5A880] text-slate-950 font-bold text-xs font-mono tracking-wider uppercase hover:brightness-110 shadow-lg shadow-[#D4AF37]/20 transition-all cursor-pointer mt-2"
