@@ -339,3 +339,89 @@ pub fn load_workshop_offcuts() -> Result<String, String> {
         .map_err(|e| format!("Failed to read offcuts file: {}", e))?;
     Ok(content)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_safe_id_accepts_valid_ids() {
+        assert!(validate_safe_id("quote-101").is_ok());
+        assert!(validate_safe_id("CHANTIER_HYDRA_2026").is_ok());
+        assert!(validate_safe_id("bv-salon-r2_vtx1").is_ok());
+    }
+
+    #[test]
+    fn test_validate_safe_id_rejects_path_traversal() {
+        assert!(validate_safe_id("").is_err());
+        assert!(validate_safe_id("../etc/passwd").is_err());
+        assert!(validate_safe_id("..\\windows\\system32").is_err());
+        assert!(validate_safe_id("quotes/subfolder").is_err());
+        assert!(validate_safe_id("invalid spaces in id").is_err());
+        assert!(validate_safe_id("bad$char*").is_err());
+    }
+
+    #[test]
+    fn test_generate_saw_cut_label_produces_valid_svg_and_text() {
+        let piece = SawCutPiece {
+            id: "piece-001".to_string(),
+            piece_name: "Montant Gauche".to_string(),
+            profile_code: "Alugraf 40".to_string(),
+            length_mm: 1245.5,
+            left_angle: 45.0,
+            right_angle: 90.0,
+            job_name: "Villa Kouba".to_string(),
+            bar_index: 1,
+            sequence: 3,
+        };
+
+        let res = generate_saw_cut_label(piece).expect("Label generation should succeed");
+        assert!(res.svg_label.contains("1245.5 mm"));
+        assert!(res.svg_label.contains("45° / 90°"));
+        assert!(res.svg_label.contains("Villa Kouba"));
+        assert!(res.svg_label.contains("ALGERIE 58W"));
+        assert!(res.print_ready_text.contains("LENGTH: 1245.5mm"));
+    }
+
+    #[test]
+    fn test_export_cnc_gcode_produces_standard_commands() {
+        let bars = vec![CncBarSpec {
+            bar_index: 1,
+            profile_name: "Coulissant 67".to_string(),
+            total_length_mm: 6000.0,
+            cuts: vec![
+                CncCutItem {
+                    length_mm: 1400.0,
+                    left_angle: 45.0,
+                    right_angle: 45.0,
+                    label: "Traverse Haute".to_string(),
+                },
+                CncCutItem {
+                    length_mm: 1400.0,
+                    left_angle: 45.0,
+                    right_angle: 45.0,
+                    label: "Traverse Basse".to_string(),
+                },
+            ],
+        }];
+
+        let gcode = export_cnc_gcode("Chantier Test".to_string(), bars)
+            .expect("G-code generation should succeed");
+
+        assert!(gcode.contains("G21 ; Millimeter units"));
+        assert!(gcode.contains("G90 ; Absolute positioning"));
+        assert!(gcode.contains("M08 ; Clamp profile"));
+        assert!(gcode.contains("G00 X1400.00"));
+        assert!(gcode.contains("M21 A45.0 B45.0"));
+        assert!(gcode.contains("M03 S2800"));
+        assert!(gcode.contains("M30 ; End of program"));
+    }
+
+    #[test]
+    fn test_get_workshop_system_info_returns_active_state() {
+        let info = get_workshop_system_info().expect("System info should return cleanly");
+        assert_eq!(info.app_version, "1.0.0");
+        assert!(info.offline_storage_active);
+        assert!(info.thermal_printer_ready);
+    }
+}

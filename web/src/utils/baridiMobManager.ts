@@ -1,5 +1,5 @@
 // Algerian CCP and BaridiMob (Algérie Poste) validation & transaction manager
-import { safeStorage } from '../lib/safeStorage';
+import { safeStorage } from '../lib/safeStorage.ts';
 
 export interface BaridiMobAccountDetails {
   ccpNumber: string;
@@ -28,7 +28,7 @@ export interface BaridiMobTransactionRecord {
 const STORAGE_ACCOUNTS_KEY = 'baiti_workshop_baridimob_account_v1';
 const STORAGE_TRANSACTIONS_KEY = 'baiti_baridimob_transactions_v1';
 
-import { amountInDzdWordsAr, formatBaridiMobRip } from '../lib/algerianFinancials';
+import { amountInDzdWordsAr, formatBaridiMobRip } from '../lib/algerianFinancials.ts';
 
 export { formatBaridiMobRip };
 
