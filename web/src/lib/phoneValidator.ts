@@ -35,9 +35,11 @@ export const validatePhoneNumber = (rawPhone: string): PhoneValidationResult => 
     };
   }
 
-  // Algerian phone format: +213(5|6|7|2|3|4|9)XXXXXXXX or 0(5|6|7|2|3|4|9)XXXXXXXX
-  const dzIntlRegex = /^(?:\+213|00213|213)([5672349]\d{8})$/;
-  const dzLocalRegex = /^0([5672349]\d{8})$/;
+  // Algerian phone format:
+  // Mobile: +213(5|6|7)XXXXXXXX or 0(5|6|7)XXXXXXXX (9 digits)
+  // Landline: +213(2|3|4|9)XXXXXXX or 0(2|3|4|9)XXXXXXX (8 or 9 digits)
+  const dzIntlRegex = /^(?:\+213|00213|213)([567]\d{8}|[2349]\d{7,8})$/;
+  const dzLocalRegex = /^0([567]\d{8}|[2349]\d{7,8})$/;
 
   const dzMatch = cleanPhone.match(dzIntlRegex) || cleanPhone.match(dzLocalRegex);
   if (dzMatch) {
@@ -48,9 +50,16 @@ export const validatePhoneNumber = (rawPhone: string): PhoneValidationResult => 
     else if (firstDigit === '6') operator = 'Mobilis (ATM)';
     else if (firstDigit === '7') operator = 'Djezzy (OTA)';
 
+    let formatted: string;
+    if (nationalNumber.length === 8) {
+      formatted = `+213 ${nationalNumber.slice(0, 2)} ${nationalNumber.slice(2, 4)} ${nationalNumber.slice(4, 6)} ${nationalNumber.slice(6)}`;
+    } else {
+      formatted = `+213 ${nationalNumber.slice(0, 3)} ${nationalNumber.slice(3, 5)} ${nationalNumber.slice(5, 7)} ${nationalNumber.slice(7)}`;
+    }
+
     return {
       valid: true,
-      formatted: `+213 ${nationalNumber.slice(0, 3)} ${nationalNumber.slice(3, 5)} ${nationalNumber.slice(5, 7)} ${nationalNumber.slice(7)}`,
+      formatted,
       country: 'DZ',
       operator,
     };

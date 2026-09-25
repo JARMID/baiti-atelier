@@ -424,4 +424,38 @@ mod tests {
         assert!(info.offline_storage_active);
         assert!(info.thermal_printer_ready);
     }
+
+    #[test]
+    fn test_print_thermal_labels_batch_creates_spool_file() {
+        let labels = vec![
+            "ETIQUETTE-1: Coup 1200mm".to_string(),
+            "ETIQUETTE-2: Coup 850mm".to_string(),
+        ];
+        let result = print_thermal_labels_batch(labels).expect("Spooling labels should succeed");
+        assert!(result.success);
+        assert_eq!(result.items_printed, 2);
+        assert!(std::path::Path::new(&result.spool_path).exists());
+        let _ = std::fs::remove_file(result.spool_path);
+    }
+
+    #[test]
+    fn test_spool_saw_sheet_creates_sheet_file() {
+        let path = spool_saw_sheet("Villa Kouba".to_string(), "FEUILLE DE DEBIT".to_string())
+            .expect("Spooling sheet should succeed");
+        assert!(std::path::Path::new(&path).exists());
+        let content = std::fs::read_to_string(&path).expect("Read sheet should succeed");
+        assert_eq!(content, "FEUILLE DE DEBIT");
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn test_save_and_load_workshop_offcuts_roundtrip() {
+        let dummy_json = r#"[{"id":"offcut-1","profile":"Alugraf 40","length_mm":450.0}]"#;
+        let save_ok = save_workshop_offcuts(dummy_json.to_string()).expect("Save should succeed");
+        assert!(save_ok);
+
+        let loaded = load_workshop_offcuts().expect("Load should succeed");
+        assert!(loaded.contains("offcut-1"));
+        assert!(loaded.contains("450"));
+    }
 }

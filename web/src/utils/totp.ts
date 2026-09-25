@@ -8,10 +8,10 @@
 const BASE32_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
 /**
- * Generates a cryptographically secure Base32 secret key (160 bits = 20 bytes = 32 chars)
+ * Generates a cryptographically secure Base32 secret key (160 bits = 32 Base32 chars)
  */
-export function generateTotpSecret(): string {
-  const randomBytes = new Uint8Array(20);
+export function generateTotpSecret(length = 32): string {
+  const randomBytes = new Uint8Array(length);
   crypto.getRandomValues(randomBytes);
   let secret = '';
   for (let i = 0; i < randomBytes.length; i++) {

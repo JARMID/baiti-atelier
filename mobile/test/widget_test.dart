@@ -12,6 +12,8 @@ import 'package:monyun_mobile/screens/auth_screen.dart';
 import 'package:monyun_mobile/widgets/laser_measure_dialog.dart';
 import 'package:monyun_mobile/widgets/devis_preview_sheet.dart';
 import 'package:monyun_mobile/widgets/security_2fa_dialog.dart';
+import 'package:monyun_mobile/widgets/algerian_payment_dialog.dart';
+import 'package:monyun_mobile/widgets/algerian_material_market_dialog.dart';
 import 'package:monyun_mobile/models/artisan_profile.dart';
 import 'package:monyun_mobile/services/app_settings.dart';
 
@@ -427,6 +429,116 @@ void main() {
 
     expect(find.text('SÉCURITÉ ATELIER & 2FA'), findsOneWidget);
     expect(find.text('BAITI 7X9K 4M2P 8W1Q'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('AlgerianPaymentDialog renders on 360x640, switches tabs, and simulates OTP step with zero overflow', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AlgerianPaymentDialog(
+            profile: ArtisanProfile.defaultProfile(),
+            onPaymentSuccess: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final settings = AppSettings.instance;
+    expect(find.text(settings.tr('pay_dialog_secure')), findsOneWidget);
+    expect(find.text(settings.tr('pay_baridimob')), findsOneWidget);
+    expect(find.text(settings.tr('pay_edahabia')), findsOneWidget);
+    expect(find.text(settings.tr('pay_ccp')), findsOneWidget);
+
+    // Switch to Edahabia card tab
+    await tester.tap(find.text(settings.tr('pay_edahabia')));
+    await tester.pumpAndSettle();
+    expect(find.text(settings.tr('pay_dialog_card_num')), findsOneWidget);
+
+    // Switch to Mandat CCP tab
+    await tester.tap(find.text(settings.tr('pay_ccp')));
+    await tester.pumpAndSettle();
+    expect(find.text(settings.tr('pay_dialog_ccp_slip')), findsOneWidget);
+
+    // Switch back to BaridiMob and trigger payment simulation
+    await tester.tap(find.text(settings.tr('pay_baridimob')));
+    await tester.pumpAndSettle();
+
+    final simulateBtn = find.text(settings.tr('pay_dialog_simulate_btn'));
+    expect(simulateBtn, findsOneWidget);
+    await tester.tap(simulateBtn);
+
+    // Advance timer past the 1400ms simulation delay
+    await tester.pump(const Duration(milliseconds: 1500));
+    await tester.pumpAndSettle();
+
+    // Verify OTP confirmation view
+    expect(find.text(settings.tr('pay_dialog_otp_title')), findsOneWidget);
+    expect(find.text(settings.tr('pay_dialog_confirm_otp')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('AlgerianMaterialMarketDialog renders on 360x640, toggles categories, and applies presets with zero overflow', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AlgerianMaterialMarketDialog(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final settings = AppSettings.instance;
+    expect(find.text('ARGUS DES COURS & CALIBRATEUR DZD'), findsOneWidget);
+    expect(find.text('ARGUS BOURSE'), findsOneWidget);
+    expect(find.text('CALIBRATEUR ATELIER'), findsOneWidget);
+
+    // Switch category in Argus tab
+    final aluFilter = find.text('Menuiserie Aluminium');
+    if (aluFilter.evaluate().isNotEmpty) {
+      await tester.tap(aluFilter);
+      await tester.pumpAndSettle();
+    }
+
+    // Switch to Calibrateur Atelier tab
+    await tester.tap(find.text('CALIBRATEUR ATELIER'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(settings.tr('calib_presets_title')), findsOneWidget);
+    expect(find.text(settings.tr('calib_slider_labor_title')), findsOneWidget);
+
+    // Tap standard preset
+    final standardPreset = find.text(settings.tr('calib_preset_standard'));
+    if (standardPreset.evaluate().isNotEmpty) {
+      await tester.tap(standardPreset.first);
+      await tester.pumpAndSettle();
+    }
+
+    // Tap save calibration button
+    final saveBtn = find.textContaining(settings.tr('calib_btn_save'));
+    if (saveBtn.evaluate().isNotEmpty) {
+      await tester.ensureVisible(saveBtn.first);
+      await tester.pumpAndSettle();
+      await tester.tap(saveBtn.first);
+      await tester.pump(const Duration(milliseconds: 1000));
+      await tester.pumpAndSettle();
+    }
+
     expect(tester.takeException(), isNull);
   });
 }
