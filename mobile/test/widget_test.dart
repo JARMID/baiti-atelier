@@ -11,6 +11,8 @@ import 'package:monyun_mobile/screens/splash_screen.dart';
 import 'package:monyun_mobile/screens/auth_screen.dart';
 import 'package:monyun_mobile/widgets/laser_measure_dialog.dart';
 import 'package:monyun_mobile/widgets/devis_preview_sheet.dart';
+import 'package:monyun_mobile/widgets/security_2fa_dialog.dart';
+import 'package:monyun_mobile/models/artisan_profile.dart';
 import 'package:monyun_mobile/services/app_settings.dart';
 
 void main() {
@@ -352,6 +354,79 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('ARGUS DES COURS & CALIBRATEUR DZD'), findsNothing);
     }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('MeasureTakeScreen renders in Arabic RTL with zero overflow on 360x640', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      AppSettings.instance.setLanguage('fr');
+    });
+
+    await AppSettings.instance.setLanguage('ar');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: MeasureTakeScreen(onSpecSaved: (_) {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppSettings.instance.tr('cotes_header_title')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('WorkshopsScreen renders in Light Mode with zero overflow on 360x640', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      AppSettings.instance.setDarkMode(true);
+    });
+
+    await AppSettings.instance.setDarkMode(false);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: WorkshopsScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('RÉPERTOIRE 58 WILAYAS'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Security2FADialog renders with zero overflow on 360x640', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Security2FADialog(
+            profile: ArtisanProfile.defaultProfile(),
+            onProfileUpdated: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('SÉCURITÉ ATELIER & 2FA'), findsOneWidget);
+    expect(find.text('BAITI 7X9K 4M2P 8W1Q'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

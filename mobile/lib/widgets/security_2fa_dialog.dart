@@ -339,17 +339,20 @@ class _Security2FADialogState extends State<Security2FADialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          settings.tr('sec_2fa_step2_title'),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: primaryTextColor,
+                        Expanded(
+                          child: Text(
+                            settings.tr('sec_2fa_step2_title'),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: primaryTextColor,
+                            ),
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.timer_outlined, size: 13, color: Color(0xFFD4AF37)),
                             const SizedBox(width: 4),

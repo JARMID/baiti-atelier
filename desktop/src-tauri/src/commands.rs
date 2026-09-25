@@ -72,6 +72,19 @@ pub struct OfflineQuoteSummary {
     pub created_at: String,
 }
 
+fn validate_safe_id(id: &str) -> Result<(), String> {
+    if id.is_empty() {
+        return Err("ID cannot be empty".to_string());
+    }
+    if id.contains('/') || id.contains('\\') || id.contains("..") {
+        return Err("Invalid identifier: path traversal detected".to_string());
+    }
+    if !id.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
+        return Err("Invalid identifier: allowed characters are alphanumeric, '-', and '_'".to_string());
+    }
+    Ok(())
+}
+
 fn get_quotes_dir() -> Result<PathBuf, String> {
     let base = std::env::var("LOCALAPPDATA")
         .map(PathBuf::from)
@@ -170,6 +183,7 @@ pub fn get_workshop_system_info() -> Result<WorkshopSystemInfo, String> {
 
 #[tauri::command]
 pub fn save_offline_quote(quote: OfflineQuote) -> Result<String, String> {
+    validate_safe_id(&quote.id)?;
     let dir = get_quotes_dir()?;
     let path = dir.join(format!("{}.json", quote.id));
     let json = serde_json::to_string_pretty(&quote)
@@ -211,6 +225,7 @@ pub fn list_offline_quotes() -> Result<Vec<OfflineQuoteSummary>, String> {
 
 #[tauri::command]
 pub fn load_offline_quote(id: String) -> Result<OfflineQuote, String> {
+    validate_safe_id(&id)?;
     let dir = get_quotes_dir()?;
     let path = dir.join(format!("{}.json", id));
     if !path.exists() {
@@ -225,6 +240,7 @@ pub fn load_offline_quote(id: String) -> Result<OfflineQuote, String> {
 
 #[tauri::command]
 pub fn delete_offline_quote(id: String) -> Result<bool, String> {
+    validate_safe_id(&id)?;
     let dir = get_quotes_dir()?;
     let path = dir.join(format!("{}.json", id));
     if path.exists() {
